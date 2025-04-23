@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 
 const WeatherDataCard = ({ location }) => {
   const [weather, setWeather] = useState(null);
@@ -11,7 +11,6 @@ const WeatherDataCard = ({ location }) => {
   const [updateMessage, setUpdateMessage] = useState("");
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Updates the local time every second
   useEffect(() => {
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date());
@@ -76,32 +75,52 @@ const WeatherDataCard = ({ location }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-32">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div
+        className="flex items-center justify-center h-32"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
       </div>
     );
   }
 
   if (error) {
-    return <div className="text-red-500 dark:text-red-400 text-center">Error: {error}</div>;
+    return (
+      <div
+        className="text-red-500 dark:text-red-400 text-center"
+        role="alert"
+        aria-label="Weather data error"
+      >
+        Error: {error}
+      </div>
+    );
   }
 
   return (
-    <div className="bg-white w-full max-w-3xl dark:bg-gray-800 shadow-lg hover:shadow-blue-500/50 rounded-xl p-4 border mx-auto text-center text-gray-900 dark:text-white">
+    <div
+      className="bg-white w-full max-w-3xl dark:bg-gray-800 shadow-lg hover:shadow-blue-500/50 rounded-xl p-4 border mx-auto text-center text-gray-900 dark:text-white"
+      aria-label="Weather data card"
+    >
       <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
         {weather.location.name}, {weather.location.country}
       </h2>
 
-      {/* Real-Time Clock Display */}
-      <p className="text-sm text-gray-600 dark:text-gray-400">
+      <p className="text-sm text-gray-600 dark:text-gray-400" aria-label="Local time">
         Local Time: <span className="font-semibold">{currentTime.toLocaleTimeString()}</span>
       </p>
 
       {updateMessage && (
-        <p className="mt-2 text-green-500 text-sm animate-fadeIn">{updateMessage}</p>
+        <p
+          className="mt-2 text-green-500 text-sm animate-fadeIn"
+          role="status"
+          aria-live="polite"
+        >
+          {updateMessage}
+        </p>
       )}
 
-      <div className="flex items-center justify-center mt-4">
+      <div className="flex items-center justify-center mt-4" aria-label="Current weather">
         <img
           src={weather.current.condition.icon}
           alt={weather.current.condition.text}
@@ -121,18 +140,28 @@ const WeatherDataCard = ({ location }) => {
         <p><span className="font-semibold">Sunset:</span> {weather.forecast.forecastday[0].astro.sunset}</p>
       </div>
 
-      {/* Show Forecast Button */}
       <div className="mt-6">
         <button
           onClick={toggleCollapse}
           className="text-blue-600 dark:text-blue-300 text-lg font-semibold"
+          aria-expanded={!isCollapsed}
+          aria-controls="forecast-section"
         >
           {isCollapsed ? "Show Forecast" : "Hide Forecast"}
         </button>
+
         {!isCollapsed && (
-          <div className="mt-4 flex overflow-x-auto space-x-4 p-2 scrollbar-hide">
+          <div
+            id="forecast-section"
+            className="mt-4 flex overflow-x-auto space-x-4 p-2 scrollbar-hide"
+            role="region"
+            aria-label="5-day forecast"
+          >
             {forecast.slice(0, 5).map((day) => (
-              <div key={day.date} className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 min-w-[120px] sm:min-w-[160px]">
+              <div
+                key={day.date}
+                className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 min-w-[120px] sm:min-w-[160px]"
+              >
                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{day.date}</p>
                 <img src={day.day.condition.icon} alt="forecast icon" className="w-12 mx-auto" />
                 <p className="text-sm text-gray-700 dark:text-gray-300">{day.day.condition.text}</p>

@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { Line, Doughnut } from "react-chartjs-2";
+import React, { useState, useEffect, lazy, Suspense } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import SkeletonLoader from './SkeletonLoader'; // Import the SkeletonLoader component
+
 import {
   Chart as ChartJS,
   ArcElement,
@@ -11,9 +13,7 @@ import {
   LineElement,
   Title,
 } from "chart.js";
-import { ChevronDown, ChevronRight } from "lucide-react";
 
-// Register necessary chart components
 ChartJS.register(
   ArcElement,
   Tooltip,
@@ -24,6 +24,10 @@ ChartJS.register(
   LineElement,
   Title
 );
+
+// Lazy load the chart components
+const LineChart = lazy(() => import("react-chartjs-2").then(mod => ({ default: mod.Line })));
+const DoughnutChart = lazy(() => import("react-chartjs-2").then(mod => ({ default: mod.Doughnut })));
 
 export default function AvgAccuracyChartTabs() {
   const [activeTab, setActiveTab] = useState("line");
@@ -121,7 +125,7 @@ export default function AvgAccuracyChartTabs() {
   };
 
   return (
-    <div className="bg-white w-full md:w-10/12 border md:w-full dark:bg-gray-900 p-6 rounded-2xl shadow-md mt-6">
+    <div className="bg-white w-full md:w-10/12 border md:w-full dark:bg-gray-800  p-6 rounded-2xl shadow-md mt-6">
       {/* Header with toggle */}
       <div
         className="flex items-center justify-between cursor-pointer"
@@ -177,12 +181,16 @@ export default function AvgAccuracyChartTabs() {
           {activeTab === "line" ? (
             <div className="overflow-x-auto">
               <div className="min-w-[700px] h-[50vh] sm:h-[60vh] md:h-[65vh] lg:h-[70vh]">
-                <Line data={lineData} options={lineOptions} />
+                <Suspense fallback={<SkeletonLoader height="h-[200px]" />}>
+                  <LineChart data={lineData} options={lineOptions} />
+                </Suspense>
               </div>
             </div>
           ) : (
             <div className="relative h-[50vh] sm:h-[60vh] md:h-[65vh] lg:h-[70vh]">
-              <Doughnut data={gaugeData} options={gaugeOptions} />
+              <Suspense fallback={<SkeletonLoader height="h-[200px]" />}>
+                <DoughnutChart data={gaugeData} options={gaugeOptions} />
+              </Suspense>
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-3xl font-bold text-green-600">
                   {currentAccuracy}%

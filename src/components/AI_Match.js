@@ -62,7 +62,7 @@ const AiMatchPage = () => {
 
               <label
                 htmlFor="userInput"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-green-700 dark:text-green-500 mb-1"
               >
                 Enter your criteria
               </label>
@@ -80,13 +80,13 @@ const AiMatchPage = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-all focus:outline-none"
+            className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 hover:scale-105 transition-all focus:outline-none"
           >
             {loading ? (
               <div className="fixed inset-0 bg-black transition bg-opacity-50 flex items-center justify-center z-50">
                 <div className="relative flex items-center justify-center">
                   <div className="absolute w-16 h-16 border-8 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <div className="w-12 h-12 border-8 border-green-500 border-t-transparent rounded-full animate-[spin_1s_linear_reverse_infinite]"></div>
+                  <div className=" w-12 h-12 border-8 border-green-500 border-t-transparent rounded-full animate-[spin_1s_linear_reverse_infinite]"></div>
                 </div>
               </div>
             ) : (

@@ -4,6 +4,7 @@ import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firest
 import { useAuth } from "../AuthContext";
 import { FiBellOff, FiPlus, FiShield, FiLock, FiSettings, FiTrash2, FiX } from "react-icons/fi";
 import { updatePassword } from "firebase/auth";
+import SkeletonLoader from "./SkeletonLoader"; // Assuming you have a skeleton loader component
 
 const AccountPage = () => {
   const { currentUser } = useAuth();
@@ -14,6 +15,7 @@ const AccountPage = () => {
   const [selectedMethod, setSelectedMethod] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [authCode, setAuthCode] = useState("");
+  const [initialLoading, setInitialLoading] = useState(true);
   const [secretKey, setSecretKey] = useState("JBSWY3DPEHPK3PXP");
   const [qrCodeUrl, setQrCodeUrl] = useState(
     `https://api.qrserver.com/v1/create-qr-code/?data=otpauth://totp/OmnisApp?secret=JBSWY3DPEHPK3PXP&size=200x200`
@@ -48,15 +50,16 @@ const AccountPage = () => {
   useEffect(() => {
     if (!currentUser) {
       console.log("No current user");
+      setInitialLoading(false);
       setIsLoading(false);
       return;
     }
-
+  
     const fetchUserData = async () => {
       try {
         const userRef = doc(db, "users", currentUser.uid);
         const userSnap = await getDoc(userRef);
-
+  
         if (userSnap.exists()) {
           const user = userSnap.data();
           setUserData(user);
@@ -70,9 +73,17 @@ const AccountPage = () => {
         setIsLoading(false);
       }
     };
-
+  
+    setInitialLoading(true);
     fetchUserData();
+  
+    const timeout = setTimeout(() => {
+      setInitialLoading(false);
+    }, 1000); // 1 second skeleton minimum
+  
+    return () => clearTimeout(timeout);
   }, [currentUser]);
+  
 
   const togglePopUp = (setting) => {
     setShowPopUp(showPopUp === setting ? null : setting);
@@ -145,28 +156,25 @@ const AccountPage = () => {
   );
 
   // Animated loading screen
-  if (isLoading) {
+  if (initialLoading || isLoading) {
     return (
-      <div className="fixed inset-0 bg-black transition bg-opacity-50 flex items-center justify-center z-50">
-        <div className="relative flex items-center justify-center">
-          <div className="absolute w-16 h-16 border-8 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <div className="w-12 h-12 border-8 border-green-500 border-t-transparent rounded-full animate-[spin_1s_linear_reverse_infinite]"></div>
-        </div>
-      </div>
-    );
+      <SkeletonLoader height="h-full" width="w-full" />
+  )
   }
+  
 
   return (
-    <div className="flex flex-col bg-gray-100 dark:bg-gray-900 p-4 w-full">
-      <div className="bg-white dark:bg-gray-800 border-2 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition w-full max-w-lg mx-auto">
-        <hr className="border-gray-300 dark:border-gray-600 my-4" />
-        <h2 className="text-lg font-semibold text-center text-blue-500 flex items-center justify-center">
+    <div className="flex flex-col bg-gray-100 dark:bg-gray-900 p-4 w-full" role="main">
+      <div className="bg-white dark:bg-gray-800 border-2 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition w-full max-w-lg mx-auto" role="region" aria-label="Account settings section">
+        <h2 className="text-lg font-semibold text-center text-blue-500 dark:text-blue-300 flex items-center justify-center" role="heading" aria-level="2">
           <FiSettings className="mr-2" /> Account Settings
         </h2>
 
-        <div className="mt-4 space-y-4 text-sm md:text-base text-gray-700 dark:text-gray-300">
-          <div className="setting-item relative">
+        <div className="mt-4 space-y-4 text-sm md:text-base text-gray-700 dark:text-gray-300" role="list">
+          <div className="setting-item relative" role="listitem">
             <p
+              role="button"
+              tabIndex={0}
               className="flex items-center cursor-pointer hover:text-blue-500 transition"
               onClick={() => togglePopUp("changePassword")}
             >
@@ -174,8 +182,10 @@ const AccountPage = () => {
               <span className="truncate">Change Password</span>
             </p>
           </div>
-          <div className="setting-item relative">
+          <div className="setting-item relative" role="listitem">
             <p
+              role="button"
+              tabIndex={0}
               className="flex items-center cursor-pointer hover:text-blue-500 transition"
               onClick={() => togglePopUp("enable2FA")}
             >
@@ -183,8 +193,10 @@ const AccountPage = () => {
               <span className="truncate">Enable Two-Factor Authentication</span>
             </p>
           </div>
-          <div className="setting-item relative">
+          <div className="setting-item relative" role="listitem">
             <p
+              role="button"
+              tabIndex={0}
               className="flex items-center cursor-pointer hover:text-blue-500 transition"
               onClick={() => togglePopUp("linkedAccounts")}
             >
@@ -192,8 +204,10 @@ const AccountPage = () => {
               <span className="truncate">Manage Linked Accounts</span>
             </p>
           </div>
-          <div className="setting-item relative">
+          <div className="setting-item relative" role="listitem">
             <p
+              role="button"
+              tabIndex={0}
               className="flex items-center cursor-pointer hover:text-blue-500 transition"
               onClick={() => togglePopUp("notificationPreferences")}
             >

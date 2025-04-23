@@ -100,7 +100,7 @@ const ChatHistory = () => {
               </div>
             ))
           ) : (
-            <p className="text-center text-gray-500 dark:text-gray-400">No history found.</p>
+            <p className="text-center text-gray-500 dark:text-gray-400">No results found for "{searchQuery}".</p> // No result message
           )}
         </div>
       )}

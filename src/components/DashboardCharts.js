@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Bar, Line, Doughnut } from "react-chartjs-2";
+import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import SkeletonLoader from './SkeletonLoader';
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,7 +13,6 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { ChevronDown, ChevronRight } from 'lucide-react';
 
 ChartJS.register(
   CategoryScale,
@@ -24,14 +25,25 @@ ChartJS.register(
   Legend
 );
 
+// Lazy load the chart components
+const BarChart = lazy(() => import("react-chartjs-2").then(mod => ({ default: mod.Bar })));
+const LineChart = lazy(() => import("react-chartjs-2").then(mod => ({ default: mod.Line })));
+const DoughnutChart = lazy(() => import("react-chartjs-2").then(mod => ({ default: mod.Doughnut })));
+
 export default function DashboardCharts() {
   const [activeChart, setActiveChart] = useState("bar");
   const [range, setRange] = useState(7);
   const storedIsOpen = localStorage.getItem('isOpen');
   const [isOpen, setIsOpen] = useState(storedIsOpen === 'false' ? false : true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('isOpen', isOpen);
+    if (isOpen) {
+      setLoading(true);
+      const t = setTimeout(() => setLoading(false), 3000);
+      return () => clearTimeout(t);
+    }
   }, [isOpen]);
 
   const labelsAll = Array.from({ length: 30 }, (_, i) => {
@@ -85,13 +97,11 @@ export default function DashboardCharts() {
 
   const pieData = {
     labels: labels,
-    datasets: [
-      {
-        label: "Simulations",
-        data: baseData,
-        backgroundColor: colorPalette.slice(0, baseData.length),
-      },
-    ],
+    datasets: [{
+      label: "Simulations",
+      data: baseData,
+      backgroundColor: colorPalette.slice(0, baseData.length),
+    }],
   };
 
   const pieOptions = {
@@ -104,7 +114,7 @@ export default function DashboardCharts() {
   };
 
   return (
-    <div className="w-full md:w-10/12 border p-6 mt-8 bg-white dark:bg-gray-900 rounded-3xl shadow-lg">
+    <div className="w-full border p-6 mt-8 bg-white dark:bg-gray-800 rounded-3xl shadow-lg transition-all duration-300 ease-in-out">
       <div
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between cursor-pointer mb-4"
@@ -121,7 +131,7 @@ export default function DashboardCharts() {
 
       <div
         className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          isOpen ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0'
+          isOpen ? 'flex-1 min-h-[300px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
         <div className="flex flex-wrap gap-4 mb-4">
@@ -156,27 +166,16 @@ export default function DashboardCharts() {
           ))}
         </div>
 
-        <div>
-          {activeChart === "bar" && (
-            <div className="overflow-x-auto relative min-h-[300px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-              <div className="relative min-h-[300px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-                <Bar data={chartData} options={commonOptions} />
-              </div>
-            </div>
+        <div className="relative flex-1 min-h-[300px] mb-4">
+          {loading ? (
+            <SkeletonLoader height="h-[300px]" />
+          ) : (
+            <Suspense fallback={<SkeletonLoader height="h-[300px]" />}>
+              {activeChart === "bar" && <BarChart data={chartData} options={commonOptions} />}
+              {activeChart === "line" && <LineChart data={chartData} options={commonOptions} />}
+              {activeChart === "pie" && <DoughnutChart data={pieData} options={pieOptions} />}
+            </Suspense>
           )}
-
-          {activeChart === "line" && (
-            <div className="relative min-h-[300px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-              <Line data={chartData} options={commonOptions} />
-            </div>
-          )}
-
-{activeChart === "pie" && (
-  <div className="relative min-h-[300px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-    <Doughnut data={pieData} options={pieOptions} />
-  </div>
-)}
-
         </div>
       </div>
     </div>

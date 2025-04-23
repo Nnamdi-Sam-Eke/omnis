@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
-import HistoryComponent from "./History";
 
 const SavedComponent = () => {
   const { currentUser } = useAuth();
@@ -70,7 +69,14 @@ const SavedComponent = () => {
       <div className="flex gap-8 mt-8">
         {/* Saved Queries Card */}
         <div className="flex-1 space-y-4">
-          {filteredSavedQueries.length > 0 ? (
+          {savedQueries.length === 0 ? (
+            // Show message if no saved queries at all
+            <p className="text-center text-gray-500 dark:text-gray-400">No saved queries available.</p>
+          ) : filteredSavedQueries.length === 0 ? (
+            // Show message if no queries match the search
+            <p className="text-center text-gray-500 dark:text-gray-400">No matching queries found for "{searchQuery}".</p>
+          ) : (
+            // Display saved queries
             filteredSavedQueries.map((item) => (
               <div key={item.id} className="p-4 bg-gray-100 dark:bg-gray-800 rounded-xl shadow">
                 <p className="text-green-600 font-semibold">Query:</p>
@@ -84,12 +90,8 @@ const SavedComponent = () => {
                 </p>
               </div>
             ))
-          ) : (
-            <p className="text-center text-gray-500 dark:text-gray-400">No saved queries found.</p>
           )}
         </div>
-
-        
       </div>
     </div>
   );

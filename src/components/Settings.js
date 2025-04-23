@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { db } from "../firebase";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { useAuth } from "../AuthContext";
 import { getAuth, deleteUser } from "firebase/auth";
 import { FiBell, FiCloud, FiDatabase } from "react-icons/fi";
 import { AiOutlineAppstore, AiOutlineGlobal } from "react-icons/ai";
-import ThemeToggle from './ThemeToggle';
-import ReauthModal from './ReauthModal';
-import ActivityLog from "./ActivityLog"
+
+// Lazy-loaded components
+const ThemeToggle = lazy(() => import('./ThemeToggle'));
+const ReauthModal = lazy(() => import('./ReauthModal'));
+const ActivityLog = lazy(() => import('./ActivityLog'));
 
 const ProfilePage = () => {
   const { currentUser } = useAuth();
@@ -16,6 +18,7 @@ const ProfilePage = () => {
   const [isOnline, setIsOnline] = useState(false);
   const [currentPage, setCurrentPage] = useState("settings");
   const [showReauth, setShowReauth] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   const [notifications, setNotifications] = useState({
     WeatherUpdates: true,
@@ -29,8 +32,9 @@ const ProfilePage = () => {
     DataCollection: false,
   });
 
-  const [isSaving, setIsSaving] = useState(false); // For Save button state
-  const [isExporting, setIsExporting] = useState(false); // For Export button state
+  const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -60,16 +64,23 @@ const ProfilePage = () => {
   };
 
   const handleSave = () => {
-    setIsSaving(true); // Start saving
+    setIsSaving(true);
+    setLoading(true);
     const settings = { notifications, language, privacy };
     try {
       localStorage.setItem('userSettings', JSON.stringify(settings));
-      alert('Settings saved successfully!');
+      setTimeout(() => {
+        setLoading(false);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      }, 500);
     } catch (error) {
       console.error('Error saving settings:', error);
       alert('Failed to save settings.');
     } finally {
-      setIsSaving(false); // End saving
+      setTimeout(() => {
+        setIsSaving(false);
+      }, 500);
     }
   };
 
@@ -86,7 +97,7 @@ const ProfilePage = () => {
   };
 
   const exportUserData = async () => {
-    setIsExporting(true); // Start exporting
+    setIsExporting(true);
     const settings = { notifications, language, privacy };
     const userExport = {
       uid: currentUser?.uid,
@@ -107,7 +118,7 @@ const ProfilePage = () => {
       console.error("Export failed:", err);
       alert("Error exporting data. Please try again.");
     } finally {
-      setIsExporting(false); // End exporting
+      setIsExporting(false);
     }
   };
 
@@ -115,7 +126,7 @@ const ProfilePage = () => {
     try {
       await deleteUser(currentUser);
       alert("Account deleted.");
-      getAuth().signOut(); // Sign out after deletion
+      getAuth().signOut();
     } catch (err) {
       console.error("Delete failed:", err);
       alert("Account deletion failed. Please try again.");
@@ -126,7 +137,7 @@ const ProfilePage = () => {
     setShowReauth(true);
   };
 
-  const handleSessionLogout = async () => {
+const handleSessionLogout = async () => {
     if (!currentUser) return;
 
     if (window.confirm("Log out from all other devices?")) {
@@ -138,20 +149,38 @@ const ProfilePage = () => {
     }
   };
 
+
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">Deeper config and app-wide settings...</h1>
+      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
+        Deeper config and app-wide settings...
+      </h1>
+
+      {showToast && (
+        <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50">
+          Settings saved successfully!
+        </div>
+      )}
+
 
       <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900 p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 w-full max-w-6xl mx-auto">
           {currentPage === "settings" && (
-            <div className="bg-white shadow-lg rounded-lg dark:bg-gray-800 p-6 border rounded-xl shadow-lg hover:shadow-blue-500/50 transition">
-              <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Settings</h2>
+            <div
+              className="bg-white shadow-lg rounded-lg dark:bg-gray-800 p-6 border rounded-xl shadow-lg hover:shadow-blue-500/50 transition"
+              role="region"
+              aria-labelledby="settings-heading"
+            >
+              <h2 id="settings-heading" className="text-2xl font-semibold text-blue-500 dark:text-blue-300">
+                Settings
+              </h2>
 
               {/* Theme */}
               <div className="mt-4">
                 <h3 className="font-semibold">Theme Settings</h3>
-                <ThemeToggle />
+                <Suspense fallback={<div>Loading Theme Toggle...</div>}>
+                  <ThemeToggle />
+                </Suspense>
               </div>
 
               <hr className="my-4 border-gray-300 dark:border-gray-600" />
@@ -161,12 +190,18 @@ const ProfilePage = () => {
                 <h3 className="font-semibold">Notification Preferences</h3>
                 {Object.keys(notifications).map((key) => (
                   <label key={key} className="flex items-center space-x-2 mt-6">
-                    <input type="checkbox" name={key} checked={notifications[key]} onChange={handleNotificationChange} />
+                    <input
+                      type="checkbox"
+                      name={key}
+                      checked={notifications[key]}
+                      onChange={handleNotificationChange}
+                      aria-label={`${key} notification toggle`}
+                    />
                     <span className="flex items-center">
                       {key === 'WeatherUpdates' && <FiCloud className="mr-2 text-blue-500" />}
                       {key === 'AIResponses' && <AiOutlineAppstore className="mr-2 text-purple-500" />}
                       {key === 'AppUpdates' && <FiBell className="mr-2 text-green-500" />}
-                      {key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
+                      {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                     </span>
                   </label>
                 ))}
@@ -179,11 +214,17 @@ const ProfilePage = () => {
                 <h3 className="font-semibold">Privacy Settings</h3>
                 {Object.keys(privacy).map((key) => (
                   <label key={key} className="flex items-center space-x-2 mt-6">
-                    <input type="checkbox" name={key} checked={privacy[key]} onChange={handlePrivacyChange} />
+                    <input
+                      type="checkbox"
+                      name={key}
+                      checked={privacy[key]}
+                      onChange={handlePrivacyChange}
+                      aria-label={`${key} privacy toggle`}
+                    />
                     <span className="flex items-center">
                       {key === 'LocationAccess' && <AiOutlineGlobal className="mr-2 text-orange-500" />}
                       {key === 'DataCollection' && <FiDatabase className="mr-2 text-red-500" />}
-                      {key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
+                      {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                     </span>
                   </label>
                 ))}
@@ -196,8 +237,9 @@ const ProfilePage = () => {
                 <h3 className="font-semibold">Language Selection</h3>
                 <select
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="p-2 border rounded-md dark:bg-gray-700"
+                  onChange={e => setLanguage(e.target.value)}
+                  className="p-2 mt-8 border rounded-md dark:bg-gray-700"
+                  aria-label="Language selector"
                 >
                   <option>English</option>
                   <option>Spanish</option>
@@ -210,14 +252,38 @@ const ProfilePage = () => {
 
               {/* Data Management */}
               <div className="mt-4">
-                <h3 className="font-semibold">Data Management</h3>
-                <button onClick={clearHistory} className="mt-6 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition">
+                <h3 className="font-semibold hover:scale-105">Data Management</h3>
+                <button
+                  onClick={clearHistory}
+                  className="hover:scale-105 mt-6 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && clearHistory()}
+                  aria-label="Clear history"
+                >
                   Clear History
                 </button>
-                <button onClick={resetSavedItems} className="mt-6 ml-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-red-600 transition">
+                <button
+                  onClick={resetSavedItems}
+                  className="hover:scale-105 mt-6 ml-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-red-600 transition"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && resetSavedItems()}
+                  aria-label="Reset saved items"
+                >
                   Reset Saved Items
                 </button>
-                <button onClick={exportUserData} disabled={isExporting} className={`mt-6 ml-2 px-4 py-2 ${isExporting ? 'bg-gray-400' : 'bg-blue-600'} text-white rounded-md hover:bg-blue-700 transition`}>
+                <button
+                  onClick={exportUserData}
+                  disabled={isExporting}
+                  className={`hover:scale-105 mt-6 ml-2 px-4 py-2 ${
+                    isExporting ? 'bg-gray-400' : 'bg-blue-600'
+                  } text-white rounded-md hover:bg-blue-700 transition`}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && exportUserData()}
+                  aria-label="Export user data"
+                >
                   {isExporting ? "Exporting..." : "Export My Data"}
                 </button>
               </div>
@@ -226,18 +292,32 @@ const ProfilePage = () => {
 
               {/* Session Management */}
               <div className="mt-4">
-                <h3 className="font-semibold">Session Management</h3>
-                <button onClick={handleSessionLogout} className="mt-6 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition">
+                <h3 className="font-semibold hover:scale-105">Session Management</h3>
+                <button
+                  onClick={handleSessionLogout}
+                  className="hover:scale-105 mt-6 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleSessionLogout()}
+                  aria-label="Log out of other devices"
+                >
                   Log Out of Other Devices
                 </button>
               </div>
 
               <hr className="my-4 border-gray-300 dark:border-gray-600" />
 
-              {/* Delete Account */}
+              {/* Danger Zone */}
               <div className="mt-4">
-                <h3 className="font-semibold text-red-500">Danger Zone</h3>
-                <button onClick={handleDeleteAccount} className="mt-6 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition">
+                <h3 className="font-semibold text-red-500 hover:scale-105">Danger Zone</h3>
+                <button
+                  onClick={handleDeleteAccount}
+                  className="hover:scale-105 mt-6 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleDeleteAccount()}
+                  aria-label="Delete my account"
+                >
                   Delete My Account
                 </button>
               </div>
@@ -246,31 +326,41 @@ const ProfilePage = () => {
 
               {/* Save Button */}
               <div className="flex justify-end">
-  <button
-    onClick={handleSave}
-    disabled={isSaving}
-    className={`mt-6 px-8 py-2 transform ${isSaving ? 'bg-gray-400' : 'bg-gradient-to-r from-blue-600 to-green-500'} text-white rounded-md hover:scale-105 hover:bg-gradient-to-r from-blue-500 to-green-600 transition`}
-  >
-    {isSaving ? "Saving..." : "Save"}
-  </button>
-</div>
+                <button
+                  onClick={handleSave}
+                  disabled={loading}
+                  className={`mt-6 px-8 hover:scale-105 py-2 transform ${
+                    isSaving ? 'bg-gray-400' : 'bg-gradient-to-r from-blue-600 to-green-500'
+                  } text-white rounded-md hover:bg-gradient-to-r from-blue-500 to-green-600 transition`}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleSave()}
+                  aria-label="Save settings"
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </button>
+              </div>
 
             </div>
           )}
           <div>
-            <ActivityLog />
+            <Suspense fallback={<div>Loading Activity Log...</div>}>
+              <ActivityLog />
+            </Suspense>
           </div>
         </div>
       </div>
 
       {showReauth && (
-        <ReauthModal
-          onSuccess={() => {
-            setShowReauth(false);
-            performFinalDelete();
-          }}
-          onClose={() => setShowReauth(false)}
-        />
+        <Suspense fallback={<div>Loading modal...</div>}>
+          <ReauthModal
+            onSuccess={() => {
+              setShowReauth(false);
+              performFinalDelete();
+            }}
+            onClose={() => setShowReauth(false)}
+          />
+        </Suspense>
       )}
     </div>
   );

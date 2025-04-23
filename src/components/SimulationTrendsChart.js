@@ -1,24 +1,30 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { ChevronRight, ChevronUp } from "lucide-react";
+import SkeletonLoader from './SkeletonLoader';
+
 import {
   Chart as ChartJS,
+  LineElement,
+  PointElement,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  Title,
   Tooltip,
   Legend,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
-import {ChevronRight, ChevronUp } from "lucide-react";
+} from 'chart.js';
 
-// Register Chart.js components
 ChartJS.register(
+  LineElement,
+  PointElement,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  Title,
   Tooltip,
   Legend
+);
+
+const LineChart = React.lazy(() =>
+  import("react-chartjs-2").then((module) => ({ default: module.Line }))
 );
 
 const allData = [
@@ -55,22 +61,24 @@ const allData = [
 ];
 
 export default function SimulationTrendsChart() {
-  // Chart type: "bar" or "line"
   const [range, setRange] = useState(7);
-  // Persist expanded/collapsed state
   const [isExpanded, setIsExpanded] = useState(() => {
     const stored = localStorage.getItem("simulationIsExpanded");
     return stored === "false" ? false : true;
   });
 
-  // Save to localStorage whenever it changes
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     localStorage.setItem("simulationIsExpanded", isExpanded);
+    if (isExpanded) {
+      setLoading(true);
+      const t = setTimeout(() => setLoading(false), 3000);
+      return () => clearTimeout(t);
+    }
   }, [isExpanded]);
 
-  // Filter data according to range (number or "all")
-  const sliceStart =
-    range === "all" ? 0 : allData.length - Number(range);
+  const sliceStart = range === "all" ? 0 : allData.length - Number(range);
   const filtered = allData.slice(sliceStart);
 
   const chartData = {
@@ -106,11 +114,11 @@ export default function SimulationTrendsChart() {
   };
 
   return (
-    <div className="bg-white mt-8 dark:bg-gray-900 p-6 rounded-2xl shadow-md transition-all duration-300">
-      {/* Header with collapse/expand toggle */}
+    <div className="bg-white mt-8 dark:bg-gray-800 border p-6 rounded-2xl shadow-md transition-all duration-300">
       <div
         className="flex justify-between items-center cursor-pointer mb-4"
         onClick={() => setIsExpanded((prev) => !prev)}
+        aria-expanded={isExpanded}
       >
         <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">
           Simulation Trend
@@ -122,32 +130,41 @@ export default function SimulationTrendsChart() {
         )}
       </div>
 
-      {/* Collapsible content */}
-      {isExpanded && (
-        <div className="mt-4">
-          {/* Range selector */}
-          <div className="flex justify-end mb-4 space-x-2">
-            {[7, 14, 30, "all"].map((d) => (
-              <button
-                key={d}
-                onClick={() => setRange(d)}
-                className={`py-1 px-3 text-sm rounded-md font-medium ${
-                  range === d
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                }`}
-              >
-                {d === "all" ? "All" : `Last ${d} Days`}
-              </button>
-            ))}
-          </div>
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          isExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        {isExpanded && (
+          <>
+            <div className="flex justify-end mb-4 space-x-2">
+              {[7, 14, 30, "all"].map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setRange(d)}
+                  className={`py-1 px-3 text-sm rounded-md font-medium ${
+                    range === d
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                  }`}
+                >
+                  {d === "all" ? "All" : `Last ${d} Days`}
+                </button>
+              ))}
+            </div>
 
-          {/* Chart */}
-          <div className="relative h-[55vh] overflow-x-auto sm:h-[60vh] md:h-[70vh]">
-            <Line data={chartData} options={options} />
-          </div>
-        </div>
-      )}
+            <div className="relative w-full max-w-5xl mx-auto h-[50vh]">
+              {loading ? (
+                <SkeletonLoader height="h-full" />
+              ) : (
+                <Suspense fallback={<SkeletonLoader height="h-full" />}>
+                  <LineChart data={chartData} options={options} />
+                </Suspense>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

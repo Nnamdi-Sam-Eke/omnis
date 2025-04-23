@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
-import HistoryComponent from "../components/History";
-import SavedComponent from "../components/Saved";
+
+const HistoryComponent = lazy(() => import("../components/History"));
+const SavedComponent = lazy(() => import("../components/Saved"));
 
 const SavedScenariosPage = () => {
   const { currentUser } = useAuth();
@@ -12,11 +13,9 @@ const SavedScenariosPage = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Function to simulate spinner delay
   const simulateSpinnerDelay = () => {
     const start = Date.now();
-    const spinnerDelay = 2000; // 2 seconds
-
+    const spinnerDelay = 2000;
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve();
@@ -27,9 +26,7 @@ const SavedScenariosPage = () => {
   useEffect(() => {
     const fetchSavedScenarios = async () => {
       if (!currentUser?.uid) return;
-
       try {
-        // Fetch saved scenarios
         const q = query(
           collection(db, "saved_scenarios"),
           where("userId", "==", currentUser.uid)
@@ -42,17 +39,15 @@ const SavedScenariosPage = () => {
       }
     };
 
-    // Start fetching and simulate spinner delay
     const loadScenarios = async () => {
-      await simulateSpinnerDelay(); // Wait for 2 seconds before loading
-      await fetchSavedScenarios();  // Fetch data after spinner delay
-      setIsLoading(false);           // Stop loading after the delay
+      await simulateSpinnerDelay();
+      await fetchSavedScenarios();
+      setIsLoading(false);
     };
 
     loadScenarios();
   }, [currentUser]);
 
-  // Filter and suggestions logic
   const filteredSavedScenarios = savedScenarios.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -83,14 +78,18 @@ const SavedScenariosPage = () => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search Saved Scenarios"
-          className="p-2 border rounded-md dark:bg-gray-700"
+          className="pl-10 pr-4 py-2 w-1/4 border rounded-lg text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Search saved scenarios"
         />
         {suggestions.length > 0 && (
-          <ul className="mt-2 bg-white dark:bg-gray-800 shadow-lg rounded-md max-h-40 overflow-y-auto">
+          <ul className="mt-2 bg-white dark:bg-gray-800 shadow-lg rounded-md max-h-40 overflow-y-auto" role="listbox">
             {suggestions.map((s, i) => (
               <li
                 key={i}
+                role="option"
+                tabIndex={0}
                 onClick={() => setSearchQuery(s)}
+                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setSearchQuery(s)}
                 className="px-4 py-2 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-600"
               >
                 {s}
@@ -102,7 +101,11 @@ const SavedScenariosPage = () => {
 
       {/* Full-screen Spinner */}
       {isLoading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition"
+          role="status"
+          aria-live="polite"
+        >
           <div className="relative flex items-center justify-center">
             <div className="absolute w-16 h-16 border-8 border-blue-500 border-t-transparent rounded-full animate-spin" />
             <div className="w-12 h-12 border-8 border-green-500 border-t-transparent rounded-full animate-[spin_1s_linear_reverse_infinite]" />
@@ -112,21 +115,25 @@ const SavedScenariosPage = () => {
 
       {/* Content */}
       {!isLoading && (
- <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 p-6">
- <div className="w-full">
- <SavedComponent scenarios={filteredSavedScenarios}  />
- </div>
- <div className="w-full">
- <HistoryComponent />
- </div>
-</div>
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 p-6">
+          <div className="w-full">
+            <Suspense fallback={<div>Loading Saved...</div>}>
+              <SavedComponent scenarios={filteredSavedScenarios} />
+            </Suspense>
+          </div>
+          <div className="w-full">
+            <Suspense fallback={<div>Loading History...</div>}>
+              <HistoryComponent />
+            </Suspense>
+          </div>
+        </div>
       )}
 
       {/* No Results Message */}
       {!isLoading && filteredSavedScenarios.length === 0 && (
-        <div className="text-center text-gray-500 dark:text-gray-400">
+        <div className="text-center text-gray-500 dark:text-gray-400" role="status" aria-live="polite">
           No saved scenarios found.
-        </div>  
+        </div>
       )}
     </div>
   );

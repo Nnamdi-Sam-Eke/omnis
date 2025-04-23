@@ -33,17 +33,17 @@ function Home() {
     <div className="flex flex-col lg:flex-row items-center justify-between p-6 sm:p-12 md:p-16 lg:p-20 min-h-screen dark:bg-black">
       {/* Text Content */}
       <div className="lg:w-1/2 space-y-6">
-        <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gray-900 dark:text-blue-500 max-w-2xl">
+        <h2 className=" transition text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gray-900 dark:text-white max-w-2xl">
           Revolutionizing Scenario Simulations with Digital Twin Intelligence.
         </h2>
-        <p className="text-base sm:text-lg md:text-xl lg:text-2xl max-w-2xl mb-6 p-4 text-gray-700 dark:text-gray-300">
+        <p className="text-base sm:text-lg md:text-xl lg:text-2xl max-w-2xl mb-6 p-4 text-gray-700 dark:text-gray-200">
           Experience the power of AI-driven simulations to make informed decisions and explore endless possibilities.
         </p>
         <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 p-6 sm:p-8">
           <Tooltip text="Join our Discord community for live support!">
             <a
               href="#"
-              className="px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-gradient-to-r from-blue-600 to-green-500 text-white rounded-2xl shadow-lg hover:bg-blue-700 transition"
+              className=" hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-gradient-to-r from-blue-600 to-green-500 text-white rounded-2xl shadow-lg hover:bg-blue-700 transition"
             >
               Join on Discord
             </a>
@@ -51,7 +51,7 @@ function Home() {
           <Tooltip text="Follow us on X for updates!">
             <a
               href="#"
-              className="px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-white text-blue-600 border-2 border-blue-600 rounded-2xl hover:shadow-lg transition"
+              className="hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-white text-blue-600 border-2 border-blue-600 rounded-2xl hover:shadow-lg transition"
             >
               Join on X
             </a>
@@ -60,9 +60,9 @@ function Home() {
       </div>
 
       {/* Image */}
-      <div className="lg:w-1/2 mt-8 lg:mt-0">
+      {/* <div className="lg:w-1/2 mt-8 lg:mt-0">
         <img src="/assets/images/motif.jpg" alt="Motif" />
-      </div>
+      </div> */}
     </div>
   );
 
@@ -70,13 +70,13 @@ function Home() {
   const OmnisSection = () => (
     <section className="py-32 bg-black text-white flex flex-col rounded-t-3xl md:flex-row items-center justify-between px-6 sm:px-16 dark:bg-white dark:text-black">
       <div className="max-w-2xl">
-        <h2 className="text-3xl sm:text-4xl font-light mb-6 text-gray-300 dark:text-gray-900">
+        <h2 className="text-3xl sm:text-4xl font-light mb-6 text-gray-200 dark:text-gray-900">
           What is <br />
-          <span className="p-2 sm:p-4 font-bold text-4xl sm:text-5xl text-blue-500">
+          <span className="p-2 sm:p-4 font-bold text-4xl sm:text-5xl text-blue-400">
             <u>Omnis?</u>
           </span>
         </h2>
-        <p className="text-xl sm:text-2xl text-gray-400 dark:text-gray-900 font-semibold">
+        <p className="text-xl sm:text-2xl text-gray-200 dark:text-gray-900 font-semibold">
           Omnis is our AI-powered simulation tool designed to help users explore multiple possible futures. Whether you're a business strategist, a student, or an investor, Omnis provides dynamic scenario analysis to optimize decision-making.
         </p>
       </div>
@@ -109,40 +109,50 @@ function Home() {
   );
 
   // 🔹 Steps Section (pauses on hover)
+  // This section will auto-play through the steps, pausing on hover.
+  // It uses a combination of useState and useEffect to manage the current step and the auto-play interval.
+
+  // ——— StepsSection.js ———
   const StepsSection = () => {
     const [currentStep, setCurrentStep] = useState(0);
     const intervalRef = useRef(null);
-
+  
+    const AUTO_PLAY_INTERVAL = 3000; // 3s between steps (was 2s)
+  
     const startAuto = () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
       intervalRef.current = setInterval(() => {
-        setCurrentStep((s) => (s + 1) % steps.length);
-      }, 2000);
+        setCurrentStep(s => (s + 1) % steps.length);
+      }, AUTO_PLAY_INTERVAL);
     };
-    const stopAuto = () => clearInterval(intervalRef.current);
-
+    const stopAuto = () => {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    };
+  
     useEffect(() => {
       startAuto();
       return () => stopAuto();
     }, []);
-
+  
     return (
       <section
         className="py-32 bg-white text-center dark:bg-black"
         onMouseEnter={stopAuto}
         onMouseLeave={startAuto}
       >
-        <h2 className="text-4xl sm:text-5xl font-bold mb-12 text-blue-600">How It Works</h2>
+        <h2 className="text-4xl sm:text-5xl font-bold mb-12 text-white">How It Works</h2>
         <div className="max-w-4xl mx-auto px-6 flex flex-col items-center">
           <div className="relative w-full h-48">
             {steps.map((step, i) => (
               <div
                 key={i}
                 className={`absolute top-0 left-0 right-0 transition-opacity duration-1000 ${
-                  i === currentStep ? "opacity-100 scale-100" : "opacity-0 scale-90"
+                  i === currentStep ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
                 }`}
               >
                 <div className="py-8 px-6 h-48 bg-gray-900 rounded-3xl shadow-lg transform transition duration-500 hover:scale-105 hover:shadow-blue-500/50">
-                  <h3 className="text-2xl sm:text-3xl font-semibold mb-4 text-green-500">{step.title}</h3>
+                  <h3 className="text-2xl sm:text-3xl font-semibold mb-4 text-green-400">{step.title}</h3>
                   <p className="text-white">{step.desc}</p>
                 </div>
               </div>
@@ -154,7 +164,7 @@ function Home() {
                 key={i}
                 onClick={() => setCurrentStep(i)}
                 className={`cursor-pointer w-3 h-3 sm:w-4 sm:h-4 rounded-full transition-all duration-500 ${
-                  i === currentStep ? "bg-blue-600 w-4 h-4" : "bg-gray-400"
+                  i === currentStep ? 'bg-blue-600 w-4 h-4' : 'bg-gray-400'
                 }`}
               />
             ))}
@@ -163,46 +173,60 @@ function Home() {
       </section>
     );
   };
-
-  // 🔹 Use Cases Section (swipe gestures)
+  
+  // ——— UseCasesSection.js ———
   const UseCasesSection = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const intervalRef = useRef(null);
     const touchStartX = useRef(0);
-
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setCurrentIndex((i) => (i + 1) % useCases.length);
-      }, 4000);
-      return () => clearInterval(interval);
-    }, []);
-
-    const handleTouchStart = (e) => (touchStartX.current = e.touches[0].clientX);
-    const handleTouchEnd = (e) => {
-      const delta = e.changedTouches[0].clientX - touchStartX.current;
-      if (delta > 50) setCurrentIndex((i) => (i - 1 + useCases.length) % useCases.length);
-      else if (delta < -50) setCurrentIndex((i) => (i + 1) % useCases.length);
+  
+    const AUTO_PLAY_INTERVAL = 5000; // 5s between slides (was 4s)
+  
+    const startAuto = () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(() => {
+        setCurrentIndex(i => (i + 1) % useCases.length);
+      }, AUTO_PLAY_INTERVAL);
     };
-
+    const stopAuto = () => {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    };
+  
+    useEffect(() => {
+      startAuto();
+      return () => stopAuto();
+    }, []);
+  
+    const handleTouchStart = e => (touchStartX.current = e.touches[0].clientX);
+    const handleTouchEnd = e => {
+      const delta = e.changedTouches[0].clientX - touchStartX.current;
+      if (delta > 50) setCurrentIndex(i => (i - 1 + useCases.length) % useCases.length);
+      else if (delta < -50) setCurrentIndex(i => (i + 1) % useCases.length);
+    };
+  
     return (
       <section
         className="py-32 p-12 bg-gray-900 text-center text-white dark:bg-black"
+        onMouseEnter={stopAuto}
+        onMouseLeave={startAuto}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <h2 className="text-4xl sm:text-5xl font-bold mb-12 text-blue-600">Who Can Benefit?</h2>
+        <h2 className="text-4xl sm:text-5xl font-bold mb-12 text-white">Who Can Benefit?</h2>
         <div className="relative w-full max-w-2xl mx-auto h-64 overflow-hidden">
           {useCases.map((uc, idx) => (
             <div
               key={idx}
               className={`absolute w-full p-8 rounded-3xl shadow-lg mb-12 bg-gray-800 transition-all duration-1000 transform ${
                 idx === currentIndex
-                  ? "translate-x-0 opacity-100"
+                  ? 'translate-x-0 opacity-100'
                   : idx < currentIndex
-                  ? "-translate-x-full opacity-0"
-                  : "translate-x-full opacity-0"
+                  ? '-translate-x-full opacity-0'
+                  : 'translate-x-full opacity-0'
               }`}
             >
-              <h3 className="text-2xl sm:text-3xl font-semibold text-green-500">{uc.title}</h3>
+              <h3 className="text-2xl sm:text-3xl font-semibold text-green-400">{uc.title}</h3>
               <p className="text-white mt-4 text-lg sm:text-xl">{uc.desc}</p>
             </div>
           ))}
@@ -210,7 +234,7 @@ function Home() {
       </section>
     );
   };
-
+  
   // 🔹 Interactive Demo / Video Section
   const InteractiveDemoSection = () => (
     <section className="py-32 bg-gray-900 text-white text-center">
@@ -231,7 +255,7 @@ function Home() {
   // 🔹 Testimonial Section (dark mode bg)
   const TestimonialSection = () => (
     <section className="py-32 bg-gray-100 text-center dark:bg-black">
-      <h2 className="text-4xl sm:text-5xl font-bold mb-12 text-blue-600">What Our Users Are Saying</h2>
+      <h2 className="text-4xl sm:text-5xl font-bold mb-12 text-blue-500">What Our Users Are Saying</h2>
       <div className="flex flex-wrap justify-center">
         {[
           { quote: "Omnis has transformed the way I approach decision-making.", name: "John Doe", role: "Business Analyst" },
@@ -242,8 +266,8 @@ function Home() {
             className="max-w-md mx-4 p-8 bg-white dark:bg-gray-800 rounded-3xl shadow-lg mb-12"
           >
             <p className="text-gray-700 dark:text-gray-200 mb-4">"{t.quote}"</p>
-            <h3 className="font-semibold text-lg text-green-500">{t.name}</h3>
-            <p className="text-blue-500">{t.role}</p>
+            <h3 className="font-semibold text-lg text-green-400">{t.name}</h3>
+            <p className="text-blue-400">{t.role}</p>
           </div>
         ))}
       </div>
@@ -253,15 +277,15 @@ function Home() {
   // 🔹 Call to Action & Footer
   const CallToActionSection = () => (
     <section className="py-32 bg-gray-100 text-center dark:bg-black">
-      <h2 className="text-5xl font-bold mb-12 text-blue-500">Join the Future</h2>
+      <h2 className="text-5xl font-bold mb-12 text-blue-600 dark:text-white">Join the Future</h2>
       <p className="text-gray-900 max-w-2xl mx-auto mb-8 dark:text-white">
         Be part of the next big thing. Sign up for early access and stay updated.
       </p>
       <div className="flex justify-center space-x-6">
-        <a href="#" className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-full shadow-lg hover:bg-blue-700 transition">
+        <a href="#" className="hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-blue-700 text-white rounded-2xl shadow-lg hover:bg-blue-600 transition">
           Sign Up for Beta
         </a>
-        <a href="#" className="px-6 py-3 bg-green-600 text-white font-semibold rounded-full shadow-lg hover:bg-gray-900 transition">
+        <a href="#" className="hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-green-700 text-white rounded-2xl shadow-lg hover:bg-green-600 transition">
           Join the Community
         </a>
       </div>

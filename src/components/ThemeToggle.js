@@ -29,7 +29,7 @@ const ThemeToggle = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="transition-all duration-500 ease-in-out p-2 rounded-full bg-gray-300 dark:bg-gray-800 text-gray-900 dark:text-white"
+      className="transition-all hover:text-xl duration-500 ease-in-out p-2 rounded-full bg-gray-300 dark:bg-gray-800 text-gray-900 dark:text-white"
     >
       {isDarkMode ? '🌙' : '☀️'}
     </button>

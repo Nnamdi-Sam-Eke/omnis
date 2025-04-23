@@ -1,264 +1,290 @@
-import React, { useState, useEffect } from "react";
-import { db } from "../firebase";
+// src/components/UserProfilePage.js
+import React, { useState, useEffect, lazy, Suspense } from "react";
+// import { useStripe } from "@stripe/react-stripe-js";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
 import { onSnapshot } from "firebase/firestore";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import ProfilePage from "./SimpleProfilePage";
 import AccountPage from "./AccountPage";
 
-// Subscription details component
-const SubscriptionCard = ({ userDetails, onUpdateSubscription }) => {
-  const [isOpen, setIsOpen] = useState(true); // default open
+// ── SubscriptionCard with Stripe checkout & skeleton on expand ─────────────────────────────
+const SubscriptionCard = ({ userDetails }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  // const stripe = useStripe();
+  const functions = getFunctions();
 
-  useEffect(() => {
-    const storedState = localStorage.getItem("subscriptionCardOpen");
-    if (storedState !== null) {
-      setIsOpen(storedState === "true");
-    }
-  }, []);
+  const toggleOpen = () => {
+    setIsOpen(prev => {
+      const next = !prev;
+      if (next) {
+        setLoading(true);
+        setTimeout(() => setLoading(false), 1000);
+      }
+      return next;
+    });
+  };
 
-  useEffect(() => {
-    localStorage.setItem("subscriptionCardOpen", isOpen.toString());
-  }, [isOpen]);
+  const handleCheckout = async (priceId) => {
+  const createSession = httpsCallable(functions, "createCheckoutSession");
+  const { data } = await createSession({
+    priceId,
+    successUrl: window.location.href + "?subscribed=true",
+    cancelUrl: window.location.href,
+  });
 
-  return (
-    <div className="bg-white shadow-lg rounded-lg dark:bg-gray-800 p-6 border rounded-xl hover:shadow-blue-500/50 transition">
-      <div onClick={() => setIsOpen(!isOpen)} className="flex justify-between items-center cursor-pointer">
-        <h2 className="text-xl font-semibold text-blue-500">Subscription</h2>
-        {isOpen ? <ChevronDown className="w-5 h-5 text-blue-500" /> : <ChevronRight className="w-5 h-5 text-blue-500" />}
-      </div>
+  // if (stripe) {
+  //   const { error } = await stripe.redirectToCheckout({
+  //     sessionId: data.sessionId,
+  //   });
 
-      <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? "max-h-[500px] opacity-100 mt-4" : "max-h-0 opacity-0"}`}>
-        <p className="text-gray-600 dark:text-gray-400 mb-2">
-          Current Plan: {userDetails?.subscription?.plan || "N/A"}
-        </p>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
-          Next Payment Date: {userDetails?.subscription?.nextPaymentDate || "N/A"}
-        </p>
-        <div className="mt-4 flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
-          <button onClick={() => onUpdateSubscription("premium")} className="bg-blue-600 text-white py-1.5 px-3 text-sm sm:text-base rounded hover:bg-blue-700 transition w-full sm:w-auto">
-            Upgrade
-          </button>
-          <button onClick={() => onUpdateSubscription("basic")} className="bg-green-600 text-white py-1.5 px-3 text-sm sm:text-base rounded hover:bg-green-700 transition w-full sm:w-auto">
-            Downgrade
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  //   if (error) {
+  //     console.error("Stripe Checkout error: ", error);
+  //   }
+  // }
 };
 
-// Billing Information Update Form
-
-const BillingInfoForm = ({ onSaveBillingInfo }) => {
-  const [cardNumber, setCardNumber] = useState("");
-  const [billingAddress, setBillingAddress] = useState("");
-  const [isOpen, setIsOpen] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [showToast, setShowToast] = useState(false);
-
-  // Persist accordion open state
-  useEffect(() => {
-    const stored = localStorage.getItem("billingInfoFormOpen");
-    if (stored !== null) setIsOpen(stored === "true");
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("billingInfoFormOpen", isOpen.toString());
-  }, [isOpen]);
-
-  // Toast component
-  const ToastMessage = ({ message, visible }) => {
-    if (!visible) return null;
-    return (
-      <div className="fixed top-5 right-5 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in">
-        {message}
-      </div>
-    );
-  };
-
-  const handleBillingUpdate = async (e) => {
-    e.preventDefault();
-    setActionLoading(true);
-    try {
-      await onSaveBillingInfo({ cardNumber, billingAddress });
-      setToastMessage("Billing information saved successfully!");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    } catch {
-      setToastMessage("Failed to save billing information.");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   return (
-    <div className="bg-white shadow-lg rounded-lg dark:bg-gray-800 p-6 border rounded-xl hover:shadow-blue-500/50 transition relative">
-      {/* Toast */}
-      <ToastMessage message={toastMessage} visible={showToast} />
-
-      {/* Accordion Header */}
+    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 transition hover:shadow-blue-500/50">
       <div
-        onClick={() => setIsOpen((o) => !o)}
-        className="flex justify-between items-center cursor-pointer"
+        role="button"
+        tabIndex={0}
+        aria-expanded={isOpen}
+        aria-controls="subscription-content"
+        aria-label="Toggle Subscription Section"
+        onClick={toggleOpen}
+        onKeyDown={e => (e.key === "Enter" || e.key === " ") && toggleOpen()}
+        className="flex justify-between items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <h2 className="text-xl font-semibold text-blue-500">
-          Update Billing Information
-        </h2>
-        {isOpen ? (
-          <ChevronDown className="w-5 h-5 text-blue-500" />
-        ) : (
-          <ChevronRight className="w-5 h-5 text-blue-500" />
-        )}
+        <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Subscription</h2>
+        {isOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
       </div>
 
-      {/* Accordion Content */}
       <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          isOpen ? "max-h-[800px] opacity-100 mt-4" : "max-h-0 opacity-0"
+        id="subscription-content"
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isOpen ? "max-h-64 opacity-100 mt-4" : "max-h-0 opacity-0"
         }`}
       >
-        <form onSubmit={handleBillingUpdate} className="space-y-4">
-          {/* Card Number Field */}
-          <div>
-            <label className="block text-gray-600 dark:text-gray-400">
-              Card Number
-            </label>
-            {actionLoading ? (
-              <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded-md animate-pulse" />
-            ) : (
-              <input
-                type="text"
-                value={cardNumber}
-                onChange={(e) => setCardNumber(e.target.value)}
-                placeholder="Enter your card number"
-                className="w-full p-2 border rounded-md"
-                required
-              />
-            )}
+        {loading ? (
+          <div className="animate-pulse space-y-2">
+            <div className="h-5 w-2/3 bg-gray-300 dark:bg-gray-700 rounded" />
+            <div className="h-5 w-1/2 bg-gray-300 dark:bg-gray-700 rounded" />
+            <div className="h-10 w-full bg-blue-300 dark:bg-blue-700 rounded" />
           </div>
-
-          {/* Billing Address Field */}
-          <div>
-            <label className="block text-gray-600 dark:text-gray-400">
-              Billing Address
-            </label>
-            {actionLoading ? (
-              <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded-md animate-pulse" />
-            ) : (
-              <input
-                type="text"
-                value={billingAddress}
-                onChange={(e) => setBillingAddress(e.target.value)}
-                placeholder="Enter your billing address"
-                className="w-full p-2 border rounded-md"
-                required
-              />
-            )}
-          </div>
-
-          {/* Save Button */}
-          <div>
-            {actionLoading ? (
-              <div className="h-10 w-full bg-blue-400 rounded animate-pulse" />
-            ) : (
+        ) : (
+          <>
+            <p className="text-gray-600 dark:text-gray-400">Current Plan: {userDetails?.subscription?.plan || "N/A"}</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Next Payment: {userDetails?.subscription?.nextPaymentDate || "N/A"}
+            </p>
+            <div className="flex space-x-2">
               <button
-                type="submit"
-                disabled={actionLoading}
-                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+                aria-label="Upgrade to premium"
+                onClick={() => handleCheckout(userDetails.subscription.premiumPriceId)}
+                className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
               >
-                Save Billing Information
+                Upgrade
               </button>
-            )}
-          </div>
-        </form>
+              <button
+                aria-label="Downgrade to basic"
+                onClick={() => handleCheckout(userDetails.subscription.basicPriceId)}
+                className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+              >
+                Downgrade
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 };
 
-// User Profile Page
+// ── BillingInfoForm with skeleton on expand ───────────────────────────────────────────────────
+const BillingInfoForm = ({ onSaveBillingInfo }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState("");
+  const [form, setForm] = useState({ cardNumber: "", billingAddress: "" });
+
+  const toggleOpen = () => {
+    setIsOpen(prev => {
+      const next = !prev;
+      if (next) {
+        setLoading(true);
+        setTimeout(() => setLoading(false), 1000);
+      }
+      return next;
+    });
+  };
+
+  const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+
+  const handleSave = async e => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await onSaveBillingInfo(form);
+      setToast("Billing info saved!");
+    } catch {
+      setToast("Save failed.");
+    } finally {
+      setSaving(false);
+      setTimeout(() => setToast(""), 3000);
+    }
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 transition hover:shadow-blue-500/50 relative">
+      {toast && (
+        <div className="fixed top-5 right-5 bg-green-500 text-white px-4 py-2 rounded animate-fade-in z-50">
+          {toast}
+        </div>
+      )}
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={isOpen}
+        aria-controls="billing-content"
+        aria-label="Toggle Billing Information Section"
+        onClick={toggleOpen}
+        onKeyDown={e => (e.key === "Enter" || e.key === " ") && toggleOpen()}
+        className="flex justify-between items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Billing Information</h2>
+        {isOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+      </div>
+
+      <div
+        id="billing-content"
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isOpen ? "max-h-96 opacity-100 mt-4" : "max-h-0 opacity-0"
+        }`}
+      >
+        {loading ? (
+          <div className="animate-pulse space-y-4">
+            <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+            <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+            <div className="h-10 bg-blue-300 dark:bg-blue-700 rounded" />
+          </div>
+        ) : (
+          <form onSubmit={handleSave} className="space-y-4">
+            <div>
+              <label htmlFor="cardNumber" className="block text-gray-600 dark:text-white">
+                Card Number
+              </label>
+              <input
+                id="cardNumber"
+                name="cardNumber"
+                value={form.cardNumber}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500
+ bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="billingAddress" className="block text-gray-600 dark:text-white">
+                Billing Address
+              </label>
+              <input
+                id="billingAddress"
+                name="billingAddress"
+                value={form.billingAddress}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500
+  bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              {saving ? "Saving…" : "Save Billing Info"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── Main UserProfilePage ─────────────────────────────────────────────────────────────────────
 const UserProfilePage = () => {
   const { currentUser } = useAuth();
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState("settings");
 
   useEffect(() => {
     if (!currentUser) return;
-
-    const userRef = doc(db, "users", currentUser.uid);
-    const unsubscribe = onSnapshot(userRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setUserData(docSnap.data());
+    const unsub = onSnapshot(doc(db, "users", currentUser.uid), snap => {
+      if (snap.exists()) {
+        setUserData(snap.data());
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
-
-    return () => unsubscribe();
+    return () => unsub();
   }, [currentUser]);
 
-  const handleUpdateSubscription = async (newPlan) => {
-    if (!userData) return;
-
-    try {
-      const userRef = doc(db, "users", currentUser.uid);
-      await updateDoc(userRef, {
-        "subscription.plan": newPlan,
-        "subscription.nextPaymentDate": new Date().toLocaleDateString(),
-      });
-      alert(`Successfully updated to ${newPlan} plan!`);
-    } catch (error) {
-      alert("Failed to update subscription.");
-    }
+  const handleUpdateSubscription = async plan => {
+    const ref = doc(db, "users", currentUser.uid);
+    await updateDoc(ref, {
+      "subscription.plan": plan,
+      "subscription.nextPaymentDate": new Date().toLocaleDateString()
+    });
   };
 
-  const handleSaveBillingInfo = async (billingInfo) => {
-    if (!userData) return;
-
-    try {
-      const userRef = doc(db, "users", currentUser.uid);
-      await updateDoc(userRef, {
-        "billing.cardNumber": billingInfo.cardNumber,
-        "billing.billingAddress": billingInfo.billingAddress,
-      });
-      alert("Billing information saved successfully!");
-    } catch (error) {
-      alert("Failed to save billing information.");
-    }
+  const handleSaveBillingInfo = async info => {
+    const ref = doc(db, "users", currentUser.uid);
+    await updateDoc(ref, {
+      "billing.cardNumber": info.cardNumber,
+      "billing.billingAddress": info.billingAddress
+    });
   };
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">Personal settings / preferences...</h1>
-      <div className="flex flex-col md:flex-row gap-6 p-4 h-9/10">
-        <div className="w-full md:w-3/4">
-          <ProfilePage userDetails={userData} isLoading={isLoading} />
+      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">
+        Personal Settings & Preferences
+      </h1>
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex-1">
+          <Suspense fallback={<div>Loading Profile…</div>}>
+            <ProfilePage userDetails={userData} isLoading={isLoading} />
+          </Suspense>
         </div>
-        <div className="w-full md:w-3/4 p-6 rounded-xl h-9/10">
-          <AccountPage userDetails={userData} isLoading={isLoading} />
+        <div className="flex-1">
+          <Suspense fallback={<div>Loading Account…</div>}>
+            <AccountPage userDetails={userData} isLoading={isLoading} />
+          </Suspense>
         </div>
-        <div className="w-full md:w-3/4">
-          {currentPage === "settings" && (
-            <div className="bg-white shadow-lg rounded-lg dark:bg-gray-800 p-6 border rounded-xl shadow-lg hover:shadow-blue-500/50 transition">
-              <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Subscription & Billing</h2>
-              <div className="mt-6">
-                <SubscriptionCard userDetails={userData} onUpdateSubscription={handleUpdateSubscription} />
-              </div>
-              <div className="mt-6">
-                <BillingInfoForm onSaveBillingInfo={handleSaveBillingInfo} />
-              </div>
+        <div className="flex-1">
+          <section
+            className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition hover:shadow-blue-500/50"
+            role="region"
+            aria-labelledby="sub-bill-heading"
+          >
+            <h2 id="sub-bill-heading" className="text-xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
+              Subscription & Billing
+            </h2>
+            <SubscriptionCard userDetails={userData} onUpdateSubscription={handleUpdateSubscription} />
+            <div className="mt-6">
+              <BillingInfoForm onSaveBillingInfo={handleSaveBillingInfo} />
             </div>
-          )}
+          </section>
         </div>
       </div>
     </div>
   );
 };
 
-export { SubscriptionCard, BillingInfoForm }; // Export components for testing or reuse
+export { SubscriptionCard, BillingInfoForm };
 export default UserProfilePage;

@@ -1,239 +1,227 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Chart as ChartJS,
   BarElement,
-  LineElement,
-  ArcElement,
   CategoryScale,
+  LineElement,
   LinearScale,
-  PointElement,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar, Line, Pie } from 'react-chartjs-2';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Bar, Line } from 'react-chartjs-2';
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  addDoc,
+  doc,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
+  query,
+  orderBy,
+} from 'firebase/firestore';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 
-// Register chart components
-ChartJS.register(
-  BarElement,
-  LineElement,
-  ArcElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  Legend
-);
+ChartJS.register(BarElement, CategoryScale, LineElement, LinearScale, Tooltip, Legend);
 
-export default function CategoryDistributionChart() {
-  const storedIsOpen = localStorage.getItem('categoryChartIsOpen');
-  const [isOpen, setIsOpen] = useState(storedIsOpen === 'false' ? false : true);
-  const [range, setRange] = useState(7);
-  const [activeChart, setActiveChart] = useState("bar");
+const UptimeChart = () => {
+  const [sessions, setSessions] = useState([]);
+  const [filteredSessions, setFilteredSessions] = useState([]);
+  const [totalNetworkTime, setTotalNetworkTime] = useState({ hours: 0, minutes: 0 });
+  const [todayTime, setTodayTime] = useState({ hours: 0, minutes: 0 });
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [isOpen, setIsOpen] = useState(false);            // collapsed by default
+  const [view, setView] = useState('session');            // 'session' or 'day'
+  const [chartType, setChartType] = useState('bar');      // 'bar' or 'line'
+  const [loading, setLoading] = useState(false);          // loader for charts & stats
 
+  const db = getFirestore();
+  const auth = getAuth();
+
+  // start real-time tracking...
   useEffect(() => {
-    localStorage.setItem('categoryChartIsOpen', isOpen);
+    let intervalId, sessionId;
+    const startRealTimeTracking = async (user) => {
+      const sessionRef = await addDoc(collection(db, 'users', user.uid, 'sessions'), {
+        start: serverTimestamp(),
+        duration: 0,
+        active: true,
+      });
+      sessionId = sessionRef.id;
+      const sessionDocRef = doc(db, 'users', user.uid, 'sessions', sessionId);
+      intervalId = setInterval(async () => {
+        const snap = await getDoc(sessionDocRef);
+        if (snap.exists()) {
+          const current = snap.data().duration || 0;
+          await updateDoc(sessionDocRef, {
+            duration: current + 60,
+            lastUpdated: serverTimestamp(),
+          });
+        }
+      }, 60000);
+    };
+    const handleExit = async () => {
+      clearInterval(intervalId);
+      const user = auth.currentUser;
+      if (user && sessionId) {
+        const sessionDocRef = doc(db, 'users', user.uid, 'sessions', sessionId);
+        await updateDoc(sessionDocRef, { active: false });
+      }
+    };
+    onAuthStateChanged(auth, (user) => { if (user) startRealTimeTracking(user); });
+    window.addEventListener('beforeunload', handleExit);
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('beforeunload', handleExit);
+    };
+  }, []);
+
+  // fetch sessions...
+  useEffect(() => {
+    const fetchSessions = async () => {
+      const usersSnap = await getDocs(collection(db, 'users'));
+      let all = [];
+      for (const u of usersSnap.docs) {
+        const uid = u.id;
+        const sq = query(collection(db, 'users', uid, 'sessions'), orderBy('start','asc'));
+        const snaps = await getDocs(sq);
+        snaps.forEach(s => all.push({ ...s.data(), userId: uid }));
+      }
+      setSessions(all);
+    };
+    fetchSessions();
+  }, []);
+
+  // recalc times when data or date filters change
+  useEffect(() => {
+    const calc = () => {
+      let tot=0, today=0;
+      const now=new Date(), midnight=new Date(); midnight.setHours(0,0,0,0);
+      const sDate = startDate ? new Date(startDate) : null;
+      const eDate = endDate   ? new Date(endDate  ) : null;
+      const filt = sessions.filter(s => {
+        if (!s.start) return false;
+        const st = s.start.toDate ? s.start.toDate() : new Date(s.start.seconds*1e3);
+        const dur = s.duration||0;
+        return dur>0 && (!sDate||st>=sDate) && (!eDate||st<=eDate);
+      });
+      filt.forEach(s => {
+        const st = s.start.toDate ? s.start.toDate() : new Date(s.start.seconds*1e3);
+        const dur = s.duration||0;
+        tot += dur;
+        const endT = new Date(st.getTime()+dur*1e3);
+        const os = st<midnight?midnight:st, oe = endT>now?now:endT;
+        if (oe>os) today += Math.floor((oe-os)/1e3);
+      });
+      setFilteredSessions(filt);
+      setTotalNetworkTime({ hours: Math.floor(tot/3600), minutes: Math.floor((tot%3600)/60) });
+      setTodayTime({ hours: Math.floor(today/3600), minutes: Math.floor((today%3600)/60) });
+    };
+    calc();
+  }, [sessions, startDate, endDate]);
+
+  // whenever panel opens, show loader briefly
+  useEffect(() => {
+    if (isOpen) {
+      setLoading(true);
+      const t = setTimeout(() => setLoading(false), 3000);
+      return () => clearTimeout(t);
+    }
   }, [isOpen]);
 
-  const fullLabels = Array.from({ length: 31 }, (_, i) => `Apr ${i + 1}`);
-  const baseData = [
-    1, 8, 4, 1.2, 2, 9, 7, 9, 6, 5.5, 16, 4.5, 11,
-    2.3, 5, 6.8, 4.2, 3.9, 7.7, 8.1, 5.2, 6.3, 9.8, 3.5, 6.6, 7.1, 2.2, 5.5, 4.4, 6.0, 3.3
-  ];
-  const bonusData = [
-    0.2, 1.5, 1, 0.3, 0.1, 1.2, 1.5, 1.3, 0.9, 1.1, 3.5, 1, 2.5,
-    0.8, 1.2, 1.0, 1.3, 1.4, 2.1, 0.5, 0.9, 1.5, 2.0, 1.1, 0.7, 1.8, 1.3, 1.4, 0.9, 2.3, 1.6
-  ];
-  const referralData = Array(fullLabels.length).fill(0);
-
-  const getSlicedData = (data) => {
-    if (range === 'all') return data;
-    return data.slice(-range);
-  };
-
-  const labels = getSlicedData(fullLabels);
-  const chartData = {
-    labels,
-    datasets: [
-      {
-        label: "Base Time",
-        data: getSlicedData(baseData),
-        backgroundColor: "#22C55E",
-        borderColor: "#22C55E",
-        fill: false,
-        borderRadius: 10,
-      },
-      {
-        label: "Bonus Time",
-        data: getSlicedData(bonusData),
-        backgroundColor: "#FB7185",
-        borderColor: "#FB7185",
-        fill: false,
-        borderRadius: 10,
-      },
-      {
-        label: "Referral Time",
-        data: getSlicedData(referralData),
-        backgroundColor: "#A78BFA",
-        borderColor: "#A78BFA",
-        fill: false,
-        borderRadius: 10,
-      },
-    ],
-  };
-
-  const getPieData = () => {
-    const slice = (arr) => (range === 'all' ? arr : arr.slice(-range));
-
-    const baseTotal = slice(baseData).reduce((acc, val) => acc + val, 0);
-    const bonusTotal = slice(bonusData).reduce((acc, val) => acc + val, 0);
-    const referralTotal = slice(referralData).reduce((acc, val) => acc + val, 0);
-
+  const getData = () => {
+    const ds = view==='session'
+      ? filteredSessions.map(s=> (s.duration||0)/3600)
+      : Object.values(filteredSessions.reduce((acc,s)=>{
+          const d=(s.start.toDate? s.start.toDate():new Date(s.start.seconds*1e3)).toDateString();
+          acc[d]=(acc[d]||0)+(s.duration||0); return acc;
+        },{})).map(sec=>sec/3600);
+    const labels = view==='session'
+      ? filteredSessions.map((_,i)=>`Session ${i+1}`)
+      : Object.keys(filteredSessions.reduce((acc,s)=>{
+          const d=(s.start.toDate? s.start.toDate():new Date(s.start.seconds*1e3)).toDateString();
+          acc[d]=(acc[d]||0)+(s.duration||0); return acc;
+        },{}));
     return {
-      labels: ['Base Time', 'Bonus Time', 'Referral Time'],
-      datasets: [
-        {
-          data: [baseTotal, bonusTotal, referralTotal],
-          backgroundColor: ['#22C55E', '#FB7185', '#A78BFA'],
-          borderColor: ['#22C55E', '#FB7185', '#A78BFA'],
-          borderWidth: 1,
-        },
-      ],
+      labels,
+      datasets:[{
+        label: view==='session'?'Session Duration (hrs)':'Day Duration (hrs)',
+        data: ds,
+        backgroundColor: chartType==='bar'? '#FF7F50':'transparent',
+        borderColor: chartType==='line'? '#DC2626':'transparent',
+        fill: chartType==='line',
+        tension: chartType==='line'?0.4:0,
+        borderWidth: chartType==='line'?2:0,
+        pointBackgroundColor: chartType==='line'? '#DC2626':'transparent'
+      }]
     };
   };
 
-  const commonOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      tooltip: { mode: "index", intersect: false },
-      legend: { position: "top" },
-    },
-    scales: {
-      x: { stacked: true },
-      y: { stacked: true, beginAtZero: true },
-    },
-  };
-
-  const pieOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: "right" },
-      tooltip: {
-        callbacks: {
-          label: function (context) {
-            const value = context.raw;
-            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-            const percentage = ((value / total) * 100).toFixed(2) + "%";
-            return `${context.label}: ${value} (${percentage})`;
-          },
-        },
-      },
-    },
-    animation: {
-      animateRotate: true,
-      animateScale: true,
-    },
-    rotation: Math.PI / 2,
-    cutout: "60%",
+  const options = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ position:'top', labels:{color:'#555'} } },
+    scales:{ x:{ ticks:{color:'#888'}, grid:{display:false} },
+             y:{ ticks:{color:'#888'}, grid:{color:'#e5e7eb'}, beginAtZero:true } }
   };
 
   return (
-    <div className="w-full md:w-10/12 border mt-8 bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-lg">
-      <div
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between cursor-pointer mb-4"
+    <div className="bg-white dark:bg-gray-800 p-6 mt-8 rounded-3xl shadow border w-full transition-all duration-300 ease-in-out">
+      <button
+        className="w-full text-left mb-4 text-blue-500 dark:text-blue-300 flex justify-between items-center"
+        onClick={()=>setIsOpen(o=>!o)}
       >
-        <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">
-          🌍 Daily Uptime
-        </h2>
-        {isOpen ? (
-          <ChevronDown className="w-5 h-5 text-blue-500" />
-        ) : (
-          <ChevronRight className="w-5 h-5 text-blue-500" />
-        )}
-      </div>
+        <span className="text-lg font-semibold">Uptime Analytics</span>
+        {isOpen? <ChevronDown/> : <ChevronRight/>}
+      </button>
 
-      <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          isOpen ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
-        {/* Chart Type & Range Toggles */}
+      <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen?'max-h-[800px] opacity-100':'max-h-0 opacity-0'}`}>
+        {/* controls */}
         <div className="flex flex-wrap gap-4 mb-4">
-          {["bar", "line", "pie"].map((type) => (
-            <button
-              key={type}
-              onClick={() => setActiveChart(type)}
-              className={`px-4 py-2 rounded-full font-semibold transition ${
-                activeChart === type
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-300 text-gray-800 hover:bg-gray-400"
-              }`}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)} Chart
-            </button>
+          {['session','day'].map(v=>(
+            <button key={v}
+              onClick={()=>setView(v)}
+              className={`px-4 py-2 rounded-md ${view===v?'bg-blue-500 text-white':'bg-gray-200'}`}
+            >{v==='session'?'Session':'Day'} View</button>
+          ))}
+          {['bar','line'].map(t=>(
+            <button key={t}
+              onClick={()=>setChartType(t)}
+              className={`px-4 py-2 rounded-md text-sm ${chartType===t?'bg-green-500 text-white':'bg-gray-200'}`}
+            >{t==='bar'?'Bar':'Line'} Chart</button>
           ))}
         </div>
 
-        {/* Date Range Selector */}
-        <div className="flex justify-end space-x-2 mb-4">
-          {[7, 14, 30, 'all'].map(d => (
-            <button
-              key={d}
-              onClick={() => setRange(d)}
-              className={`py-1 px-3 text-sm rounded-md font-medium ${
-                range === d
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-              }`}
-            >
-              {d === 'all' ? 'All' : `Last ${d} Days`}
-            </button>
-          ))}
+        {/* chart or loader */}
+        <div className="flex-1 min-h-[300px] mb-6">
+          {loading
+            ? <div className="w-full h-[260px] bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+            : chartType==='bar'
+              ? <Bar data={getData()} options={options}/>
+              : <Line data={getData()} options={options}/>
+          }
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
-          <div className="w-full lg:w-3/4 overflow-x-auto">
-            {activeChart === "bar" && (
-              <div className="relative min-h-[300px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-                <Bar data={chartData} options={commonOptions} />
-              </div>
-            )}
-            {activeChart === "line" && (
-              <div className="relative min-h-[300px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-                <Line data={chartData} options={commonOptions} />
-              </div>
-            )}
-            {activeChart === "pie" && (
-              <div className="relative min-h-[300px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px]">
-                <Pie data={getPieData()} options={pieOptions} />
-              </div>
-            )}
-          </div>
-
-          <div className="w-full lg:w-1/4 flex flex-col gap-16">
-            <div className="flex items-center gap-4">
-              <div className="text-gray-500 dark:text-gray-400 text-2xl">🕒</div>
-              <div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">Total Uptime</div>
-                <div className="text-2xl font-bold text-black dark:text-white">21d 9h 36m</div>
-              </div>
+        {/* stats or loader */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {[{label:'Total Network Time',val:totalNetworkTime},
+            {label:'Today’s Time', val:todayTime}].map(({label,val},i)=>(
+            <div key={i} className="bg-gray-200 dark:bg-gray-700 p-4 rounded-md shadow flex-1 transition-all duration-300">
+              <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+              {loading
+                ? <div className="w-2/3 h-6 bg-gray-300 dark:bg-gray-600 rounded animate-pulse mt-2"/>
+                : <p className="text-2xl font-mono text-black dark:text-white mt-2">
+                    {val.hours}h {val.minutes}m
+                  </p>
+              }
             </div>
-
-            <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-
-            <div className="flex items-center gap-4">
-              <div className="text-gray-500 dark:text-gray-400 text-2xl">📅</div>
-              <div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide">Today's Time</div>
-                <div className="text-2xl font-bold text-black dark:text-white">14h 24m</div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default UptimeChart;

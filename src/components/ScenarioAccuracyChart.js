@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Line } from 'react-chartjs-2';
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -8,11 +11,8 @@ import {
   Filler,
   Tooltip,
   Legend,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
-import { ChevronDown, ChevronRight } from 'lucide-react';
+} from 'chart.js';
 
-// Register necessary Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -23,7 +23,6 @@ ChartJS.register(
   Legend
 );
 
-// Full 15-day labels and accuracy data
 const allLabels = [
   "Mar 25", "Mar 26", "Mar 27", "Mar 28", "Mar 29",
   "Mar 30", "Mar 31", "Apr 1",  "Apr 2",  "Apr 3",
@@ -35,15 +34,23 @@ export default function ScenarioAccuracyChart() {
   const [range, setRange] = useState(7);
   const storedIsOpen = localStorage.getItem('isOpen');
   const [isOpen, setIsOpen] = useState(storedIsOpen === 'false' ? false : true);
-  const [activeChart, setActiveChart] = useState("bar");
-  
+
+  // skeleton loading flag
+  const [isLoading, setIsLoading] = useState(true);
+
+  // whenever card expands or range changes, show skeleton then chart
+  useEffect(() => {
+    if (isOpen) {
+      setIsLoading(true);
+      const t = setTimeout(() => setIsLoading(false), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen, range]);
+
   useEffect(() => {
     localStorage.setItem('isOpen', isOpen);
   }, [isOpen]);
 
-  
-
-  // derive filtered labels & data based on range
   const labels = range === "all" ? allLabels : allLabels.slice(-range);
   const dataPoints = range === "all" ? allAccuracy : allAccuracy.slice(-range);
 
@@ -54,8 +61,8 @@ export default function ScenarioAccuracyChart() {
         label: "Scenario Accuracy (%)",
         data: dataPoints,
         fill: true,
-        backgroundColor: "rgba(59, 130, 246, 0.2)", // Tailwind blue-500 20%
-        borderColor: "#3b82f6",                   // Tailwind blue-500
+        backgroundColor: "rgba(59, 130, 246, 0.2)",
+        borderColor: "#3b82f6",
         pointBackgroundColor: "#3b82f6",
         tension: 0.4,
       },
@@ -64,7 +71,7 @@ export default function ScenarioAccuracyChart() {
 
   const options = {
     responsive: true,
-    maintainAspectRatio: false,    // allow manual height
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: "top",
@@ -86,19 +93,18 @@ export default function ScenarioAccuracyChart() {
     },
   };
 
-  // width per point in px; adjust as needed
   const pointWidth = 60;
   const minWidth = labels.length * pointWidth;
 
   return (
-    <div className="w-full md:w-10/12 border bg-white mt-8 dark:bg-gray-900 p-6 rounded-3xl shadow-lg">
+    <div className="w-full border mt-8 bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-lg transition-all duration-300">
       <div
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between cursor-pointer mb-4"
       >
-              <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">
-        📊 Scenario Accuracy Over Time
-      </h2>
+        <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">
+          📊 Scenario Prediction Accuracy Over Time
+        </h2>
         {isOpen ? (
           <ChevronDown className="w-5 h-5 text-blue-500" />
         ) : (
@@ -111,34 +117,39 @@ export default function ScenarioAccuracyChart() {
           isOpen ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-      {/* Range buttons */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {[7, 14, 30, "all"].map((d) => (
-          <button
-            key={d}
-            onClick={() => setRange(d)}
-            className={`py-1 px-3 text-sm rounded-md font-medium transition ${
-              range === d
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300"
-            }`}
-          >
-            {d === "all" ? "All" : `Last ${d} Days`}
-          </button>
-        ))}
-      </div>
+        {/* Range buttons */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {[7, 14, 30, "all"].map((d) => (
+            <button
+              key={d}
+              onClick={() => setRange(d)}
+              className={`py-1 px-3 text-sm rounded-md font-medium transition-all duration-200 ${
+                range === d
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300"
+              }`}
+            >
+              {d === "all" ? "All" : `Last ${d} Days`}
+            </button>
+          ))}
+        </div>
 
-      {/* Scrollable chart container */}
-      <div className=" Overflow-x-auto flex flex-col lg:flex-row gap-6 items-start ">
-        <div
-          className="relative min-h-[300px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px]"
-          style={{ minWidth: `${minWidth}px` }}
-        >
-          <Line data={data} options={options} />
+        {/* Chart area or skeleton */}
+        <div className="relative w-full max-w-5xl mx-auto h-[50vh] sm:h-[45vh] md:h-[40vh] lg:h-[35vh] xl:h-[30vh] overflow-x-auto transition-all duration-300">
+          {isLoading ? (
+            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md" />
+          ) : (
+            <div
+              className="relative"
+              style={{ minWidth: `${minWidth}px`, height: "100%" }}
+            >
+              <Suspense fallback={<div className="w-full h-full bg-gray-200 animate-pulse rounded-md" />}>
+                <Line data={data} options={options} />
+              </Suspense>
+            </div>
+          )}
         </div>
       </div>
-      </div>
-
     </div>
   );
 }

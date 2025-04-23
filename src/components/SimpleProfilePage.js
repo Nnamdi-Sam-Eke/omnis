@@ -3,10 +3,28 @@ import { useAuth } from "../AuthContext";
 import { db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 
+const ProfileSkeleton = () => (
+  <div className="animate-pulse max-w-lg mx-auto border p-8 mt-10 bg-white dark:bg-gray-900 rounded-2xl shadow-lg">
+    <div className="h-6 w-1/2 bg-gray-300 dark:bg-gray-700 rounded mb-6" />
+    <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center">
+      <div className="w-24 h-24 mx-auto rounded-full bg-gray-300 dark:bg-gray-700 mb-4" />
+      <div className="h-4 w-3/4 mx-auto bg-gray-300 dark:bg-gray-600 rounded mb-2" />
+      <div className="h-4 w-1/2 mx-auto bg-gray-300 dark:bg-gray-600 rounded" />
+    </div>
+    <div className="mt-6 space-y-4">
+      <div className="h-4 w-full bg-gray-300 dark:bg-gray-700 rounded" />
+      <div className="h-4 w-5/6 bg-gray-300 dark:bg-gray-700 rounded" />
+      <div className="h-4 w-2/3 bg-gray-300 dark:bg-gray-700 rounded" />
+    </div>
+    <div className="mt-6 h-10 w-1/2 bg-gray-300 dark:bg-gray-700 rounded mx-auto" />
+  </div>
+);
+
 const ProfilePage = () => {
   const { user } = useAuth();
   const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(false); // Now controlling loading state
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
 
   const [firstName, setFirstName] = useState("");
@@ -25,15 +43,14 @@ const ProfilePage = () => {
       return () => clearTimeout(timer);
     }
   }, [showPopUp]);
-
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user) return;
-
+  
       try {
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
-
+  
         if (userSnap.exists()) {
           const userData = userSnap.data();
           setUserData(userData);
@@ -50,18 +67,19 @@ const ProfilePage = () => {
       } catch (error) {
         console.error("Error fetching user data:", error.message);
       } finally {
-        setLoading(false);
+        // Always show skeleton for at least 1.2 seconds
+        setTimeout(() => setInitialLoading(false), 2000);
       }
     };
-
+  
+    setInitialLoading(true); // ✅ always trigger skeleton on remount
     fetchUserData();
   }, [user]);
+  
 
   const handleSaveChanges = async () => {
     if (!user) return;
-
-    setLoading(true); // Show spinner when saving changes
-
+    setLoading(true);
     try {
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, {
@@ -78,20 +96,21 @@ const ProfilePage = () => {
       console.error("Error updating profile:", error.message);
       setShowPopUp("error");
     } finally {
-      setLoading(false); // Hide spinner after process
+      setLoading(false);
     }
   };
 
   const handleEdit = () => setIsEditable(true);
 
   const handleUpdateProfilePic = () => {
-    setLoading(true); // Show spinner when updating profile pic
-
+    setLoading(true);
     setTimeout(() => {
       setShowPopUp("comingSoon");
-      setLoading(false); // Hide spinner after delay (simulating async action)
-    }, 2000); // Simulate a delay for profile picture update
+      setLoading(false);
+    }, 2000);
   };
+
+  if (initialLoading) return <ProfileSkeleton />;
 
   if (loading)
     return (
@@ -107,7 +126,6 @@ const ProfilePage = () => {
 
   return (
     <div className="relative">
-      {/* ✅ Popup */}
       {showPopUp && (
         <div className="fixed top-5 right-5 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in">
           {showPopUp === "profileUpdated" && "Profile updated successfully!"}
@@ -195,7 +213,6 @@ const ProfilePage = () => {
     </div>
   );
 };
-
 const AnimatedInput = ({ label, value, onChange, editable, isTextArea }) => (
   <div className="mb-4">
     <p className="text-green-600 dark:text-green-400 font-semibold">{label}</p>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -6,25 +6,26 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import { Doughnut } from 'react-chartjs-2';
 
-// Register required components
+const DoughnutChart = lazy(() =>
+  import('react-chartjs-2').then(mod => ({ default: mod.Doughnut }))
+);
+
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-// Sample scenario category distribution
 const chartData = {
-  labels: ["Finance", "Logistics", "Health", "Energy", "Retail", "Agriculture"],
+  labels: ['Finance', 'Logistics', 'Health', 'Energy', 'Retail', 'Agriculture'],
   datasets: [
     {
-      label: "Scenario Count",
+      label: 'Scenario Count',
       data: [25, 15, 20, 10, 12, 18],
       backgroundColor: [
-        "#3b82f6",
-        "#10b981",
-        "#f59e0b",
-        "#ef4444",
-        "#8b5cf6",
-        "#14b8a6",
+        '#3b82f6',
+        '#10b981',
+        '#f59e0b',
+        '#ef4444',
+        '#8b5cf6',
+        '#14b8a6',
       ],
       borderWidth: 1,
     },
@@ -37,7 +38,7 @@ const chartOptions = {
     legend: {
       position: 'right',
       labels: {
-        color: '#6b7280', // Tailwind gray-500
+        color: '#6b7280',
         font: { size: 12 },
       },
     },
@@ -54,20 +55,29 @@ const chartOptions = {
 };
 
 export default function CategoryDistributionChart() {
-  // Retrieve stored state or default to open
   const storedIsOpen = localStorage.getItem('categoryChartIsOpen');
   const [isOpen, setIsOpen] = useState(
     storedIsOpen === 'false' ? false : true
   );
 
-  // Persist open/closed state
+  // skeleton loader flag
+  const [isLoading, setIsLoading] = useState(true);
+
+  // when expanded/collapsed, trigger loading
+  useEffect(() => {
+    if (isOpen) {
+      setIsLoading(true);
+      const t = setTimeout(() => setIsLoading(false), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     localStorage.setItem('categoryChartIsOpen', isOpen);
   }, [isOpen]);
 
   return (
-    <div className="w-full md:w-10/12 border bg-white mt-8 dark:bg-gray-900 p-6 rounded-3xl shadow-lg">
-      {/* Header with toggle */}
+    <div className="w-full border bg-white mt-6 dark:bg-gray-800 p-6 rounded-3xl shadow-lg transition-all duration-300">
       <div
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between cursor-pointer mb-4"
@@ -82,14 +92,19 @@ export default function CategoryDistributionChart() {
         )}
       </div>
 
-      {/* Collapsible chart section */}
       <div
         className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          isOpen ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0'
+          isOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="h-96 flex items-center justify-center">
-          <Doughnut data={chartData} options={chartOptions} />
+        <div className="h-96 flex items-center justify-center transition-all duration-300">
+          {isLoading ? (
+            <div className="w-full h-full bg-gray-200 dark:bg-gray-700 animate-pulse rounded-md" />
+          ) : (
+            <Suspense fallback={<div className="w-full h-full bg-gray-200 animate-pulse rounded-md" />}>
+              <DoughnutChart data={chartData} options={chartOptions} />
+            </Suspense>
+          )}
         </div>
       </div>
     </div>

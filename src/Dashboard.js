@@ -275,17 +275,17 @@ function Dashboard() {
               </h1>
 
               {/* Desktop icons */}
-              <div className="hidden sm:flex items-center space-x-4">
+              <div className="hidden sm:flex items-center space-x-6">
                 <ThemeToggle />
                 <span
-                  className="cursor-pointer hover:text-blue-200"
+                  className="cursor-pointer hover:text-blue-200 hover:text-xl"
                   onClick={() => setCurrentPage("notifications")}
                 >
                   🔔
                 </span>
                 <div className="relative">
                   <span
-                    className="cursor-pointer profile-trigger"
+                    className="cursor-pointer profile-trigger hover:text-xl"
                     onClick={() => setIsProfileMenuOpen((p) => !p)}
                   >
                     👤
@@ -332,9 +332,6 @@ function Dashboard() {
             {renderPage()}
 
             <div className="text-sm text-gray-600">
-              <Tooltip text="Make sure all fields are filled correctly before submitting.">
-                <span>Need help creating scenarios? Hover for tips.</span>
-              </Tooltip>
               <CreatorsCorner />
               <FeedbackButton />
             </div>

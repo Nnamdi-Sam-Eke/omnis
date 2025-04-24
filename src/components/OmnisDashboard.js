@@ -102,16 +102,16 @@ const OmnisDashboard = () => {
   const tabLabels = {
     quickStats: 'Pilot Dashboard',
     analytics: 'Analytics',
-    achievements: 'Gamification & Engagement',
+    achievements: 'Achievements',
   };
 
   return (
-    <div className="p-4 space-y-6 flex-1 overflow-y-auto pb-16 transition-all duration-300">
+    <div className="p-4 space-y-6 flex-1 h-full overflow-y-auto pb-16 transition-all duration-300">
       <h1 className="text-3xl font-semibold text-green-500 mb-6">
         {getGreeting()}, {userFirstName || 'there'} 👋
       </h1>
 
-      <div role="tablist" className="flex flex-wrap gap-4 justify-center sm:justify-start mb-4 sm:mb-6">
+      <div role="tablist" className="flex flex-wrap gap-4 justify-center mt-8 sm:justify-start mb-4 sm:mb-6">
         {Object.keys(tabLabels).map(tab => (
           <button
             key={tab}
@@ -131,10 +131,10 @@ const OmnisDashboard = () => {
         ))}
       </div>
 
-      <div className="relative grid h-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 transition-all">
+      <div className="relative grid h-full grid-cols-1 msm:grid-cols-2 lg:grid-cols-1 gap-6 transition-all">
         {activeTab === 'quickStats' && (
           <div id="quickStats-panel" role="tabpanel" aria-labelledby="quickStats-tab">
-            <div className="mb-4">
+            <div className="mb-4 mt-8">
               <input
                 id="dashboard-search"
                 type="text"

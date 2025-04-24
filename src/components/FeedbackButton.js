@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FiThumbsUp, FiThumbsDown } from "react-icons/fi";
+import emailjs from "emailjs-com"; // ✅ EmailJS import
 
 function FeedbackButton() {
   const [isFeedbackFormVisible, setIsFeedbackFormVisible] = useState(false);
@@ -9,23 +10,36 @@ function FeedbackButton() {
   const [validationMessage, setValidationMessage] = useState("");
 
   const toggleFeedbackForm = () => {
-    console.log("Feedback button clicked"); // debug log
     setIsFeedbackFormVisible(!isFeedbackFormVisible);
   };
 
   const handleFeedbackSubmit = (e) => {
     e.preventDefault();
+
     if (!feedback.trim() || !category || rating === null) {
       setValidationMessage("Please fill in all fields before submitting.");
       return;
     }
 
-    console.log("Feedback submitted:", { feedback, category, rating });
-    setValidationMessage("Thank you for your feedback!");
-    setFeedback("");
-    setCategory("");
-    setRating(null);
-    setIsFeedbackFormVisible(false);
+    emailjs.sendForm(
+      'service_lfch17n',     // e.g., 'service_xxx'
+      'template_zb3uq0x',    // e.g., 'template_feedback'
+      e.target,
+      'Ru_HJfV9Y-llO0KHQ'      // e.g., 'abcd1234xyz'
+    ).then((result) => {
+        console.log("✅ Email sent:", result.text);
+        setValidationMessage("Thank you for your feedback!");
+        setFeedback("");
+        setCategory("");
+        setRating(null);
+        setIsFeedbackFormVisible(false);
+    }, (error) => {
+        console.error("❌ Email error:", error.text);
+        setValidationMessage("Something went wrong. Please try again.");
+    });
+
+    // Optional: reset form
+    e.target.reset();
   };
 
   useEffect(() => {
@@ -47,7 +61,7 @@ function FeedbackButton() {
         </button>
       </div>
 
-      {/* Toast Popup */}
+      {/* Toast Message */}
       {validationMessage && (
         <div className="fixed bottom-24 right-4 bg-black/80 text-white text-sm px-4 py-2 rounded shadow-lg z-[9999] transition-opacity animate-fade">
           {validationMessage}
@@ -68,6 +82,7 @@ function FeedbackButton() {
                 Select Category
               </label>
               <select
+                name="category" // ✅ include name for EmailJS
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full p-2 border dark:border-gray-600 rounded-lg text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none"
@@ -82,6 +97,7 @@ function FeedbackButton() {
 
             {/* Rating */}
             <div className="mb-4 flex items-center space-x-6">
+              <input type="hidden" name="rating" value={rating ? "Positive" : rating === false ? "Negative" : ""} />
               <button
                 type="button"
                 onClick={() => setRating(true)}
@@ -106,18 +122,19 @@ function FeedbackButton() {
               </button>
             </div>
 
-            {/* Feedback Textarea */}
+            {/* Feedback Text */}
             <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
               Your Feedback
             </label>
             <textarea
+              name="message" // ✅ name for EmailJS
               className="w-full h-24 border dark:border-gray-600 rounded p-2 mb-4 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none"
               placeholder="Enter your feedback..."
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
             />
 
-            {/* Form Buttons */}
+            {/* Buttons */}
             <div className="flex justify-between mt-2">
               <button
                 type="button"

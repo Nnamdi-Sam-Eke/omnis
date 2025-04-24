@@ -6,9 +6,13 @@ import Home from "./Home";  // Import your HomePage component
 
 function App() {
   return (
-    <AuthProvider>  {/* ✅ Wrap the entire app once */}
-      <Dashboard />
-    </AuthProvider>
+        <div className="min-h-full w-full bg-white dark:bg-gray-900">
+          <main className="min-h-full w-full bg-white dark:bg-gray-900">
+            <AuthProvider>  {/* ✅ Wrap the entire app once */}
+              <Dashboard />
+            </AuthProvider>
+          </main>
+        </div>
   );
   <Router>
     <Routes>

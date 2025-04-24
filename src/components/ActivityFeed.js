@@ -28,7 +28,7 @@ const ActivityFeed = () => {
   }, []);
 
   return (
-    <div className="mt-6 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md">
+    <div className="mt-6 border bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md">
       <h2 className="text-xl font-semibold mb-4 text-blue-500 dark:text-blue-300">Recent Activity</h2>
       <ul className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
         {activities.length === 0 ? (

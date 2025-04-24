@@ -16,7 +16,7 @@ const ActionButtons = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 border w-full">
+    <div className="grid grid-cols-1 lg:grid-cols-2  mt-8 w-full">
       {/* Environment Info Card */}
       {/*
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 w-full">

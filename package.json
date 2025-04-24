@@ -10,7 +10,10 @@
     "@react-google-maps/api": "^2.20.1",
     "react-scripts": "^5.0.1",
     "recharts": "2.4.3"
-
+  },
+  "resolutions": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "scripts": {
     "start": "react-scripts start",

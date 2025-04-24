@@ -1,35 +1,46 @@
 import React, { useState, useEffect } from 'react';
 
 const ThemeToggle = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // 1. Initialize state from localStorage (or OS preference)
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark' || saved === 'light') {
+        return saved === 'dark';
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
 
-  // Check if the theme is already set in localStorage
+  // 2. Whenever isDarkMode changes, update <html> class and localStorage
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    } else {
-      setIsDarkMode(false);
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
+    const root = document.documentElement;
     if (isDarkMode) {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    } else {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
       localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
+  }, [isDarkMode]);
+
+  // 3. Toggle simply flips state
+  const toggleTheme = () => {
+    setIsDarkMode(prev => !prev);
   };
 
   return (
     <button
       onClick={toggleTheme}
-      className="transition-all hover:text-xl duration-500 ease-in-out p-2 rounded-full bg-gray-300 dark:bg-gray-800 text-gray-900 dark:text-white"
+      className="
+        transition-all duration-500 ease-in-out
+        p-2 rounded-full 
+        bg-gray-300 dark:bg-gray-800 
+        text-gray-900 dark:text-white 
+        hover:text-xl
+      "
+      aria-label="Toggle theme"
     >
       {isDarkMode ? '🌙' : '☀️'}
     </button>

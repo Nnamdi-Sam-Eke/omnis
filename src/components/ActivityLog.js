@@ -46,7 +46,7 @@ const ActivityLog = () => {
       )}
 
       {/* ✅ Main Card */}
-      <div className="bg-white border-2 h-96 dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition">
+      <div className="bg-white border h-96 dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition">
         <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Activity Log</h2>
         <p className="text-gray-600 dark:text-gray-400 text-center mt-2">
           Your recent activities will be displayed here.

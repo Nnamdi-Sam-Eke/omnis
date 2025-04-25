@@ -4,6 +4,7 @@ import { useAuth } from "../AuthContext";
 import { doc, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { getAuth } from "firebase/auth";
+import { Eye, EyeOff } from "lucide-react";
 
 const AuthForm = () => {
   const { signup, login, resetPassword } = useAuth();
@@ -14,12 +15,15 @@ const AuthForm = () => {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [location, setLocation] = useState("");
   const [country, setCountry] = useState("");
   const [error, setError] = useState("");
   const [isSignUp, setIsSignUp] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const fetchUserData = async () => {
     const user = getAuth().currentUser;
@@ -38,6 +42,10 @@ const AuthForm = () => {
     e.preventDefault();
     try {
       if (isSignUp) {
+        if (password !== confirmPassword) {
+          setError("Passwords do not match");
+          return;
+        }
         await signup(firstname, lastname, phone, email, password, location, country);
       } else {
         await login(email, password);
@@ -68,6 +76,27 @@ const AuthForm = () => {
     }
   };
 
+  const getPasswordStrength = () => {
+    if (password.length < 6) return "Weak";
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/) && password.match(/[0-9]/) && password.length >= 8) {
+      return "Strong";
+    }
+    return "Medium";
+  };
+
+  const getStrengthColor = (strength) => {
+    switch (strength) {
+      case "Weak":
+        return "text-red-500";
+      case "Medium":
+        return "text-yellow-500";
+      case "Strong":
+        return "text-green-500";
+      default:
+        return "text-gray-500";
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center h-screen space-y-4 bg-gray-100">
       {!showForm ? (
@@ -83,11 +112,7 @@ const AuthForm = () => {
       ) : showResetPassword ? (
         <div className="flex flex-col items-center justify-center h-full text-gray-900">
           <h2 className="text-3xl font-extrabold mb-6">Reset Your Password</h2>
-          {error && (
-            <p className="text-red-500 mb-4">
-              {String(error)}
-            </p>
-          )}
+          {error && <p className="text-red-500 mb-4">{String(error.message)}</p>}
           <form onSubmit={handleResetPassword} className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
             <input
               type="email"
@@ -120,11 +145,7 @@ const AuthForm = () => {
           <h2 className="text-3xl font-extrabold mb-6">
             {isSignUp ? "Create Your Omnis Account" : "Welcome Back!"}
           </h2>
-          {error && (
-            <p className="text-red-500 mb-4">
-              {String(error)}
-            </p>
-          )}
+          {error && <p className="text-red-500 mb-4">{String(error.message)}</p>}
           <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md space-y-4">
             {isSignUp && (
               <>
@@ -178,14 +199,49 @@ const AuthForm = () => {
               required
               className="p-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="p-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
+            <div className="relative w-full">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="p-3 border rounded-lg w-full pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+            {isSignUp && (
+              <>
+                <p className={`text-sm ${getStrengthColor(getPasswordStrength())}`}>
+                  Password Strength: {getPasswordStrength()}
+                </p>
+                <div className="relative w-full">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="p-3 border rounded-lg w-full pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500"
+                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  >
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </>
+            )}
             <button
               type="submit"
               className="w-full bg-gradient-to-r from-blue-600 to-green-500 text-white py-3 rounded-full"

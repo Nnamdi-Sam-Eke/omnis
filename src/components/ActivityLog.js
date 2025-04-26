@@ -5,7 +5,10 @@ const ToastMessage = ({ message, visible }) => {
   if (!visible) return null;
 
   return (
-    <div className="fixed top-5 right-5 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in">
+    <div
+      className="fixed top-5 right-5 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in"
+      title="This message confirms that the activity log was downloaded successfully."
+    >
       {message}
     </div>
   );
@@ -33,11 +36,17 @@ const ActivityLog = () => {
   return (
     <div className="relative">
       {/* ✅ Toast Message */}
-      <ToastMessage message="Activity log downloaded successfully!" visible={showToast} />
+      <ToastMessage
+        message="Activity log downloaded successfully!"
+        visible={showToast}
+      />
 
       {/* ✅ Spinner Overlay */}
       {loading && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+          title="Downloading your activity log. Please wait..."
+        >
           <div className="relative flex items-center justify-center">
             <div className="absolute w-16 h-16 border-8 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             <div className="w-12 h-12 border-8 border-green-500 border-t-transparent rounded-full animate-[spin_1s_linear_reverse_infinite]"></div>
@@ -46,8 +55,13 @@ const ActivityLog = () => {
       )}
 
       {/* ✅ Main Card */}
-      <div className="bg-white border h-96 dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition">
-        <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Activity Log</h2>
+      <div
+        className="bg-white border h-96 dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition"
+        title="Here you can download the log of your recent activities."
+      >
+        <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">
+          Activity Log
+        </h2>
         <p className="text-gray-600 dark:text-gray-400 text-center mt-2">
           Your recent activities will be displayed here.
         </p>
@@ -57,6 +71,7 @@ const ActivityLog = () => {
           className={`w-full hover:scale-105 justify-center ${
             loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
           } text-white py-2 px-8 rounded mt-4 transition`}
+          title="Click to download your activity log"
         >
           {loading ? "Downloading..." : "Download Log"}
         </button>

@@ -39,24 +39,27 @@ function Home() {
         <p className="text-base sm:text-lg md:text-xl lg:text-2xl max-w-2xl mb-6 p-4 text-gray-700 dark:text-gray-200">
           Experience the power of AI-driven simulations to make informed decisions and explore endless possibilities.
         </p>
-        <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 p-6 sm:p-8">
-          <Tooltip text="Join our Discord community for live support!">
-            <a
-              href="#"
-              className=" hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-gradient-to-r from-blue-600 to-green-500 text-white rounded-2xl shadow-lg hover:bg-blue-700 transition"
-            >
-              Join on Discord
-            </a>
-          </Tooltip>
-          <Tooltip text="Follow us on X for updates!">
-            <a
-              href="#"
-              className="hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-white text-blue-600 border-2 border-blue-600 rounded-2xl hover:shadow-lg transition"
-            >
-              Join on X
-            </a>
-          </Tooltip>
-        </div>
+        <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 p-6 sm:p-8">
+  <Tooltip text="Join our Discord community for live support!">
+    <a
+      href="#"
+      className="w-full sm:w-auto mb-4 sm:mb-0 hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-gradient-to-r from-blue-600 to-green-500 text-white rounded-2xl shadow-lg hover:bg-blue-700"
+    >
+      Join on Discord
+    </a>
+  </Tooltip>
+  <p className="mt-14"></p>
+  <Tooltip text="Follow us on X for updates!">
+    <a
+      href="#"
+      className="w-full sm:mt-20 sm:w-auto hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-white text-blue-600 border-2 border-blue-600 rounded-2xl hover:shadow-lg"
+    >
+      Join on X
+    </a>
+  </Tooltip>
+</div>
+
+
       </div>
 
       {/* Image */}
@@ -281,14 +284,26 @@ function Home() {
       <p className="text-gray-900 max-w-2xl mx-auto mb-8 dark:text-white">
         Be part of the next big thing. Sign up for early access and stay updated.
       </p>
-      <div className="flex justify-center space-x-6">
-        <a href="#" className="hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-blue-700 text-white rounded-2xl shadow-lg hover:bg-blue-600 transition">
-          Sign Up for Beta
-        </a>
-        <a href="#" className="hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-green-700 text-white rounded-2xl shadow-lg hover:bg-green-600 transition">
-          Join the Community
-        </a>
-      </div>
+      <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 w-full sm:w-auto">
+  <Tooltip text="Sign up for our beta program!">
+    <a
+      href="#"
+      className="w-full sm:w-auto mb-4 sm:mb-0 hover:shadow-blue-500/50 transition px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-semibold bg-blue-600 text-white rounded-2xl shadow-lg hover:bg-blue-500"
+    >
+      Sign Up for Beta
+    </a>
+  </Tooltip>
+  <Tooltip text="Join our community for support and updates!">
+    <a
+      href="#"
+      className="w-full sm:w-auto hover:shadow-blue-500/50 transition px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-semibold bg-green-500 text-white rounded-2xl shadow-lg hover:bg-green-400"
+    >
+      Join the Community
+    </a>
+  </Tooltip>
+</div>
+      
+
     </section>
   );
 

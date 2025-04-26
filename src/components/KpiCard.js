@@ -35,11 +35,7 @@ const KpiCard = () => {
 
   const [totalUsers, setTotalUsers] = useState(null);
   const [lastActivity, setLastActivity] = useState(null);
-// Replace this:
-const [performance, setPerformance] = useState(null);
-
-// With:
-const [performanceStatus, setPerformanceStatus] = useState(null);
+  const [performanceStatus, setPerformanceStatus] = useState(null);
   const [systemStatus, setSystemStatus] = useState(null);
   const [totalSimulations, setTotalSimulations] = useState(null);
   const [activeUsers, setActiveUsers] = useState(null);
@@ -93,16 +89,15 @@ const [performanceStatus, setPerformanceStatus] = useState(null);
     });
 
     const { timing } = window.performance;
-if (timing && timing.loadEventEnd && timing.navigationStart) {
-  const loadTime = timing.loadEventEnd - timing.navigationStart;
-  if (loadTime < 1000) setPerformanceStatus("Excellent");
-  else if (loadTime < 3000) setPerformanceStatus("Good");
-  else if (loadTime < 5000) setPerformanceStatus("Fair");
-  else setPerformanceStatus("Poor");
-} else {
-  setPerformanceStatus("Unavailable");
-}
-
+    if (timing && timing.loadEventEnd && timing.navigationStart) {
+      const loadTime = timing.loadEventEnd - timing.navigationStart;
+      if (loadTime < 1000) setPerformanceStatus("Excellent");
+      else if (loadTime < 3000) setPerformanceStatus("Good");
+      else if (loadTime < 5000) setPerformanceStatus("Fair");
+      else setPerformanceStatus("Poor");
+    } else {
+      setPerformanceStatus("Unavailable");
+    }
 
     const fetchSystemStatus = async () => {
       const online = navigator.onLine ? "Online" : "Offline";
@@ -149,8 +144,7 @@ if (timing && timing.loadEventEnd && timing.navigationStart) {
       title: "Performance",
       value: performanceStatus,
       iconColor: "text-green-500"
-    }
-,    
+    },
     {
       icon: <FiClock className="text-3xl md:text-4xl" />,
       title: "Last Activity",
@@ -204,7 +198,7 @@ if (timing && timing.loadEventEnd && timing.navigationStart) {
         {cards.map((card, index) => (
           <div
             key={index}
-            className="min-w-[250px] bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex items-center space-x-4 animate-fade-in"
+            className="min-w-[250px] bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex items-center space-x-4 animate-pulse-slow"
           >
             <div className={`${card.iconColor} flex-shrink-0`}>
               {card.icon}

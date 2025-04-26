@@ -34,12 +34,12 @@ const TaskPlanner = ({ scenarioTasks = [] }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mt-8 border">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md mt-8 border">
       <div
         className="flex justify-between items-center cursor-pointer"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        <h3 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Task Planner</h3>
+        <h3 className="text-xl font-semibold text-blue-500 dark:text-blue-300">Task Planner</h3>
         {isCollapsed ? <FiChevronDown /> : <FiChevronUp />}
       </div>
 

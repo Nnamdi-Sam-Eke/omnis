@@ -1,56 +1,46 @@
 import React, { useEffect, useState } from "react";
-import { collection, query, orderBy, onSnapshot, limit } from "firebase/firestore";
+import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
-import { FiUser, FiPlayCircle, FiLogIn, FiMessageCircle } from "react-icons/fi";
+import { FiClock, FiCheckCircle } from "react-icons/fi";
 
-// Define icon map for activity types
-const activityIcons = {
-  simulation: <FiPlayCircle className="text-blue-500" />,
-  login: <FiLogIn className="text-green-500" />,
-  feedback: <FiMessageCircle className="text-yellow-500" />,
-  default: <FiUser className="text-gray-500" />
-};
+const RecentActivityCard = () => {
+  const [recentActivities, setRecentActivities] = useState([]);
 
-const ActivityFeed = () => {
-  const [activities, setActivities] = useState([]);
-
+  // Fetch recent activity logs from Firestore
   useEffect(() => {
-    const q = query(collection(db, "activities"), orderBy("timestamp", "desc"), limit(10));
+    const activitiesRef = collection(db, "activityLog"); // Assumes you have an "activityLog" collection
+    const q = query(activitiesRef, orderBy("timestamp", "desc"), limit(5)); // Get the latest 5 activities
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const logs = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setActivities(logs);
+      const activitiesData = snapshot.docs.map((doc) => doc.data());
+      setRecentActivities(activitiesData); // Update the state with the latest activities
     });
 
-    return () => unsubscribe();
+    return () => unsubscribe(); // Cleanup the listener when the component is unmounted
   }, []);
 
   return (
-    <div className="mt-6 border bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md">
-      <h2 className="text-xl font-semibold mb-4 text-blue-500 dark:text-blue-300">Recent Activity</h2>
-      <ul className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
-        {activities.length === 0 ? (
-          <p className="text-sm text-gray-600 dark:text-gray-400">No recent activity.</p>
+    <div className="min-w-[250px]  border bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
+      <h3 className="text-xl font-semibold text-blue-500 dark:text-blue-300">Recent Activity</h3>
+      <div className="space-y-2">
+        {recentActivities.length === 0 ? (
+          <p className="justify-center text-gray-200">No recent activity.</p>
         ) : (
-          activities.map((log) => (
-            <li key={log.id} className="flex items-start gap-3">
-              <div className="mt-1">
-                {activityIcons[log.type || "default"]}
-              </div>
+          recentActivities.map((activity, index) => (
+            <div key={index} className="flex items-center space-x-2">
+              <FiClock className="text-gray-500" />
               <div>
-                <p className="text-sm text-gray-700 dark:text-gray-200">{log.action}</p>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {log.timestamp ? new Date(log.timestamp.toDate()).toLocaleString() : "Unknown time"}
-                </span>
+                <p className="text-sm">{activity.action}</p>
+                <p className="text-xs text-gray-500">
+                  {new Date(activity.timestamp.seconds * 1000).toLocaleString()}
+                </p>
               </div>
-            </li>
+            </div>
           ))
         )}
-      </ul>
+      </div>
     </div>
   );
 };
 
-export default ActivityFeed;
+export default RecentActivityCard;

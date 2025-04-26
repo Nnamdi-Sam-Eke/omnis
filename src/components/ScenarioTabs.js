@@ -1,4 +1,5 @@
 import React, { useState, lazy, Suspense, useRef } from "react";
+import Tooltip from './Tooltip'; // Assuming you have a Tooltip component
 
 // Lazy loaded components
 const NewScenarioPage = lazy(() => import("../components/OmnisCore"));
@@ -32,24 +33,25 @@ const ScenarioTabs = () => {
       {/* Tab List */}
       <div role="tablist" aria-label="Scenario tabs" className="flex flex-wrap gap-4 justify-center sm:justify-start mb-4 sm:mb-6">
         {tabs.map((tab, index) => (
-          <button
-            key={tab}
-            ref={(el) => (tabRefs.current[index] = el)}
-            role="tab"
-            id={`tab-${tab}`}
-            aria-selected={activeTab === tab}
-            aria-controls={`panel-${tab}`}
-            tabIndex={activeTab === tab ? 0 : -1}
-            onClick={() => setActiveTab(tab)}
-            onKeyDown={(e) => handleKeyDown(e, index)}
-            className={`px-4 py-2 sm:px-5 sm:py-2 rounded-full font-semibold transition-all outline-none focus:ring-2 focus:ring-blue-400 ${
-              activeTab === tab
-                ? "bg-blue-500 text-white border border-blue-700"
-                : "bg-gray-300 text-gray-800 hover:bg-green-300"
-            }`}
-          >
-            {tab === 'core' ? 'Omnis Core' : 'AI_Match'}
-          </button>
+          <Tooltip key={tab} text={tab === 'core' ? 'Go to Omnis Core' : 'Switch to AI Match'}>
+            <button
+              ref={(el) => (tabRefs.current[index] = el)}
+              role="tab"
+              id={`tab-${tab}`}
+              aria-selected={activeTab === tab}
+              aria-controls={`panel-${tab}`}
+              tabIndex={activeTab === tab ? 0 : -1}
+              onClick={() => setActiveTab(tab)}
+              onKeyDown={(e) => handleKeyDown(e, index)}
+              className={`px-4 py-2 sm:px-5 sm:py-2 rounded-full font-semibold transition-all outline-none focus:ring-2 focus:ring-blue-400 ${
+                activeTab === tab
+                  ? "bg-blue-500 text-white border border-blue-700"
+                  : "bg-gray-300 text-gray-800 hover:bg-green-300"
+              }`}
+            >
+              {tab === 'core' ? 'Omnis Core' : 'AI_Match'}
+            </button>
+          </Tooltip>
         ))}
       </div>
 

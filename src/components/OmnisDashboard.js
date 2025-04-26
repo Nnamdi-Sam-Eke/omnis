@@ -120,6 +120,7 @@ const OmnisDashboard = () => {
             aria-controls={`${tab}-panel`}
             id={`${tab}-tab`}
             onClick={() => setActiveTab(tab)}
+            title={`Go to ${tabLabels[tab]}`} // Tooltip added here
             className={`px-4 py-2 sm:px-5 sm:py-2 rounded-full font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               activeTab === tab
                 ? 'bg-blue-500 text-white border border-blue-700'
@@ -134,6 +135,7 @@ const OmnisDashboard = () => {
       <div className="relative grid h-full grid-cols-1 msm:grid-cols-2 lg:grid-cols-1 gap-6 transition-all">
         {activeTab === 'quickStats' && (
           <div id="quickStats-panel" role="tabpanel" aria-labelledby="quickStats-tab">
+             <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">Quick stats, activity logs etc..</h2>
             <div className="mb-4 mt-8">
               <input
                 id="dashboard-search"
@@ -141,6 +143,7 @@ const OmnisDashboard = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search activities"
+                title="Search for activities" // Tooltip added here
                 className="pl-10 pr-4 py-2 w-full sm:w-2/4 border rounded-lg text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -150,7 +153,7 @@ const OmnisDashboard = () => {
                 <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Search Results</h3>
                 <div className="grid grid-cols-1 gap-6">
                   {filteredData.map((item, index) => (
-                    <div key={index} className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                    <div key={index} className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md" title="Click for more details">
                       <h4 className="font-bold text-lg">{item.name}</h4>
                       <p>{item.description}</p>
                     </div>
@@ -185,11 +188,11 @@ const OmnisDashboard = () => {
             <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">User Analytics + Insights</h2>
             <Suspense fallback={<SkeletonLoader height="h-[300px]" />}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                <div>
+                <div title="Total time spent on the platform">
                   <h3 className="font-semibold text-green-500">Total Time Spent</h3>
                   <AnalyticsCard />
                 </div>
-                <div>
+                <div title="Total number of simulations run">
                   <h3 className="font-semibold text-green-500">Total Simulations</h3>
                   <DashboardCharts />
                 </div>
@@ -199,11 +202,11 @@ const OmnisDashboard = () => {
                 <ScenarioAccuracyChart />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                <div>
+                <div title="Distribution of scenarios across categories">
                   <h3 className="font-semibold text-green-500">Category Distribution</h3>
                   <CategoryDistributionChart />
                 </div>
-                <div>
+                <div title="Narrative insights based on your simulations">
                   <h3 className="font-semibold text-green-500">Narrative Insights</h3>
                   <NarrativePanel />
                 </div>

@@ -5,7 +5,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  sendPasswordResetEmail
 } from "./firebase";
 
 import {
@@ -14,11 +15,6 @@ import {
   getDoc,
   onSnapshot
 } from "firebase/firestore";
-
-import {
-  getAuth,
-  sendPasswordResetEmail
-} from "firebase/auth";
 
 const AuthContext = createContext();
 
@@ -40,11 +36,11 @@ export function AuthProvider({ children }) {
     const userRef = doc(db, "users", user.uid);
     const unsub = onSnapshot(userRef, (docSnap) => {
       const session = docSnap.data()?.sessionVersion || 1;
-      const local = parseInt(localStorage.getItem("sessionVersion") || "1");
+      const local = Number(localStorage.getItem("sessionVersion")) || 1;
 
       if (session !== local) {
         alert("You've been logged out on this device.");
-        signOut(getAuth());
+        signOut(auth);
       }
     });
 
@@ -63,7 +59,7 @@ export function AuthProvider({ children }) {
 
       if (sessionVersion.toString() !== localVersion) {
         alert("You've been signed out because your session expired or was revoked.");
-        await signOut(getAuth());
+        await signOut(auth);
       }
     };
 
@@ -150,3 +146,4 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+export default AuthContext;

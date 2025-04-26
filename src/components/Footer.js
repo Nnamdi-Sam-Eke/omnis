@@ -19,7 +19,7 @@ const Footer = () => {
       className={`
         transition-all duration-700 ease-in-out
         transform ${showFooter ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}
-        w-full bg-white dark:bg-gray-800 shadow p-4 text-center z-50
+        w-full bg-white dark:bg-gray-800 shadow p-4 text-center z-20
       `}
     >
       <p className="text-gray-600 text-sm">

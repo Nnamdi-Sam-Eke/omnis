@@ -14,7 +14,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBc3CNH5hAatFsuvAhrsOoNBZxIgUdfdCU",
   authDomain: "the-digital-twin-app-3e2b1.firebaseapp.com",
   projectId: "the-digital-twin-app-3e2b1",
-  storageBucket: "the-digital-twin-app-3e2b1.firebasestorage.app",
+  storageBucket: "the-digital-twin-app-3e2b1.firebasestorage.appspot.com",
   messagingSenderId: "404132163896",
   appId: "1:404132163896:web:4be038cbee416c56c7d1cd",
   measurementId: "G-BZNSJW940T"

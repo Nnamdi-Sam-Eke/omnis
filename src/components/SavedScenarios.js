@@ -71,8 +71,8 @@ const SavedScenariosPage = () => {
         Archive of Genius...
       </h1>
 
-      {/* Search Input */}
-      <div className="mt-4">
+      {/* Search Input with Tooltip */}
+      <div className="mt-4 relative">
         <input
           type="text"
           value={searchQuery}
@@ -80,9 +80,15 @@ const SavedScenariosPage = () => {
           placeholder="Search Saved Scenarios"
           className="pl-10 pr-4 py-2 w-1/4 border rounded-lg text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label="Search saved scenarios"
+          title="Type to search for saved scenarios"  // Tooltip for the search input
         />
         {suggestions.length > 0 && (
-          <ul className="mt-2 bg-white dark:bg-gray-800 shadow-lg rounded-md max-h-40 overflow-y-auto" role="listbox">
+          <ul
+            className="mt-2 bg-white dark:bg-gray-800 shadow-lg rounded-md max-h-40 overflow-y-auto"
+            role="listbox"
+            aria-live="polite"
+            title="Click a suggestion to autofill the search"
+          >
             {suggestions.map((s, i) => (
               <li
                 key={i}
@@ -91,6 +97,7 @@ const SavedScenariosPage = () => {
                 onClick={() => setSearchQuery(s)}
                 onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setSearchQuery(s)}
                 className="px-4 py-2 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-600"
+                title={`Click to search for "${s}"`}  // Tooltip for each suggestion
               >
                 {s}
               </li>
@@ -99,12 +106,13 @@ const SavedScenariosPage = () => {
         )}
       </div>
 
-      {/* Full-screen Spinner */}
+      {/* Full-screen Spinner with Tooltip */}
       {isLoading && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition"
           role="status"
           aria-live="polite"
+          title="Loading saved scenarios..."  // Tooltip for the loading spinner
         >
           <div className="relative flex items-center justify-center">
             <div className="absolute w-16 h-16 border-8 border-blue-500 border-t-transparent rounded-full animate-spin" />

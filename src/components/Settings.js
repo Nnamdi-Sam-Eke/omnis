@@ -176,7 +176,7 @@ const handleSessionLogout = async () => {
               </h2>
 
               {/* Theme */}
-              <div className="mt-4">
+              <div className="mt-4" title="Click to change themes">
                 <h3 className="font-semibold">Theme Settings</h3>
                 <Suspense fallback={<div>Loading Theme Toggle...</div>}>
                   <ThemeToggle />
@@ -186,7 +186,7 @@ const handleSessionLogout = async () => {
               <hr className="my-4 border-gray-300 dark:border-gray-600" />
 
               {/* Notifications */}
-              <div className="mt-6">
+              <div className="mt-6" title="Click to select your preferred notifications">
                 <h3 className="font-semibold">Notification Preferences</h3>
                 {Object.keys(notifications).map((key) => (
                   <label key={key} className="flex items-center space-x-2 mt-6">
@@ -210,7 +210,7 @@ const handleSessionLogout = async () => {
               <hr className="my-4 border-gray-300 dark:border-gray-600" />
 
               {/* Privacy */}
-              <div className="mt-6">
+              <div className="mt-6" title="Select your privacy settings">
                 <h3 className="font-semibold">Privacy Settings</h3>
                 {Object.keys(privacy).map((key) => (
                   <label key={key} className="flex items-center space-x-2 mt-6">
@@ -233,8 +233,8 @@ const handleSessionLogout = async () => {
               <hr className="my-4 border-gray-300 dark:border-gray-600" />
 
               {/* Language */}
-              <div className="mt-6">
-                <h3 className="font-semibold">Language Selection</h3>
+              <div className="mt-6" title="Select your preferred language">
+                <h3 className="font-semibold ">Language Selection</h3>
                 <select
                   value={language}
                   onChange={e => setLanguage(e.target.value)}
@@ -251,7 +251,7 @@ const handleSessionLogout = async () => {
               <hr className="my-4 border-gray-300 dark:border-gray-600" />
 
               {/* Data Management */}
-              <div className="mt-4">
+              <div className="mt-4" title="Manage your data and history">
                 <h3 className="font-semibold hover:scale-105">Data Management</h3>
                 <button
                   onClick={clearHistory}
@@ -291,7 +291,7 @@ const handleSessionLogout = async () => {
               <hr className="my-4 border-gray-300 dark:border-gray-600" />
 
               {/* Session Management */}
-              <div className="mt-4">
+              <div className="mt-4" title="Manage your sessions">
                 <h3 className="font-semibold hover:scale-105">Session Management</h3>
                 <button
                   onClick={handleSessionLogout}
@@ -308,7 +308,7 @@ const handleSessionLogout = async () => {
               <hr className="my-4 border-gray-300 dark:border-gray-600" />
 
               {/* Danger Zone */}
-              <div className="mt-4">
+              <div className="mt-4" title="Delete your account">
                 <h3 className="font-semibold text-red-500 hover:scale-105">Danger Zone</h3>
                 <button
                   onClick={handleDeleteAccount}
@@ -325,7 +325,7 @@ const handleSessionLogout = async () => {
               <hr className="my-4 border-gray-300 dark:border-gray-600" />
 
               {/* Save Button */}
-              <div className="flex justify-end">
+              <div className="flex justify-end" title="Save your settings">
                 <button
                   onClick={handleSave}
                   disabled={loading}
@@ -362,6 +362,7 @@ const handleSessionLogout = async () => {
           />
         </Suspense>
       )}
+
     </div>
   );
 };

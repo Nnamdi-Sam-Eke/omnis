@@ -184,82 +184,95 @@ function Dashboard() {
         <div className="flex flex-col h-screen bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white">
           
           {/* Sidebar */}
-          <aside
-            id="sidebar"
-            className={`fixed inset-y-0 left-0 w-64 p-6 transition-all duration-300 z-30 bg-gradient-to-r from-blue-600 to-green-500 text-white dark:bg-gray-800 overflow-y-auto ${
-              isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-            }`}
-          >
-            <button
-              onClick={toggleSidebar}
-              id="sidebar-button"
-              className="ml-auto p-2 rounded bg-white text-green-900 hover:bg-red-100 dark:bg-gray-700 dark:text-white"
-            >
-              ✖
-            </button>
-            <h2 className="text-4xl font-bold mt-2">Menu</h2>
-            <ul className="text-xl mt-6 space-y-4">
-              {[
-                { name: "Home", icon: <FiHome />, page: "Home" },
-                { name: "Dashboard", icon: <FiGrid />, page: "dashboard" },
-                { name: "New Scenario", icon: <FiPlus />, page: "new Scenario" },
-                { name: "Saved Scenarios", icon: <FiBookmark />, page: "saved Scenarios" },
-                { name: "User Profile", icon: <FiUserX />, page: "user Profile" },
-                { name: "Settings", icon: <FiSettings />, page: "settings" },
-                { name: "Resources", icon: <FiDatabase />, page: "resources" }
-              ].map(({ name, icon, page }) => (
-                <li
-                  key={name}
-                  onClick={() => {
-                    setCurrentPage(page);
-                    setIsSidebarOpen(false);
-                  }}
-                  className={`flex items-center space-x-3 py-3 cursor-pointer hover:text-gray-300 ${
-                    currentPage === page
-                      ? "font-bold border-l-4 border-green-500 text-white text-2xl"
-                      : ""
-                  }`}
-                >
-                  {icon}
-                  <span>{name}</span>
-                </li>
-              ))}
-            </ul>
+          import Tooltip from './Tooltip'; // Make sure Tooltip is imported
 
-            {/* Mobile-only icons */}
-            <div className="sm:hidden mt-2 flex bg-gray-300 rounded-xl p-2 justify-around text-sm">
-              <ThemeToggle />
-              <span
-                className="cursor-pointer hover:text-blue-200"
-                onClick={() => {
-                  setCurrentPage("notifications");
-                  setIsSidebarOpen(false);
-                }}
-              >
-                🔔
-              </span>
-              <span
-                className="cursor-pointer hover:text-blue-200"
-                onClick={() => {
-                  setCurrentPage("account");
-                  setIsSidebarOpen(false);
-                }}
-              >
-                👤
-              </span>
-            </div>
+<aside
+  id="sidebar"
+  className={`fixed inset-y-0 left-0 w-64 p-6 transition-all duration-300 z-30 bg-gradient-to-r from-blue-600 to-green-500 text-white dark:bg-gray-800 overflow-y-auto ${
+    isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+  }`}
+>
+  <button
+    onClick={toggleSidebar}
+    id="sidebar-button"
+    className="ml-auto p-2 rounded bg-white text-green-900 hover:bg-red-100 dark:bg-gray-700 dark:text-white"
+  >
+    ✖
+  </button>
+  <h2 className="text-4xl font-bold mt-2">Menu</h2>
+  <ul className="text-xl mt-6 space-y-4">
+    {[
+      { name: "Home", icon: <FiHome />, page: "Home" },
+      { name: "Dashboard", icon: <FiGrid />, page: "dashboard" },
+      { name: "New Scenario", icon: <FiPlus />, page: "new Scenario" },
+      { name: "Saved Scenarios", icon: <FiBookmark />, page: "saved Scenarios" },
+      { name: "User Profile", icon: <FiUserX />, page: "user Profile" },
+      { name: "Settings", icon: <FiSettings />, page: "settings" },
+      { name: "Resources", icon: <FiDatabase />, page: "resources" }
+    ].map(({ name, icon, page }) => (
+      <li
+        key={name}
+        onClick={() => {
+          setCurrentPage(page);
+          setIsSidebarOpen(false);
+        }}
+        className={`flex items-center space-x-3 py-3 cursor-pointer hover:text-gray-300 ${
+          currentPage === page
+            ? "font-bold border-l-4 border-green-500 text-white text-2xl"
+            : ""
+        }`}
+      >
+        <Tooltip text={name} position="right">
+          <div className="flex items-center space-x-3">
+            {icon}
+            <span>{name}</span>
+          </div>
+        </Tooltip>
+      </li>
+    ))}
+  </ul>
 
-            {/* Mobile logout */}
-            <div className="sm:hidden mt-auto">
-              <li
-                onClick={handleLogout}
-                className="flex items-center space-x-3 py-3 cursor-pointer text-white hover:text-red-500"
-              >
-                <FiLogOut />
-                <span>Log Out</span>
-              </li>
-            </div>
-          </aside>
+  {/* Mobile-only icons */}
+  <div className="sm:hidden mt-2 flex bg-gray-300 rounded-xl p-2 justify-around text-sm">
+    <ThemeToggle />
+    <Tooltip text="Notifications" position="top">
+      <span
+        className="cursor-pointer hover:text-blue-200"
+        onClick={() => {
+          setCurrentPage("notifications");
+          setIsSidebarOpen(false);
+        }}
+      >
+        🔔
+      </span>
+    </Tooltip>
+    <Tooltip text="Account" position="top">
+      <span
+        className="cursor-pointer hover:text-blue-200"
+        onClick={() => {
+          setCurrentPage("account");
+          setIsSidebarOpen(false);
+        }}
+      >
+        👤
+      </span>
+    </Tooltip>
+  </div>
+
+  {/* Mobile logout */}
+  <div className="sm:hidden mt-20">
+    <Tooltip text="Log Out" position="top">
+      <li
+        onClick={handleLogout}
+        className="flex items-center space-x-3 py-3 cursor-pointer text-white hover:text-red-500"
+      >
+        <FiLogOut />
+        <span>Log Out</span>
+      </li>
+    </Tooltip>
+  </div>
+</aside>
+
 
           {/* Header & Content */}
           <div className="flex flex-col flex-1 pt-24">
@@ -270,6 +283,12 @@ function Dashboard() {
               >
                 ☰
               </button>
+
+              {/* Omnis logo with Poppins font and blue color */}
+              <h1 className="text-3xl italic font-bold capitalize text-blue-600 font-poppins dark:text-blue-400">
+                Omnis
+              </h1>
+              
               <h1 className="text-2xl font-bold capitalize">
                 {toTitleCase(currentPage.replace(/_/g, " "))}
               </h1>

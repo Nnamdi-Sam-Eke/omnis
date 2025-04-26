@@ -1,10 +1,11 @@
 // tailwind.config.js
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',
   content: [
-    "./public/index.html",         // ← add this
-    "./src/**/*.{js,jsx,ts,tsx}",  // Adjust to your file paths
+    "./public/index.html",
+    "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {
@@ -14,7 +15,7 @@ module.exports = {
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in forwards',
-        'pulse-slow': 'pulse 3s infinite ease-in-out', // Add the pulse animation here
+        'pulse-slow': 'pulse 3s infinite ease-in-out',
       },
       keyframes: {
         fadeIn: {
@@ -28,10 +29,14 @@ module.exports = {
         },
       },
       fontFamily: {
-        poppins: ['Poppins', 'sans-serif'], // Fix: correctly placed fontFamily here
+        poppins: ['Poppins', 'sans-serif'],
       },
     },
   },
   plugins: [],
 };
-// Add any additional plugins or configurations here
+// tailwind.config.js
+// tailwind.config.js
+// tailwind.config.js
+// tailwind.config.js
+// tailwind.config.js

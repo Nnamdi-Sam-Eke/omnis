@@ -13,7 +13,11 @@ import {
   FiUsers,
   FiLogOut,
   FiUserX,
-  FiDatabase
+  FiDatabase,
+  FiMessageCircle,
+  FiList,
+  FiHelpCircle,
+  FiBarChart
 } from "react-icons/fi";
 import Home from "./Home";
 import ThemeToggle from "./components/ThemeToggle";
@@ -35,9 +39,12 @@ import { auth } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import "./App.css";
 import UserProfilePage from "./components/UserProfilePage";
+import AnalyticsPage from "./components/AnalyticsPage";
 import ResourcesPage from "./components/ResourcesPage";
 import CreatorsCorner from "./Creator'sCorner";
-
+import Support from "./components/Support";
+import PartnerChat from "./components/PartnerChat";
+import ActivityLog from "./components/ActivityLog";
 // — Utility: convert strings to Title Case
 const toTitleCase = (str) =>
   str
@@ -167,8 +174,16 @@ function Dashboard() {
         return <Settings />;
       case "resources":
         return <ResourcesPage />;
+      case "activity log":
+        return <ActivityLog />;
+      case "partner chat":
+        return <PartnerChat />;
+      case "support":
+        return <Support />;
       case "profile":
         return <ProfilePage />;
+      case "analytics":
+          return <AnalyticsPage />;
       case "account":
         return <AccountPage />;
       case "logout":
@@ -204,11 +219,15 @@ function Dashboard() {
     {[
       { name: "Home", icon: <FiHome />, page: "Home" },
       { name: "Dashboard", icon: <FiGrid />, page: "dashboard" },
+      { name: "Partner Chat", icon: <FiMessageCircle />, page: "partner chat" },
       { name: "New Scenario", icon: <FiPlus />, page: "new Scenario" },
       { name: "Saved Scenarios", icon: <FiBookmark />, page: "saved Scenarios" },
-      { name: "User Profile", icon: <FiUserX />, page: "user Profile" },
+      { name: "Analytics", icon: <FiBarChart />, page: "analytics" },
+      { name: "Activity Log", icon: <FiList />, page: "activity log" },
+      { name: "Resources", icon: <FiDatabase />, page: "resources" },
+      { name: "Support", icon: <FiHelpCircle />, page: "support" },
       { name: "Settings", icon: <FiSettings />, page: "settings" },
-      { name: "Resources", icon: <FiDatabase />, page: "resources" }
+      { name: "User Profile", icon: <FiUserX />, page: "user Profile" }
     ].map(({ name, icon, page }) => (
       <li
         key={name}

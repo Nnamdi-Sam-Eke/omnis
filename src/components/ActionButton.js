@@ -17,7 +17,7 @@ const ActionButtons = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 mt-8 w-full">
+    <div className="grid grid-cols-1 lg:grid-cols-2 mt-8 min-w-[250px]  border bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
       {/* Create Report Button */}
       <div className="flex items-center mt-8 justify-center">
         <Tooltip text="Create a new report with the data">

@@ -15,6 +15,7 @@ import ActionButtons from './ActionButton';
 import CommandPalette from './CommandPalette';
 import AchievementsTab from './AchievementsTab';
 import SkeletonLoader from './SkeletonLoader'; // 🔄 Make sure you have this
+import QuickActions from './QuickActionButtons'
 
 // Lazy-loaded components
 const ActivityFeed = lazy(() => import('./ActivityFeed'));
@@ -168,17 +169,17 @@ const OmnisDashboard = () => {
 
             <Suspense fallback={<SkeletonLoader height="h-[300px]" />}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <ActivityFeed />
                 <SimulationTrendsChart />
-                <SimulationByUserChart />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                <ActivityFeed />
                 <TaskPlanner />
+                <ActionButtons />
               </div>
             </Suspense>
 
             <div className="flex justify-center">
-              <ActionButtons />
+              <QuickActions />
             </div>
           </div>
         )}

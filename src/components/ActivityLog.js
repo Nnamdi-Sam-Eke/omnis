@@ -1,83 +1,97 @@
-import React, { useState } from "react";
+import React, { useEffect, useState, lazy, Suspense } from "react";
+import { collection, query, where, orderBy, limit, getDocs, startAfter } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from "../AuthContext";
 
-// Toast component
-const ToastMessage = ({ message, visible }) => {
-  if (!visible) return null;
+const ActivityLogRow = lazy(() => import("../components/ActivityLogRow")); // Each row is lazy
 
-  return (
-    <div
-      className="fixed top-5 right-5 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-fade-in"
-      title="This message confirms that the activity log was downloaded successfully."
-    >
-      {message}
-    </div>
-  );
-};
+const PAGE_SIZE = 10;
 
-const ActivityLog = () => {
-  const [loading, setLoading] = useState(false);
-  const [showToast, setShowToast] = useState(false);
+const ActivityLogPage = () => {
+  const { currentUser } = useAuth();
+  const [logs, setLogs] = useState([]);
+  const [lastVisible, setLastVisible] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
-  const handleDownloadLog = () => {
-    setLoading(true);
+  useEffect(() => {
+    if (currentUser?.uid) {
+      fetchLogs();
+    }
+  }, [currentUser]);
 
-    // Simulate log download delay (3 seconds)
-    setTimeout(() => {
-      setLoading(false);
-      setShowToast(true);
+  const fetchLogs = async () => {
+    setIsLoading(true);
+    try {
+      const q = query(
+        collection(db, "activity_log"),
+        where("userId", "==", currentUser.uid),
+        orderBy("timestamp", "desc"),
+        ...(lastVisible ? [startAfter(lastVisible)] : []),
+        limit(PAGE_SIZE)
+      );
 
-      // Hide toast after 3 seconds
-      setTimeout(() => {
-        setShowToast(false);
-      }, 3000);
-    }, 3000);
+      const snapshot = await getDocs(q);
+
+      const newLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setLogs(prev => [...prev, ...newLogs]);
+
+      if (snapshot.docs.length < PAGE_SIZE) {
+        setHasMore(false);
+      } else {
+        setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+      }
+    } catch (error) {
+      console.error("Error fetching activity logs:", error);
+    }
+    setIsLoading(false);
   };
 
   return (
-    <div className="relative">
-      {/* ✅ Toast Message */}
-      <ToastMessage
-        message="Activity log downloaded successfully!"
-        visible={showToast}
-      />
+    <div className="p-4">
+      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
+        Activity Log
+      </h1>
 
-      {/* ✅ Spinner Overlay */}
-      {loading && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-          title="Downloading your activity log. Please wait..."
-        >
-          <div className="relative flex items-center justify-center">
-            <div className="absolute w-16 h-16 border-8 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <div className="w-12 h-12 border-8 border-green-500 border-t-transparent rounded-full animate-[spin_1s_linear_reverse_infinite]"></div>
-          </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white dark:bg-gray-800 rounded-lg shadow">
+          <thead>
+            <tr className="bg-blue-100 dark:bg-gray-700">
+              <th className="py-2 px-4 text-left text-gray-700 dark:text-gray-300 text-sm font-semibold">Activity</th>
+              <th className="py-2 px-4 text-left text-gray-700 dark:text-gray-300 text-sm font-semibold">Description</th>
+              <th className="py-2 px-4 text-left text-gray-700 dark:text-gray-300 text-sm font-semibold">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <Suspense fallback={<tr><td colSpan={3} className="text-center py-8">Loading activity...</td></tr>}>
+              {logs.map(log => (
+                <ActivityLogRow key={log.id} log={log} />
+              ))}
+            </Suspense>
+          </tbody>
+        </table>
+      </div>
+
+      {isLoading && (
+        <div className="text-center text-blue-500 py-4">Loading more...</div>
+      )}
+
+      {!isLoading && hasMore && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={fetchLogs}
+            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg"
+          >
+            Load More
+          </button>
         </div>
       )}
 
-      {/* ✅ Main Card */}
-      <div
-        className="bg-white border h-96 dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition"
-        title="Here you can download the log of your recent activities."
-      >
-        <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">
-          Activity Log
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 text-center mt-2">
-          Your recent activities will be displayed here.
-        </p>
-        <button
-          onClick={handleDownloadLog}
-          disabled={loading}
-          className={`w-full hover:scale-105 justify-center ${
-            loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
-          } text-white py-2 px-8 rounded mt-4 transition`}
-          title="Click to download your activity log"
-        >
-          {loading ? "Downloading..." : "Download Log"}
-        </button>
-      </div>
+      {!hasMore && (
+        <div className="text-center text-gray-400 py-6">No more activity logs.</div>
+      )}
     </div>
   );
 };
 
-export default ActivityLog;
+export default ActivityLogPage;

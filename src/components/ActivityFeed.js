@@ -20,11 +20,11 @@ const RecentActivityCard = () => {
   }, []);
 
   return (
-    <div className="min-w-[250px]  border bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
+    <div className="min-w-[250px]  border bg-white hover:shadow-blue-500/50 transition px-6 py-3 dark:bg-gray-800 p-6 rounded-2xl shadow-md">
       <h3 className="text-xl font-semibold text-blue-500 dark:text-blue-300">Recent Activity</h3>
       <div className="space-y-2">
         {recentActivities.length === 0 ? (
-          <p className="justify-center text-gray-200">No recent activity.</p>
+          <p className="justify-center p-2 text-gray-400">No recent activity.</p>
         ) : (
           recentActivities.map((activity, index) => (
             <div key={index} className="flex items-center space-x-2">

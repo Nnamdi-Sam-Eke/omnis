@@ -3,13 +3,13 @@ import { db } from "../firebase";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { useAuth } from "../AuthContext";
 import { getAuth, deleteUser } from "firebase/auth";
-import { FiBell, FiCloud, FiDatabase } from "react-icons/fi";
+import { FiBell, FiCloud, FiDatabase, FiSettings } from "react-icons/fi";
 import { AiOutlineAppstore, AiOutlineGlobal } from "react-icons/ai";
 
 // Lazy-loaded components
 const ThemeToggle = lazy(() => import('./ThemeToggle'));
 const ReauthModal = lazy(() => import('./ReauthModal'));
-const ActivityLog = lazy(() => import('./ActivityLog'));
+const AccountPage = lazy(() => import('./AccountPage'));
 
 const ProfilePage = () => {
   const { currentUser } = useAuth();
@@ -148,6 +148,7 @@ const handleSessionLogout = async () => {
       alert("Sessions on other devices will be logged out on next activity.");
     }
   };
+  
 
 
   return (
@@ -171,8 +172,8 @@ const handleSessionLogout = async () => {
               role="region"
               aria-labelledby="settings-heading"
             >
-              <h2 id="settings-heading" className="text-2xl font-semibold text-blue-500 dark:text-blue-300">
-                Settings
+              <h2 id="settings-heading" className="text-2xl font-semibold text-blue-500 dark:text-blue-300 flex items-center justify-center">
+                <FiSettings className="mr-2" /> App Settings
               </h2>
 
               {/* Theme */}
@@ -345,7 +346,7 @@ const handleSessionLogout = async () => {
           )}
           <div>
             <Suspense fallback={<div>Loading Activity Log...</div>}>
-              <ActivityLog />
+              <AccountPage />
             </Suspense>
           </div>
         </div>

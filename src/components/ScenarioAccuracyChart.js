@@ -97,7 +97,7 @@ export default function ScenarioAccuracyChart() {
   const minWidth = labels.length * pointWidth;
 
   return (
-    <div className="w-full border mt-8 bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-lg transition-all duration-300">
+    <div className="w-full border mt-8 bg-white dark:bg-gray-800 w-full  hover:shadow-blue-500/50 transition px-6 py-6 border p-6 mt-8 bg-white dark:bg-gray-800 rounded-3xl shadow-lg transition-all duration-300 ease-in-out rounded-3xl shadow-lg transition-all duration-300">
       <div
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between cursor-pointer mb-4"

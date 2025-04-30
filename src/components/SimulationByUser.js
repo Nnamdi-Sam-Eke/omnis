@@ -81,7 +81,7 @@ export default function SimulationByUserChart() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 mt-8 border p-6 rounded-2xl shadow-md transition-all duration-300 ease-in-out">
+    <div className="bg-white dark:bg-gray-800 mt-8 border w-full  hover:shadow-blue-500/50 transition px-6 py-6 border p-6 mt-8 bg-white dark:bg-gray-800 rounded-3xl shadow-lg transition-all duration-300 ease-in-out rounded-2xl shadow-md transition-all duration-300 ease-in-out">
       <div
         className="flex justify-between items-center cursor-pointer mb-4"
         onClick={() => setIsExpanded((prev) => !prev)}

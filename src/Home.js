@@ -33,7 +33,7 @@ function Home() {
     <div className="flex flex-col lg:flex-row items-center justify-between p-6 sm:p-12 md:p-16 lg:p-20 min-h-screen dark:bg-black">
       {/* Text Content */}
       <div className="lg:w-1/2 space-y-6">
-        <h2 className=" transition text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gray-900 dark:text-white max-w-2xl">
+        <h2 className=" transition text-4xl dark:text-blue-500 sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gray-900 max-w-2xl">
           Revolutionizing Scenario Simulations with Digital Twin Intelligence.
         </h2>
         <p className="text-base sm:text-lg md:text-xl lg:text-2xl max-w-2xl mb-6 p-4 text-gray-700 dark:text-gray-200">
@@ -144,7 +144,7 @@ function Home() {
         onMouseEnter={stopAuto}
         onMouseLeave={startAuto}
       >
-        <h2 className="text-4xl sm:text-5xl font-bold mb-12 text-white">How It Works</h2>
+        <h2 className="text-4xl sm:text-5xl font-bold mb-12 text:black dark:text-white">How It Works</h2>
         <div className="max-w-4xl mx-auto px-6 flex flex-col items-center">
           <div className="relative w-full h-48">
             {steps.map((step, i) => (

@@ -17,15 +17,11 @@ import AchievementsTab from './AchievementsTab';
 import SkeletonLoader from './SkeletonLoader'; // 🔄 Make sure you have this
 import QuickActions from './QuickActionButtons'
 
+
 // Lazy-loaded components
 const ActivityFeed = lazy(() => import('./ActivityFeed'));
-const SimulationByUserChart = lazy(() => import('./SimulationByUser'));
-const AnalyticsCard = lazy(() => import('./AnalyticsCard'));
-const DashboardCharts = lazy(() => import('./DashboardCharts'));
+const AnalyticsOverview = lazy(() => import('./AnalyticsOverview'));
 const SimulationTrendsChart = lazy(() => import('./SimulationTrendsChart'));
-const ScenarioAccuracyChart = lazy(() => import('./ScenarioAccuracyChart'));
-const CategoryDistributionChart = lazy(() => import('./CategoryDistributionChart'));
-const NarrativePanel = lazy(() => import('./NarrativePanel'));
 const TaskPlanner = lazy(() => import('./TaskList'));
 
 const OmnisDashboard = () => {
@@ -186,9 +182,9 @@ const OmnisDashboard = () => {
 
         {activeTab === 'analytics' && (
           <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab">
-            <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">User Analytics + Insights</h2>
+            <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">Analytics(overview)</h2>
             <Suspense fallback={<SkeletonLoader height="h-[300px]" />}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+              {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                 <div title="Total time spent on the platform">
                   <h3 className="font-semibold text-green-500">Total Time Spent</h3>
                   <AnalyticsCard />
@@ -211,7 +207,8 @@ const OmnisDashboard = () => {
                   <h3 className="font-semibold text-green-500">Narrative Insights</h3>
                   <NarrativePanel />
                 </div>
-              </div>
+              </div> */}
+              <AnalyticsOverview />
             </Suspense>
           </div>
         )}

@@ -35,7 +35,7 @@ const QuickActions = () => {
             boxShadow: `0px 0px 12px ${action.glow}`,
           }}
           whileTap={{ scale: 0.95 }}
-          className={`${action.bgColor} ${action.hoverColor} text-white rounded-2xl px-6 py-3 text-lg shadow-md transition-all`}
+          className={`${action.bgColor} ${action.hoverColor} text-gray-500 dark:text-white rounded-2xl px-6 py-3 text-lg shadow-md transition-all`}
         >
           {action.label}
         </motion.button>

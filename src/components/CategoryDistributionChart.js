@@ -77,7 +77,7 @@ export default function CategoryDistributionChart() {
   }, [isOpen]);
 
   return (
-    <div className="w-full border bg-white mt-6 dark:bg-gray-800 p-6 rounded-3xl shadow-lg transition-all duration-300">
+    <div className="w-full border bg-white mt-6 dark:bg-gray-800 p-6  hover:shadow-blue-500/50 transition px-6 py-6 rounded-3xl shadow-lg transition-all duration-300">
       <div
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between cursor-pointer mb-4"

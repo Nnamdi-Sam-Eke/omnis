@@ -60,7 +60,7 @@ const ChatHistory = () => {
 
   return (
     <div className="max-w-6xl mx-auto mt-8 p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-lg hover:shadow-blue-500/50 rounded-lg border">
-      <h1 className="text-2xl font-bold text-center p-6 text-blue-600 dark:text-blue-600 mb-4">Interaction History</h1>
+      <h1 className="text-2xl font-bold text-center p-6 text-blue-600 dark:text-blue-300 mb-4">Interaction History</h1>
 
       {/* Search bar with autocomplete */}
       <input

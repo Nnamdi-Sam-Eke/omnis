@@ -34,7 +34,7 @@ const TaskPlanner = ({ scenarioTasks = [] }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md mt-8 border">
+    <div className="bg-white dark:bg-gray-800 hover:shadow-blue-500/50 transition px-6 py-6 rounded-2xl shadow-md mt-8 border">
       <div
         className="flex justify-between items-center cursor-pointer"
         onClick={() => setIsCollapsed(!isCollapsed)}

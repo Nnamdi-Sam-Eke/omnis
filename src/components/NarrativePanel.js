@@ -28,7 +28,7 @@ const NarrativePanel = () => {
   }, [isOpen]);
 
   return (
-    <div className="w-full border bg-white mt-6 dark:bg-gray-800 p-6 rounded-3xl shadow-lg transition-all duration-300 ease-in-out">
+    <div className="w-full  hover:shadow-blue-500/50 transition px-6 py-6 border p-6 mt-8 bg-white dark:bg-gray-800 rounded-3xl shadow-lg transition-all mb-12 duration-300 ease-in-out">
       <div
         onClick={() => setIsOpen(prevState => !prevState)}
         className="flex items-center justify-between cursor-pointer mb-4"

@@ -261,11 +261,11 @@ const UserProfilePage = () => {
             <ProfilePage userDetails={userData} isLoading={isLoading} />
           </Suspense>
         </div>
-        <div className="flex-1">
+        {/* <div className="flex-1">
           <Suspense fallback={<div>Loading Account…</div>}>
             <AccountPage userDetails={userData} isLoading={isLoading} />
           </Suspense>
-        </div>
+        </div> */}
         <div className="flex-1">
           <section
             className="bg-white  border dark:bg-gray-800 p-6 rounded-xl shadow-lg transition hover:shadow-blue-500/50"

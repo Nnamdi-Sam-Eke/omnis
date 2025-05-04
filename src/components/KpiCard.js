@@ -23,16 +23,6 @@ import {
 const KpiCard = () => {
   const scrollRef = useRef(null);
   const [loading, setLoading] = useState(true);
-
-  const scrollCards = (direction) => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -300 : 300,
-        behavior: "smooth"
-      });
-    }
-  };
-
   const [totalUsers, setTotalUsers] = useState(null);
   const [lastActivity, setLastActivity] = useState(null);
   const [performanceStatus, setPerformanceStatus] = useState(null);
@@ -42,19 +32,33 @@ const KpiCard = () => {
   const [avgAccuracy, setAvgAccuracy] = useState(null);
   const [uptime, setUptime] = useState("99.99%");
 
+  // Handles horizontal scrolling for KPI cards
+  const scrollCards = (direction) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -300 : 300,
+        behavior: "smooth"
+      });
+    }
+  };
+
+  // Simulating loading state for 2 seconds
   useEffect(() => {
     const timeout = setTimeout(() => setLoading(false), 2000); // simulate loading
     return () => clearTimeout(timeout);
   }, []);
 
+  // Fetch and set data from Firebase
   useEffect(() => {
     const usersRef = collection(db, "users");
     const simulationsRef = collection(db, "simulations");
 
+    // Total Users
     const unsubscribeUsers = onSnapshot(usersRef, (snapshot) => {
       setTotalUsers(snapshot.size);
     });
 
+    // Last Activity (Most recent login)
     const q = query(usersRef, orderBy("lastLogin", "desc"), limit(1));
     const unsubscribeLastLogin = onSnapshot(q, (snapshot) => {
       const doc = snapshot.docs[0];
@@ -70,6 +74,7 @@ const KpiCard = () => {
       }
     });
 
+    // Total Simulations and Avg. Accuracy
     const unsubscribeSimulations = onSnapshot(simulationsRef, (snapshot) => {
       setTotalSimulations(snapshot.size);
 
@@ -82,12 +87,14 @@ const KpiCard = () => {
       setAvgAccuracy(average);
     });
 
+    // Active Users in the last 24 hours
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const activeQuery = query(usersRef, where("lastLogin", ">", yesterday));
     const unsubscribeActiveUsers = onSnapshot(activeQuery, (snapshot) => {
       setActiveUsers(snapshot.size);
     });
 
+    // Performance Status based on page load time
     const { timing } = window.performance;
     if (timing && timing.loadEventEnd && timing.navigationStart) {
       const loadTime = timing.loadEventEnd - timing.navigationStart;
@@ -99,6 +106,7 @@ const KpiCard = () => {
       setPerformanceStatus("Unavailable");
     }
 
+    // System status: Connectivity, Cores, Browser, and Battery
     const fetchSystemStatus = async () => {
       const online = navigator.onLine ? "Online" : "Offline";
       const cores = navigator.hardwareConcurrency || "N/A";
@@ -132,6 +140,7 @@ const KpiCard = () => {
     };
   }, []);
 
+  // KPI Cards Layout
   const cards = [
     {
       icon: <FiUser className="text-3xl md:text-4xl" />,
@@ -185,26 +194,31 @@ const KpiCard = () => {
 
   return (
     <div className="relative mt-8">
+      {/* Left scroll button */}
       <button
         onClick={() => scrollCards("left")}
-        className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full p-2 shadow"
+        className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white dark:text-white dark:bg-gray-700 rounded-full p-2 shadow-lg"
       >
         <FiChevronLeft size={24} />
       </button>
+
+      {/* KPI cards */}
       <div
         ref={scrollRef}
-        className="flex overflow-x-auto space-x-4 scrollbar-hide px-12"
+        className="flex overflow-x-auto space-x-6 scrollbar-hide px-8 py-2"
       >
         {cards.map((card, index) => (
           <div
             key={index}
-            className="min-w-[250px] bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex items-center space-x-4 animate-pulse-slow"
+            className="min-w-[250px] bg-gray-50 dark:bg-gray-800 dark:shadow-lg p-6 rounded-lg shadow-lg flex items-center space-x-4 transition-all hover:scale-105"
           >
             <div className={`${card.iconColor} flex-shrink-0`}>
               {card.icon}
             </div>
             <div className="flex flex-col">
-              <h3 className="text-base md:text-lg font-semibold">{card.title}</h3>
+              <h3 className="text-base md:text-lg font-semibold text-gray-700 dark:text-white">
+                {card.title}
+              </h3>
               <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 break-words">
                 {loading ? (
                   <span className="inline-block bg-gray-300 dark:bg-gray-700 rounded w-24 h-4 animate-pulse"></span>
@@ -216,9 +230,11 @@ const KpiCard = () => {
           </div>
         ))}
       </div>
+
+      {/* Right scroll button */}
       <button
         onClick={() => scrollCards("right")}
-        className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full p-2 shadow"
+        className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white dark:text-white dark:bg-gray-700 rounded-full p-2 shadow-lg"
       >
         <FiChevronRight size={24} />
       </button>

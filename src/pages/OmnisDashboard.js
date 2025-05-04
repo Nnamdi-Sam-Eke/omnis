@@ -10,19 +10,19 @@ import {
   getDocs
 } from 'firebase/firestore';
 
-import KpiCard from './KpiCard';
-import ActionButtons from './ActionButton';
-import CommandPalette from './CommandPalette';
-import AchievementsTab from './AchievementsTab';
-import SkeletonLoader from './SkeletonLoader'; // 🔄 Make sure you have this
-import QuickActions from './QuickActionButtons'
+import KpiCard from '../components//KpiCard';
+import ActionButtons from '../components/ActionButton';
+import CommandPalette from '../components/CommandPalette';
+import AchievementsTab from '../components/AchievementsTab';
+import SkeletonLoader from '../components/SkeletonLoader'; // 🔄 Make sure you have this
+import QuickActions from '../components/QuickActionButtons'
 
 
 // Lazy-loaded components
-const ActivityFeed = lazy(() => import('./ActivityFeed'));
-const AnalyticsOverview = lazy(() => import('./AnalyticsOverview'));
-const SimulationTrendsChart = lazy(() => import('./SimulationTrendsChart'));
-const TaskPlanner = lazy(() => import('./TaskList'));
+const ActivityFeed = lazy(() => import('../components/ActivityFeed'));
+const AnalyticsOverview = lazy(() => import('../components/AnalyticsOverview'));
+const SimulationTrendsChart = lazy(() => import('../components/SimulationTrendsChart'));
+const TaskPlanner = lazy(() => import('../components/TaskList'));
 
 const OmnisDashboard = () => {
   const [userFirstName, setUserFirstName] = useState(null);
@@ -182,32 +182,8 @@ const OmnisDashboard = () => {
 
         {activeTab === 'analytics' && (
           <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab">
-            <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">Analytics(overview)</h2>
+            <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">Analytics (overview)</h2>
             <Suspense fallback={<SkeletonLoader height="h-[300px]" />}>
-              {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                <div title="Total time spent on the platform">
-                  <h3 className="font-semibold text-green-500">Total Time Spent</h3>
-                  <AnalyticsCard />
-                </div>
-                <div title="Total number of simulations run">
-                  <h3 className="font-semibold text-green-500">Total Simulations</h3>
-                  <DashboardCharts />
-                </div>
-              </div>
-              <div className="mt-6">
-                <h3 className="font-semibold text-green-500">Scenario Accuracy</h3>
-                <ScenarioAccuracyChart />
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                <div title="Distribution of scenarios across categories">
-                  <h3 className="font-semibold text-green-500">Category Distribution</h3>
-                  <CategoryDistributionChart />
-                </div>
-                <div title="Narrative insights based on your simulations">
-                  <h3 className="font-semibold text-green-500">Narrative Insights</h3>
-                  <NarrativePanel />
-                </div>
-              </div> */}
               <AnalyticsOverview />
             </Suspense>
           </div>

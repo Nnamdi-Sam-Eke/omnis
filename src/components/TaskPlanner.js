@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiPlus, FiTrash2, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { ChevronRight, ChevronUp } from "lucide-react";
 
 const TaskPlanner = ({ scenarioTasks = [] }) => {
   const [tasks, setTasks] = useState([]);
@@ -40,7 +40,11 @@ const TaskPlanner = ({ scenarioTasks = [] }) => {
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <h3 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Task Planner</h3>
-        {isCollapsed ? <FiChevronDown /> : <FiChevronUp />}
+        {isExpanded ? (
+          <ChevronUp className="w-5 h-5 text-blue-600 dark:text-white" />
+        ) : (
+          <ChevronRight className="w-5 h-5 text-blue-600 dark:text-white" />
+        )}
       </div>
 
       {!isCollapsed && (

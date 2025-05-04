@@ -3,7 +3,7 @@ import { db } from "../firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useAuth } from "../AuthContext";
 import { FiBellOff, FiPlus, FiShield, FiLock, FiSettings } from "react-icons/fi";
-import Dashboard from "../Dashboard";
+
 
 const AccountPage = () => {
   const { currentUser } = useAuth();

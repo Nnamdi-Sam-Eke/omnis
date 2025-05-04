@@ -1,0 +1,7 @@
+[
+  {
+    "origin": ["http://localhost:3000", "https://the-digital-twin-app-3e2b1.web.app"],
+    "method": ["GET", "POST", "PUT", "DELETE"],
+    "maxAgeSeconds": 3600
+  }
+]

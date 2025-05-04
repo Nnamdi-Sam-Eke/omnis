@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { FiThumbsUp, FiThumbsDown } from "react-icons/fi";
-import emailjs from "emailjs-com"; // ✅ EmailJS import
+import { FiThumbsUp, FiThumbsDown, FiPenTool } from "react-icons/fi";
+import emailjs from "emailjs-com";
 
 function FeedbackButton() {
   const [isFeedbackFormVisible, setIsFeedbackFormVisible] = useState(false);
@@ -22,10 +22,10 @@ function FeedbackButton() {
     }
 
     emailjs.sendForm(
-      'service_lfch17n',     // e.g., 'service_xxx'
-      'template_zb3uq0x',    // e.g., 'template_feedback'
+      'service_lfch17n',
+      'template_zb3uq0x',
       e.target,
-      'Ru_HJfV9Y-llO0KHQ'      // e.g., 'abcd1234xyz'
+      'Ru_HJfV9Y-llO0KHQ'
     ).then((result) => {
         console.log("✅ Email sent:", result.text);
         setValidationMessage("Thank you for your feedback!");
@@ -38,7 +38,6 @@ function FeedbackButton() {
         setValidationMessage("Something went wrong. Please try again.");
     });
 
-    // Optional: reset form
     e.target.reset();
   };
 
@@ -52,12 +51,12 @@ function FeedbackButton() {
   return (
     <div>
       {/* Floating Feedback Button */}
-      <div className="fixed bottom-6 right-6 z-[9999]">
+      <div className="fixed bottom-6 bg-opacity-50 backdrop-blur-sm right-6 z-[9999]" title="Feedback Button">
         <button
           onClick={toggleFeedbackForm}
           className="bg-blue-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-full shadow-lg"
         >
-          Feedback
+          <FiPenTool />
         </button>
       </div>
 
@@ -68,9 +67,14 @@ function FeedbackButton() {
         </div>
       )}
 
+      {/* Background Overlay with Blur */}
+      {isFeedbackFormVisible && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9998]" onClick={toggleFeedbackForm}></div>
+      )}
+
       {/* Feedback Form */}
       {isFeedbackFormVisible && (
-        <div className="fixed bottom-20 right-6 z-[9999] bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-6 rounded-lg shadow-lg w-80 border-2 border-blue-300">
+        <div className="fixed bottom-20 right-6 z-[9999] bg-white backdrop-blur-sm dark:bg-gray-800 text-gray-900 dark:text-white p-6 rounded-lg shadow-lg w-80 border-2 border-blue-300">
           <h2 className="text-lg font-bold mb-4 text-blue-700 dark:text-blue-400">
             Submit Feedback
           </h2>
@@ -82,7 +86,7 @@ function FeedbackButton() {
                 Select Category
               </label>
               <select
-                name="category" // ✅ include name for EmailJS
+                name="category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full p-2 border dark:border-gray-600 rounded-lg text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none"
@@ -127,7 +131,7 @@ function FeedbackButton() {
               Your Feedback
             </label>
             <textarea
-              name="message" // ✅ name for EmailJS
+              name="message"
               className="w-full h-24 border dark:border-gray-600 rounded p-2 mb-4 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none"
               placeholder="Enter your feedback..."
               value={feedback}

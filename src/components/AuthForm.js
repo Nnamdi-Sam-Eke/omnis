@@ -98,7 +98,8 @@ const AuthForm = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen space-y-4 bg-gray-100">
+    <div className="flex flex-col items-center justify-center min-h-screen mb-8 space-y-4 bg-gray-100 px-4 sm:px-6 w-full max-w-md mx-auto overflow-y-auto">
+
       {!showForm ? (
         <div className="flex flex-col items-center justify-center space-y-4">
           <p className="text-5xl text-gray-800 italic font-light">New to Omnis?</p>
@@ -111,7 +112,7 @@ const AuthForm = () => {
         </div>
       ) : showResetPassword ? (
         <div className="flex flex-col items-center justify-center h-full text-gray-900">
-          <h2 className="text-3xl font-extrabold mb-6">Reset Your Password</h2>
+          <h2 className="text-3xl font-light mb-6">Reset Your Password</h2>
           {error && <p className="text-red-500 mb-4">{String(error.message)}</p>}
           <form onSubmit={handleResetPassword} className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
             <input
@@ -142,7 +143,7 @@ const AuthForm = () => {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center h-full text-gray-900">
-          <h2 className="text-3xl font-extrabold mb-6">
+          <h2 className="text-3xl font-light mb-6 mt-8">
             {isSignUp ? "Create Your Omnis Account" : "Welcome Back!"}
           </h2>
           {error && <p className="text-red-500 mb-4">{String(error.message)}</p>}
@@ -244,16 +245,16 @@ const AuthForm = () => {
             )}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-green-500 text-white py-3 rounded-full"
+              className="w-full bg-gradient-to-r from-blue-600 to-green-500 text-white py-3  transform transition duration-150 ease-in-out hover:scale-105 active:scale-95 rounded-full"
             >
               {isSignUp ? "Sign Up" : "Log In"}
             </button>
           </form>
           <div className="flex space-x-4 mt-4">
-            <button className="text-blue-600 hover:underline" onClick={() => setIsSignUp(!isSignUp)}>
+            <button className="text-blue-600 hover:underline mb-8" onClick={() => setIsSignUp(!isSignUp)}>
               {isSignUp ? "Already have an account? Log In" : "Don't have an account? Sign Up"}
             </button>
-            <button className="text-blue-600 hover:underline" onClick={() => setShowResetPassword(true)}>
+            <button className="text-blue-600 hover:underline mb-8" onClick={() => setShowResetPassword(true)}>
               Forgot Password?
             </button>
           </div>

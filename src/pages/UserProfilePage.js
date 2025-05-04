@@ -7,8 +7,8 @@ import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
 import { onSnapshot } from "firebase/firestore";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import ProfilePage from "./SimpleProfilePage";
-import AccountPage from "./AccountPage";
+import ProfilePage from "../components/SimpleProfilePage";
+import AccountPage from "../components/AccountPage";
 
 // ── SubscriptionCard with Stripe checkout & skeleton on expand ─────────────────────────────
 const SubscriptionCard = ({ userDetails }) => {
@@ -61,7 +61,7 @@ const SubscriptionCard = ({ userDetails }) => {
         className="flex justify-between items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Subscription</h2>
-        {isOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+        {isOpen ? <ChevronDown className="w-5 h-5 dark:text-white" /> : <ChevronRight className="w-5 h-5 dark:text-white" />}
       </div>
 
       <div
@@ -158,7 +158,7 @@ const BillingInfoForm = ({ onSaveBillingInfo }) => {
         className="flex justify-between items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Billing Information</h2>
-        {isOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+        {isOpen ? <ChevronDown className="w-5 h-5 dark:text-white" /> : <ChevronRight className="w-5 h-5 dark:text-white" />}
       </div>
 
       <div
@@ -261,11 +261,11 @@ const UserProfilePage = () => {
             <ProfilePage userDetails={userData} isLoading={isLoading} />
           </Suspense>
         </div>
-        {/* <div className="flex-1">
+        <div className="flex-1">
           <Suspense fallback={<div>Loading Account…</div>}>
             <AccountPage userDetails={userData} isLoading={isLoading} />
           </Suspense>
-        </div> */}
+        </div>
         <div className="flex-1">
           <section
             className="bg-white  border dark:bg-gray-800 p-6 rounded-xl shadow-lg transition hover:shadow-blue-500/50"

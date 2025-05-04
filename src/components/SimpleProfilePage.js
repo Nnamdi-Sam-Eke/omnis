@@ -1,7 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from 'react';
+// Import Firebase storage, auth, and firestore modules
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'; // Remove `storage`
 import { useAuth } from "../AuthContext";
-import { db } from "../firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { storage } from '../firebase';
+import { getAuth } from 'firebase/auth';
+import { db, auth } from '../firebase';  // adjust path if needed
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import imageCompression from 'browser-image-compression';
+
 
 const ProfileSkeleton = () => (
   <div className="animate-pulse max-w-lg mx-auto border p-8 mt-10 bg-white dark:bg-gray-900 rounded-2xl shadow-lg">
@@ -26,9 +32,18 @@ const ProfilePage = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
+  const [image, setImage] = useState(null); // Declare the image state variable
+  const [imageUrl, setImageUrl] = useState(''); // Store uploaded image URL
+  const [progress, setProgress] = useState(0); // Track upload progress
+  const [errorMessage, setErrorMessage] = useState("");
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageBase64, setImageBase64] = useState('');
+  
+  
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [profilePicture, setProfilePicture] = useState(null);
   const [bio, setBio] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -36,46 +51,176 @@ const ProfilePage = () => {
   const [country, setCountry] = useState("");
   const [isEditable, setIsEditable] = useState(false);
   const [showPopUp, setShowPopUp] = useState(null);
+  const { currentUser } = useAuth();
+  const auth = getAuth();
+
+  // Handle image file selection
+  // Handle image file selection
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const options = {
+            maxSizeMB: 0.3,  // reduce to ~300KB max
+            maxWidthOrHeight: 800,
+            useWebWorker: true
+        };
+        try {
+            const compressedFile = await imageCompression(file, options);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImageBase64(reader.result);
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(compressedFile);
+        } catch (error) {
+            console.error('Error compressing the image', error);
+        }
+    }
+};
+
+
+// Handle profile picture save to Firestore
+const saveProfilePicture = async () => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user) {
+      alert('No user is logged in.');
+      return;
+  }
+
+  if (imageBase64) {
+      try {
+          const userRef = doc(db, 'users', user.uid);  // dynamically gets the user’s document
+          await updateDoc(userRef, {
+            profilePicture: imageBase64,
+        });
+        alert('Profile picture updated successfully!');
+        
+        // ✅ Update the main profile picture too
+        setProfilePicture(imageBase64);
+        
+        // ✅ Clear preview and file input after saving
+        setImageBase64(null);
+        setImagePreview(null);
+        
+
+      } catch (error) {
+          console.error('Error saving profile picture: ', error);
+          alert('Error updating profile picture.');
+      }
+  } else {
+      alert('Please select an image.');
+  }
+};
+  
+
+  // Update the upload function to use the new Firebase modular API
+  const handleUpload = async () => {
+    if (!image) {
+      alert("Please select an image to upload.");
+      return;
+    }
+  
+    if (!user) {
+      alert("You need to be logged in to upload an image.");
+      return;
+    }
+  
+    const storageRef = ref(storage, `images/${user.uid}/${image.name}`);
+    const uploadTask = uploadBytesResumable(storageRef, image);
+  
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setProgress(progress);
+      },
+      (error) => {
+        console.error("Upload error:", error);
+        alert("Failed to upload image.");
+      },
+      async () => {
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref());
+        setImageUrl(downloadURL);
+        alert("Image uploaded successfully!");
+  
+        // Optionally update Firestore with the new image URL
+        await updateUserImage(downloadURL);
+      }
+    );
+  };
+  
+
+  const updateUserImage = async (downloadURL) => {
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      await updateDoc(userRef, {
+        imageUrl: downloadURL, // Save image URL to Firestore
+      });
+    } catch (error) {
+      console.error("Error updating user document:", error);
+    }
+  };
 
   useEffect(() => {
-    if (showPopUp) {
-      const timer = setTimeout(() => setShowPopUp(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [showPopUp]);
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user) return;
-  
-      try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-  
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          setUserData(userData);
-          setFirstName(userData.firstname || "");
-          setLastName(userData.lastname || "");
-          setBio(userData.bio || "");
-          setEmail(userData.email || "");
-          setPhone(userData.phone || "");
-          setCity(userData.location?.city || "");
-          setCountry(userData.location?.country || "");
-        } else {
-          console.error("No user data found in Firestore!");
+    const fetchProfilePicture = async () => {
+        const user = auth.currentUser;
+        if (user) {
+            const userRef = doc(db, 'users', user.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                if (data.profilePicture) {
+                    setImagePreview(data.profilePicture);
+                }
+            } else {
+                console.log('No such document!');
+            }
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error.message);
-      } finally {
-        // Always show skeleton for at least 1.2 seconds
-        setTimeout(() => setInitialLoading(false), 2000);
-      }
     };
-  
-    setInitialLoading(true); // ✅ always trigger skeleton on remount
-    fetchUserData();
-  }, [user]);
-  
+
+    fetchProfilePicture();
+}, []);
+
+useEffect(() => {
+  const fetchUserData = async () => {
+      if (!user) return;
+
+      try {
+          const userRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userRef);
+
+          if (userSnap.exists()) {
+              const userData = userSnap.data();
+              setUserData(userData);
+              setFirstName(userData.firstname || "");
+              setLastName(userData.lastname || "");
+              setBio(userData.bio || "");
+              setEmail(userData.email || "");
+              setPhone(userData.phone || "");
+              setCity(userData.location?.city || "");
+              setCountry(userData.location?.country || "");
+
+              // 👉 Add this to handle profile picture
+              setProfilePicture(userData.profilePicture || null);
+          } else {
+              console.error("No user data found in Firestore!");
+          }
+      } catch (error) {
+          console.error("Error fetching user data:", error.message);
+      } finally {
+          // Always show skeleton for at least 1.2 seconds
+          setTimeout(() => setInitialLoading(false), 2000);
+      }
+  };
+
+  fetchUserData();
+}, [user]);
+
+
+
 
   const handleSaveChanges = async () => {
     if (!user) return;
@@ -102,14 +247,6 @@ const ProfilePage = () => {
 
   const handleEdit = () => setIsEditable(true);
 
-  const handleUpdateProfilePic = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setShowPopUp("comingSoon");
-      setLoading(false);
-    }, 2000);
-  };
-
   if (initialLoading) return <ProfileSkeleton />;
 
   if (loading)
@@ -133,29 +270,65 @@ const ProfilePage = () => {
           {showPopUp === "error" && "Error occurred while updating profile!"}
         </div>
       )}
-
-      <div className="animate-fade-in max-w-lg mx-auto border p-8 mt-10 bg-white dark:bg-gray-900 rounded-2xl shadow-lg hover:shadow-blue-500/50 transition-all">
+    <div className='animate-fade-in max-w-lg mx-auto bg-white border p-8 bg-white dark:bg-gray-900 mb-20 mt-16 rounded-2xl shadow-lg hover:shadow-blue-500/50 transition-all'>
+      <div className="animate-fade-in max-w-lg mx-auto bg-white border p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-lg hover:shadow-blue-500/50 transition-all">
         <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Profile details</h2>
 
         {/* Avatar Card */}
-        <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center">
-          <img
-            src="profile.jpg"
+        <div className="p-4">
+          <div className="">
+          <div className="bg-gray-100 border dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center">
+          {profilePicture ? (
+            <img
+            src={profilePicture}
             alt="User Avatar"
-            className="border-4 border-gray-500 dark:border-gray-300 w-24 h-24 mx-auto rounded-full transform transition-transform duration-300 hover:scale-105"
-          />
-          <h2 className="text-xl font-semibold mt-3 text-gray-900 dark:text-white">
-            {firstName || "John"} {lastName || "Doe"}
-          </h2>
-          <button
-            onClick={handleUpdateProfilePic}
-            className="mt-2 text-sm text-blue-500 hover:underline"
-          >
-            Update Profile Picture
-          </button>
-        </div>
+            className="border-4 dark:text-white border-gray-500 dark:border-gray-300 w-24 h-24 mx-auto rounded-full transform transition-transform duration-300 hover:scale-105"
+        />
+    ) : (
+        <div className="w-24 h-24 mx-auto rounded-full bg-gray-300 animate-pulse" />
+    )}
 
-        {/* Tabs */}
+    <h2 className="text-xl font-semibold mt-3 text-gray-900 dark:text-white">
+        {firstName || "John"} {lastName || "Doe"}
+    </h2>
+    <button
+        onClick={() => document.getElementById("file-input").click()}
+        className="mt-2 text-sm text-blue-500 hover:underline"
+    >
+        Update Profile Picture
+    </button>
+</div>
+
+            <input
+                type="file"
+                accept="image/*"
+                id="file-input"
+                onChange={handleImageChange}
+                className="hidden"
+            />
+            {/* {imagePreview && (
+                <div>
+                    <img
+                        src={imagePreview}
+                        alt="Profile Preview"
+                        className="w-32 h-32 rounded-full mb-4"
+                    />
+                </div>
+            )} */}
+            {errorMessage && (
+                <div className="text-red-500 text-sm mb-2">{errorMessage}</div>
+            )}
+            <button
+                onClick={saveProfilePicture}
+                className="bg-blue-600 text-white py-2 px-4 ml-8 mt-10 rounded-2xl hover:bg-blue-900 transition"
+            >
+                Save
+            </button>
+        </div>
+      </div>
+      </div>
+
+{/* Tabs */}
         <div className="mt-6">
           <div className="flex flex-wrap justify-center gap-2 md:gap-4 mt-4">
             {["personal", "contact", "address"].map((tab) => (
@@ -210,7 +383,7 @@ const ProfilePage = () => {
           </button>
         </div>
       </div>
-    </div>
+      </div>
   );
 };
 const AnimatedInput = ({ label, value, onChange, editable, isTextArea }) => (
@@ -236,6 +409,8 @@ const AnimatedInput = ({ label, value, onChange, editable, isTextArea }) => (
       <p className="text-gray-700 dark:text-white">{value || "N/A"}</p>
     )}
   </div>
+  
+  
 );
 
 export default ProfilePage;

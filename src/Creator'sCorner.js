@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Scroll} from "lucide-react";
+import { FiAward} from "react-icons/fi";
 
 export default function CreatorsCorner() {
   const [open, setOpen] = useState(false);
@@ -11,7 +11,7 @@ export default function CreatorsCorner() {
         className="fixed bottom-6 left-6 z-[9999] cursor-pointer text-green-400 hover:text-blue-600 transition"
         onClick={() => setOpen(true)}
       >
-        <Scroll size={32} />
+        <FiAward size={30} />
       </div>
 
       {/* Modal */}

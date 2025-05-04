@@ -1,5 +1,5 @@
 import React, { useState, lazy, Suspense, useRef } from "react";
-import Tooltip from './Tooltip'; // Assuming you have a Tooltip component
+import Tooltip from '../components/Tooltip'; // Assuming you have a Tooltip component
 
 // Lazy loaded components
 const NewScenarioPage = lazy(() => import("../components/OmnisCore"));

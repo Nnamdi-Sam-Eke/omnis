@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import Tooltip from "./components/Tooltip";
+import Tooltip from "../components/Tooltip";
+import favicon from '../images/favicon1.png';
 
 function Home() {
   const navigate = useNavigate(); // React Router navigation
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [currentPage, setCurrentPage] = useState("home");
+
 
   // 🔹 Use Case Data
   const useCases = [
@@ -61,11 +62,11 @@ function Home() {
 
 
       </div>
-
-      {/* Image */}
-      {/* <div className="lg:w-1/2 mt-8 lg:mt-0">
-        <img src="/assets/images/motif.jpg" alt="Motif" />
-      </div> */}
+      <div >
+        <img src={favicon}
+        alt="Motif"
+        className="w-[800px] h-[800px] mt-8 lg:mt-0 sm:w-[400px] sm:h-[400px]" />
+      </div>
     </div>
   );
 
@@ -279,16 +280,16 @@ function Home() {
 
   // 🔹 Call to Action & Footer
   const CallToActionSection = () => (
-    <section className="py-32 bg-gray-100 text-center dark:bg-black">
+    <section className="py-32 px-6 sm:space-y-4 bg-gray-100 text-center dark:bg-black">
       <h2 className="text-5xl font-bold mb-12 text-blue-600 dark:text-white">Join the Future</h2>
-      <p className="text-gray-900 max-w-2xl mx-auto mb-8 dark:text-white">
-        Be part of the next big thing. Sign up for early access and stay updated.
+      <p className="text-gray-900 max-w-2xl mx-auto mb-12 py-8 dark:text-white">
+        Be part of the next big thing. Sign up for<br/> early access and stay updated.
       </p>
       <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 w-full sm:w-auto">
   <Tooltip text="Sign up for our beta program!">
     <a
       href="#"
-      className="w-full sm:w-auto mb-4 sm:mb-0 hover:shadow-blue-500/50 transition px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-semibold bg-blue-600 text-white rounded-2xl shadow-lg hover:bg-blue-500"
+      className="w-full sm:w-auto mb-4 sm:mb-0 hover:shadow-blue-500/50 transition px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-semibold bg-blue-600 text-white rounded-2xl shadow-lg hover:bg-blue-700"
     >
       Sign Up for Beta
     </a>
@@ -296,7 +297,7 @@ function Home() {
   <Tooltip text="Join our community for support and updates!">
     <a
       href="#"
-      className="w-full sm:w-auto hover:shadow-blue-500/50 transition px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-semibold bg-green-500 text-white rounded-2xl shadow-lg hover:bg-green-400"
+      className="w-full sm:w-auto hover:shadow-blue-500/50 transition px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-semibold bg-green-500 text-white rounded-2xl shadow-lg hover:bg-green-600"
     >
       Join the Community
     </a>

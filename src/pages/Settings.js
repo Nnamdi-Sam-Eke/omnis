@@ -7,9 +7,9 @@ import { FiBell, FiCloud, FiDatabase, FiSettings } from "react-icons/fi";
 import { AiOutlineAppstore, AiOutlineGlobal } from "react-icons/ai";
 
 // Lazy-loaded components
-const ThemeToggle = lazy(() => import('./ThemeToggle'));
-const ReauthModal = lazy(() => import('./ReauthModal'));
-const AccountPage = lazy(() => import('./AccountPage'));
+const ThemeToggle = lazy(() => import('../components/ThemeToggle'));
+const ReauthModal = lazy(() => import('../components/ReauthModal'));
+const AccountPage = lazy(() => import('../components/AccountPage'));
 
 const ProfilePage = () => {
   const { currentUser } = useAuth();
@@ -168,7 +168,7 @@ const handleSessionLogout = async () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 w-full max-w-6xl mx-auto">
           {currentPage === "settings" && (
             <div
-              className="bg-white shadow-lg rounded-lg dark:bg-gray-800 p-6 border rounded-xl shadow-lg hover:shadow-blue-500/50 transition"
+              className="bg-white shadow-lg rounded-lg dark:bg-gray-800 dark:text-white p-6 border rounded-xl shadow-lg hover:shadow-blue-500/50 transition"
               role="region"
               aria-labelledby="settings-heading"
             >
@@ -222,7 +222,7 @@ const handleSessionLogout = async () => {
                       onChange={handlePrivacyChange}
                       aria-label={`${key} privacy toggle`}
                     />
-                    <span className="flex items-center">
+                    <span className="flex items-center dark:text-white">
                       {key === 'LocationAccess' && <AiOutlineGlobal className="mr-2 text-orange-500" />}
                       {key === 'DataCollection' && <FiDatabase className="mr-2 text-red-500" />}
                       {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}

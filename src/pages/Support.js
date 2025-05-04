@@ -1,12 +1,12 @@
 import React, { useState, Suspense, lazy } from 'react';
-import { ChevronRight, ChevronUp } from 'react-feather'; // Icons for toggling FAQ answers
+import { ChevronRight, ChevronUp } from 'react-feather';
 
 // Lazy loading the contact form component
 const ContactForm = lazy(() => import('../components/ContactForm'));
 
 const SupportPage = () => {
   const [activeTab, setActiveTab] = useState('FAQs');
-  const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [openFaqIndex, setOpenFaqIndex] = useState({ categoryIdx: null, faqIdx: null });
 
   // FAQs Data with categories
   const faqCategories = [
@@ -62,6 +62,17 @@ const SupportPage = () => {
     Contact: 'Contact Us'
   };
 
+  const isOpen = (categoryIdx, faqIdx) =>
+    openFaqIndex.categoryIdx === categoryIdx && openFaqIndex.faqIdx === faqIdx;
+
+  const handleFaqToggle = (categoryIdx, faqIdx) => {
+    if (isOpen(categoryIdx, faqIdx)) {
+      setOpenFaqIndex({ categoryIdx: null, faqIdx: null });
+    } else {
+      setOpenFaqIndex({ categoryIdx, faqIdx });
+    }
+  };
+
   return (
     <div className="p-6">
       {/* Tabs Navigation */}
@@ -74,7 +85,7 @@ const SupportPage = () => {
             aria-controls={`${tab}-panel`}
             id={`${tab}-tab`}
             onClick={() => setActiveTab(tab)}
-            title={`Go to ${tabLabels[tab]}`} // Tooltip added here
+            title={`Go to ${tabLabels[tab]}`}
             className={`px-4 py-2 sm:px-5 sm:py-2 rounded-full font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               activeTab === tab
                 ? 'bg-blue-500 text-white border border-blue-700'
@@ -90,12 +101,18 @@ const SupportPage = () => {
       <div className="relative grid h-full grid-cols-1 msm:grid-cols-2 lg:grid-cols-1 gap-6 transition-all">
         {/* FAQs Tab */}
         {activeTab === 'FAQs' && (
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense
+            fallback={
+              <div className="flex justify-center items-center h-40">
+                <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            }
+          >
             <div id="FAQs-panel" role="tabpanel" aria-labelledby="FAQs-tab" className="space-y-4">
               <h3 className="text-xl font-semibold text-green-500 dark:text-green-500">Frequently Asked Questions</h3>
-              {faqCategories.map((category, idx) => (
-                <div key={idx} className="space-y-4">
-                  <h4 className="text-lg font-semibold text-blue-500">{category.category}</h4>
+              {faqCategories.map((category, categoryIdx) => (
+                <div key={categoryIdx} className="space-y-4">
+                  <h4 className="text-lg font-semibold text-green-500">{category.category}</h4>
                   {category.faqs.map((faq, faqIdx) => (
                     <div
                       key={faqIdx}
@@ -105,19 +122,26 @@ const SupportPage = () => {
                       <button
                         role="button"
                         tabIndex={0}
-                        aria-expanded={openFaqIndex === faqIdx}
-                        aria-controls={`faq-${faqIdx}`}
-                        onClick={() => setOpenFaqIndex(openFaqIndex === faqIdx ? null : faqIdx)}
-                        onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setOpenFaqIndex(openFaqIndex === faqIdx ? null : faqIdx)}
+                        aria-expanded={isOpen(categoryIdx, faqIdx)}
+                        aria-controls={`faq-${categoryIdx}-${faqIdx}`}
+                        onClick={() => handleFaqToggle(categoryIdx, faqIdx)}
+                        onKeyDown={e =>
+                          (e.key === 'Enter' || e.key === ' ') && handleFaqToggle(categoryIdx, faqIdx)
+                        }
                         className="w-full text-left flex justify-between items-center text-base md:text-lg font-medium text-blue-600 dark:text-blue-400"
                       >
                         {faq.question}
                         <span className="ml-2 text-xl">
-                          {openFaqIndex === faqIdx ? <ChevronUp /> : <ChevronRight />}
+                          {isOpen(categoryIdx, faqIdx) ? <ChevronUp /> : <ChevronRight />}
                         </span>
                       </button>
-                      {openFaqIndex === faqIdx && (
-                        <p id={`faq-${faqIdx}`} className="mt-3 text-sm md:text-base text-gray-700 dark:text-gray-300">{faq.answer}</p>
+                      {isOpen(categoryIdx, faqIdx) && (
+                        <p
+                          id={`faq-${categoryIdx}-${faqIdx}`}
+                          className="mt-3 text-sm md:text-base text-gray-700 dark:text-gray-300"
+                        >
+                          {faq.answer}
+                        </p>
                       )}
                     </div>
                   ))}
@@ -129,7 +153,13 @@ const SupportPage = () => {
 
         {/* Contact Tab */}
         {activeTab === 'Contact' && (
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense
+            fallback={
+              <div className="flex justify-center items-center h-40">
+                <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            }
+          >
             <div id="Contact-panel" role="tabpanel" aria-labelledby="Contact-tab" className="space-y-4">
               <h3 className="text-xl font-semibold text-green-500 dark:text-green-500">Contact Us</h3>
               <ContactForm />

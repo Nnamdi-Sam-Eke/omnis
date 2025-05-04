@@ -149,7 +149,7 @@ const AccountPage = () => {
         >
           <FiX size={30} />
         </button>
-        <h2 className="text-xl font-semibold mb-4">{title}</h2>
+        <h2 className="text-xl font-semibold mb-4 dark:text-green-600">{title}</h2>
         <div>{contentJSX}</div>
       </div>
     </div>

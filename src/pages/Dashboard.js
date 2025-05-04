@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MemoryProvider } from "./MemoryContext";
-import { useAuth } from "./AuthContext";
+import { MemoryProvider } from "../MemoryContext";
+import { useAuth } from "../AuthContext";
 import { signOut } from "firebase/auth";
 import {
   FiBookmark,
@@ -19,32 +19,34 @@ import {
   FiHelpCircle,
   FiBarChart
 } from "react-icons/fi";
+import Header from "../components/Header";
+import Sidebar from '../components/Sidebar'; // adjust the path based on where you saved the Sidebar
 import Home from "./Home";
-import ThemeToggle from "./components/ThemeToggle";
-import OmnisDashboard from "./components/OmnisDashboard";
-import Footer from "./components/Footer";
-import Settings from "./components/Settings";
-import AccountPage from "./components/ProfilePage";
-import ProfilePage from "./components/SimpleProfilePage";
-import NotificationsPage from "./components/NotificationsPage";
-import FeedbackButton from "./components/FeedbackButton";
-import Logout from "./components/Logout";
-import AuthForm from "./components/AuthForm";
-import Tooltip from "./components/Tooltip";
-import History from "./components/History";
-import SavedScenariosPage from "./components/SavedScenarios";
-import ScenarioTabs from "./components/ScenarioTabs";
-import { OmnisProvider } from "./context/OmnisContext";
-import { auth } from "./firebase";
+import ThemeToggle from "../components/ThemeToggle";
+import OmnisDashboard from "./OmnisDashboard";
+import Footer from "../components/Footer";
+import Settings from "./Settings";
+import AccountPage from "./ProfilePage";
+import ProfilePage from "../components/SimpleProfilePage";
+import NotificationsPage from "./NotificationsPage";
+import FeedbackButton from "../components/FeedbackButton";
+import Logout from "../components/Logout";
+import AuthForm from "../components/AuthForm";
+import Tooltip from "../components/Tooltip";
+import History from "../components/History";
+import SavedScenariosPage from "./SavedScenarios";
+import ScenarioTabs from "./ScenarioTabs";
+import { OmnisProvider } from "../context/OmnisContext";
+import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import "./App.css";
-import UserProfilePage from "./components/UserProfilePage";
-import AnalyticsPage from "./components/AnalyticsPage";
-import ResourcesPage from "./components/ResourcesPage";
-import CreatorsCorner from "./Creator'sCorner";
-import Support from "./components/Support";
-import PartnerChat from "./components/PartnerChat";
-import ActivityLog from "./components/ActivityLog";
+import "../App.css";
+import UserProfilePage from "./UserProfilePage";
+import AnalyticsPage from "./AnalyticsPage";
+import ResourcesPage from "./ResourcesPage";
+import CreatorsCorner from "../Creator'sCorner";
+import Support from "./Support";
+import PartnerChat from "./PartnerChat";
+import ActivityLog from "./ActivityLog";
 // — Utility: convert strings to Title Case
 const toTitleCase = (str) =>
   str
@@ -199,7 +201,15 @@ function Dashboard() {
         <div className="flex flex-col h-screen bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white">
           
           {/* Sidebar */}
-          import Tooltip from './Tooltip'; // Make sure Tooltip is imported
+
+          <Sidebar
+  isSidebarOpen={isSidebarOpen}
+  toggleSidebar={toggleSidebar}
+  handleLogout={handleLogout}
+  user={user}
+/>
+
+          {/* import Tooltip from './Tooltip'; // Make sure Tooltip is imported
 
 <aside
   id="sidebar"
@@ -252,7 +262,7 @@ function Dashboard() {
   </ul>
 
   {/* Mobile-only icons */}
-  <div className="sm:hidden mt-2 flex bg-gray-300 rounded-xl p-2 justify-around text-sm">
+  {/* <div className="sm:hidden mt-2 flex bg-gray-300 rounded-xl p-2 justify-around text-sm">
     <ThemeToggle />
     <Tooltip text="Notifications" position="top">
       <span
@@ -279,7 +289,7 @@ function Dashboard() {
   </div>
 
   {/* Mobile logout */}
-  <div className="sm:hidden mt-20">
+  {/* <div className="sm:hidden mt-20">
     <Tooltip text="Log Out" position="top">
       <li
         onClick={handleLogout}
@@ -290,10 +300,10 @@ function Dashboard() {
       </li>
     </Tooltip>
   </div>
-</aside>
+</aside> 
+  */}
 
-
-          {/* Header & Content */}
+          {/* Header & Content
           <div className="flex flex-col flex-1 pt-24">
             <div className="fixed top-0 left-0 right-0 z-40 shadow-lg px-6 py-4 flex justify-between items-center bg-white dark:bg-gray-800">
               <button
@@ -303,7 +313,7 @@ function Dashboard() {
                 ☰
               </button>
 
-              {/* Omnis logo with Poppins font and blue color */}
+              /* Omnis logo with Poppins font and blue color/*
               <h1 className="text-3xl italic font-bold capitalize text-blue-600 font-poppins dark:text-blue-400">
                 Omnis
               </h1>
@@ -313,7 +323,7 @@ function Dashboard() {
               </h1>
 
               {/* Desktop icons */}
-              <div className="hidden sm:flex items-center space-x-6">
+              {/* <div className="hidden sm:flex items-center space-x-6">
                 <ThemeToggle />
                 <span
                   className="cursor-pointer hover:text-blue-200 hover:text-xl"
@@ -364,7 +374,20 @@ function Dashboard() {
                   )}
                 </div>
               </div>
-            </div>
+            </div>  */}
+            <div className="flex flex-col flex-1 pt-24">
+  <Header
+    toggleSidebar={toggleSidebar}
+    currentPage={currentPage}
+    toTitleCase={toTitleCase}
+    isProfileMenuOpen={isProfileMenuOpen}
+    setIsProfileMenuOpen={setIsProfileMenuOpen}
+    setCurrentPage={setCurrentPage}
+    handleLogout={handleLogout}
+  />
+  {/* rest of your content */}
+</div>
+
 
             {/* Main content */}
             {renderPage()}
@@ -376,7 +399,7 @@ function Dashboard() {
 
             <Footer />
           </div>
-        </div>
+      
       </MemoryProvider>
     </OmnisProvider>
   );

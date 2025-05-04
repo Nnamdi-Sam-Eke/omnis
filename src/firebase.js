@@ -26,6 +26,8 @@ const auth = getAuth(app); // ✅ Correctly initializing Firebase Auth
 const db = getFirestore(app);
 const storage = getStorage(app); // ✅ Correctly initializing Firebase Storage
 
+
+
 // Initialize messaging only if it's available
 let messaging;
 try {

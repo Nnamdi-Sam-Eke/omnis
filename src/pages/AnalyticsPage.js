@@ -10,7 +10,6 @@ const ScenarioAccuracyChart = lazy(() => import('../components/ScenarioAccuracyC
 const CategoryDistributionChart = lazy(() => import('../components/CategoryDistributionChart'));
 const NarrativePanel = lazy(() => import('../components/NarrativePanel'));
 
-
 const AnalyticsPage = () => {
   const [totalTime, setTotalTime] = useState(0);
   const [totalSimulations, setTotalSimulations] = useState(0);
@@ -18,55 +17,72 @@ const AnalyticsPage = () => {
   const [categoryDistribution, setCategoryDistribution] = useState([]);
   const [narrativeInsights, setNarrativeInsights] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    let isMounted = true; // Cleanup-ready flag
+
     const fetchAnalyticsData = async () => {
       setLoading(true);
+      setError(null);
 
       try {
-        const timeRef = collection(db, "user_analytics");
-        const timeSnapshot = await getDocs(timeRef);
+        const [timeSnapshot, simulationsSnapshot, scenariosSnapshot, narrativeSnapshot] = await Promise.all([
+          getDocs(collection(db, 'user_analytics')),
+          getDocs(collection(db, 'simulations')),
+          getDocs(collection(db, 'scenarios')),
+          getDocs(collection(db, 'narratives')),
+        ]);
+
+        if (!isMounted) return; // Prevent state updates if unmounted
+
+        // Total time
         const timeData = timeSnapshot.docs.map(doc => doc.data().totalTimeSpent || 0);
         setTotalTime(timeData.reduce((acc, curr) => acc + curr, 0));
 
-        const simulationsRef = collection(db, "simulations");
-        const simulationsSnapshot = await getDocs(simulationsRef);
+        // Total simulations
         setTotalSimulations(simulationsSnapshot.docs.length);
 
-        const accuracyRef = collection(db, "scenarios");
-        const accuracySnapshot = await getDocs(accuracyRef);
-        const accuracyData = accuracySnapshot.docs.map(doc => doc.data().accuracy || 0);
-        setScenarioAccuracy(accuracyData.length > 0 ? accuracyData.reduce((acc, curr) => acc + curr, 0) / accuracyData.length : 0);
+        // Scenarios: accuracy + categories
+        const accuracyData = scenariosSnapshot.docs.map(doc => doc.data().accuracy || 0);
+        setScenarioAccuracy(
+          accuracyData.length > 0
+            ? accuracyData.reduce((acc, curr) => acc + curr, 0) / accuracyData.length
+            : 0
+        );
 
-        const categoryRef = collection(db, "scenarios");
-        const categorySnapshot = await getDocs(categoryRef);
-        const categories = categorySnapshot.docs.map(doc => doc.data().category);
+        const categories = scenariosSnapshot.docs.map(doc => doc.data().category);
         const categoryCounts = categories.reduce((acc, category) => {
           acc[category] = (acc[category] || 0) + 1;
           return acc;
         }, {});
         setCategoryDistribution(Object.entries(categoryCounts));
 
-        const narrativeRef = collection(db, "narratives");
-        const narrativeSnapshot = await getDocs(narrativeRef);
+        // Narrative insights
         setNarrativeInsights(narrativeSnapshot.docs.map(doc => doc.data().insight));
-
-      } catch (error) {
-        console.error('❌ Error fetching analytics data:', error);
+      } catch (err) {
+        console.error('❌ Error fetching analytics data:', err);
+        if (isMounted) setError('Failed to load analytics data. Please try again later.');
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchAnalyticsData();
+
+    return () => {
+      isMounted = false; // Cleanup
+    };
   }, []);
 
   return (
-    <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab">
+    <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab" className="p-6 space-y-4">
       <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">User Analytics + Insights</h2>
 
       {loading ? (
         <SkeletonLoader height="h-[300px]" />
+      ) : error ? (
+        <div className="text-red-500 text-center py-4">{error}</div>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">

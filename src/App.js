@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation} from 'react-router-dom';
 import { AuthProvider } from './AuthContext';
 import { Toaster } from 'react-hot-toast';
 import { signOut } from "firebase/auth";
@@ -7,7 +7,6 @@ import { auth } from "./firebase";
 
 // Pages
 import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
 import PartnerChat from './pages/PartnerChat';
 import SavedScenarios from './pages/SavedScenarios';
 import UserProfilePage from './pages/UserProfilePage';
@@ -63,7 +62,7 @@ function AppContent() {
   };
 
   // ❗ Define which routes should NOT show the UI
-  const noLayoutRoutes = ['/login'];
+  const noLayoutRoutes = ['/login', '/'];
   const hideLayout = noLayoutRoutes.includes(location.pathname);
 
   return (
@@ -95,7 +94,7 @@ function AppContent() {
             <OmnisProvider>
               <MemoryProvider>
                 <Routes>
-                  <Route path="/" element={<OmnisDashboard />} />
+                <Route path="/" element={<AuthForm />} />
                   <Route path="/login" element={<AuthForm />} />
                   <Route path="/home" element={<Home />} />
                   <Route path="/dashboard" element={<OmnisDashboard />} />
@@ -114,11 +113,18 @@ function AppContent() {
                 </Routes>
               </MemoryProvider>
             </OmnisProvider>
-          </AuthProvider>
-        </main>
+
+             {/* 👇 FOOTER & OTHER BOTTOM ELEMENTS */}
+    {!hideLayout && (
+      <>
+        <Footer />
         <CreatorsCorner />
         <FeedbackButton />
-        <Footer />
+      </>
+    )}
+          </AuthProvider>
+        </main>
+        
       </div>
     </div>
   );

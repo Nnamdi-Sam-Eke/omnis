@@ -70,7 +70,7 @@ function Sidebar({ isSidebarOpen, toggleSidebar, setIsSidebarOpen, setCurrentPag
     ref={sidebarRef}
 
       id="sidebar"
-      className={`fixed inset-y-0 left-0 w-64 p-6 transition-all h-screen duration-300 z-30 bg-gradient-to-r from-blue-600 to-green-500 text-white dark:bg-gray-800 overflow-y-auto ${
+      className={` left-0 w-64 p-6 transition-all fixed inset-y-0 duration-300 z-30 bg-gradient-to-r from-blue-600 to-green-500 text-white dark:bg-gray-800 overflow-y-auto ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >

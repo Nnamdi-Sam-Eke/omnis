@@ -47,6 +47,19 @@ export function AuthProvider({ children }) {
     return () => unsub();
   }, [user]);
 
+  // Add this to your AuthProvider state:
+const [loading, setLoading] = useState(true);
+
+// ✅ Modify your auth state tracker
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    setUser(currentUser);
+    setLoading(false); // ✅ Set loading false when auth check completes
+  });
+  return () => unsubscribe();
+}, []);
+
+
   // ✅ One-time session version check on load
   useEffect(() => {
     const checkSession = async () => {
@@ -137,7 +150,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, signup, login, logout, resetPassword }}>
+    <AuthContext.Provider value={{ user, loading, setUser, signup, login, logout, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );

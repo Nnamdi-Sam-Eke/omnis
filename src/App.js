@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation} from 'react-router-dom';
-import { AuthProvider } from './AuthContext';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './AuthContext';
 import { Toaster } from 'react-hot-toast';
 import { signOut } from "firebase/auth";
 import { auth } from "./firebase";
@@ -30,6 +30,20 @@ import { MemoryProvider } from './MemoryContext';
 import AuthForm from './components/AuthForm';
 import ProfilePage from './components/SimpleProfilePage';
 import AccountPage from './pages/ProfilePage';
+
+// ✅ PrivateRoute component
+const PrivateRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div>Loading...</div>;
+  return user ? children : <Navigate to="/login" />;
+};
+
+// ✅ PublicRoute component
+const PublicRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div>Loading...</div>;
+  return !user ? children : <Navigate to="/dashboard" />;
+};
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('');
@@ -62,7 +76,7 @@ function AppContent() {
   };
 
   // ❗ Define which routes should NOT show the UI
-  const noLayoutRoutes = ['/login', '/'];
+  const noLayoutRoutes = ['/login'];
   const hideLayout = noLayoutRoutes.includes(location.pathname);
 
   return (
@@ -71,7 +85,7 @@ function AppContent() {
         <main className="min-h-full w-full bg-white dark:bg-gray-900">
           <AuthProvider>
             <Toaster position="top-right" />
-            
+
             {/* ✅ Conditionally show Header & Sidebar */}
             {!hideLayout && (
               <>
@@ -94,37 +108,151 @@ function AppContent() {
             <OmnisProvider>
               <MemoryProvider>
                 <Routes>
-                <Route path="/" element={<AuthForm />} />
-                  <Route path="/login" element={<AuthForm />} />
-                  <Route path="/home" element={<Home />} />
-                  <Route path="/dashboard" element={<OmnisDashboard />} />
-                  <Route path="/partner-chat" element={<PartnerChat />} />
-                  <Route path="/saved-scenarios" element={<SavedScenarios />} />
-                  <Route path="/user-profile" element={<UserProfilePage />} />
-                  <Route path="/support" element={<Support />} />
-                  <Route path="/activity-log" element={<ActivityLog />} />
-                  <Route path="/resources" element={<ResourcesPage />} />
-                  <Route path="/new-scenario" element={<ScenarioTabs />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/analytics" element={<AnalyticsPage />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/account" element={<AccountPage />} />
-                  <Route path='/profile' element={<ProfilePage />} />
+                  {/* Public Route */}
+                  <Route
+                    path="/login"
+                    element={
+                      <PublicRoute>
+                        <AuthForm />
+                      </PublicRoute>
+                    }
+                  />
+
+                  {/* Private Routes */}
+                  <Route
+                    path="/"
+                    element={
+                      <PrivateRoute>
+                        <OmnisDashboard />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/home"
+                    element={
+                      <PrivateRoute>
+                        <Home />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <PrivateRoute>
+                        <OmnisDashboard />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/partner-chat"
+                    element={
+                      <PrivateRoute>
+                        <PartnerChat />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/saved-scenarios"
+                    element={
+                      <PrivateRoute>
+                        <SavedScenarios />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/user-profile"
+                    element={
+                      <PrivateRoute>
+                        <UserProfilePage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/support"
+                    element={
+                      <PrivateRoute>
+                        <Support />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/activity-log"
+                    element={
+                      <PrivateRoute>
+                        <ActivityLog />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/resources"
+                    element={
+                      <PrivateRoute>
+                        <ResourcesPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/new-scenario"
+                    element={
+                      <PrivateRoute>
+                        <ScenarioTabs />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <PrivateRoute>
+                        <Settings />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/analytics"
+                    element={
+                      <PrivateRoute>
+                        <AnalyticsPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/notifications"
+                    element={
+                      <PrivateRoute>
+                        <NotificationsPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/account"
+                    element={
+                      <PrivateRoute>
+                        <AccountPage />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <PrivateRoute>
+                        <ProfilePage />
+                      </PrivateRoute>
+                    }
+                  />
                 </Routes>
               </MemoryProvider>
             </OmnisProvider>
 
-             {/* 👇 FOOTER & OTHER BOTTOM ELEMENTS */}
-    {!hideLayout && (
-      <>
-        <Footer />
-        <CreatorsCorner />
-        <FeedbackButton />
-      </>
-    )}
+            {/* 👇 FOOTER & OTHER BOTTOM ELEMENTS */}
+            {!hideLayout && (
+              <>
+                <Footer />
+                <CreatorsCorner />
+                <FeedbackButton />
+              </>
+            )}
           </AuthProvider>
         </main>
-        
       </div>
     </div>
   );
@@ -132,7 +260,8 @@ function AppContent() {
 
 export default function App() {
   return (
-  <AppContent />
+   
+    <AppContent />
     
   );
 }

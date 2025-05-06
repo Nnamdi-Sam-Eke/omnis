@@ -70,7 +70,7 @@ function Sidebar({ isSidebarOpen, toggleSidebar, setIsSidebarOpen, setCurrentPag
     ref={sidebarRef}
 
       id="sidebar"
-      className={` left-0 w-64 p-6 transition-all fixed inset-y-0 duration-300 z-30 bg-gradient-to-r from-blue-600 to-green-500 text-white dark:bg-gray-800 overflow-y-auto ${
+      className={`h-full left-0 w-64 p-6 transition-all fixed inset-y-0 duration-300 z-30 bg-gradient-to-r from-blue-600 to-green-500 text-white dark:bg-gray-800 overflow-y-auto ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
@@ -84,7 +84,7 @@ function Sidebar({ isSidebarOpen, toggleSidebar, setIsSidebarOpen, setCurrentPag
 
       <h2 className="text-4xl font-bold mt-2">Menu</h2>
 
-      <ul className="text-xl mt-6 space-y-4">
+      <ul className="flex:1 text-xl mt-6 lg:mb-20 space-y-3">
         {navItems.map(({ name, icon, path }) => (
           <li key={name}>
             <Link

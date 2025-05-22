@@ -71,11 +71,11 @@ const ContactForm = () => {
   };
 
   return (
-    <div className="w-full px-6 py-10 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white space-y-10">
+    <div className="w-full px-6 py-10 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white space-y-10 ">
       {/* Contact Section Layout */}
       <div className="flex flex-col lg:flex-row gap-10 max-w-6xl mx-auto">
         {/* Left: Contact Form */}
-        <div className="flex-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
+        <div className="flex-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition">
           <h2 className="text-2xl font-semibold text-blue-600 dark:text-white mb-6">Contact Us</h2>
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             {/* Name Field */}
@@ -165,7 +165,7 @@ const ContactForm = () => {
         </div>
 
         {/* Right: Info + Hours */}
-        <div className="flex-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-6">
+        <div className="flex-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition space-y-6">
           <div>
             <h3 className="text-xl font-semibold text-blue-600 mb-2">Our Information</h3>
             <p>Omnis Intelligence Ltd</p>
@@ -185,7 +185,7 @@ const ContactForm = () => {
       </div>
 
       {/* Google Map */}
-      <div className="max-w-6xl mx-auto rounded-xl overflow-hidden shadow-lg">
+      <div className="max-w-6xl mx-auto rounded-xl overflow-hidden p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition">
         <iframe
           title="Omnis Map"
           src="https://maps.google.com/maps?q=Innovation%20City&t=&z=13&ie=UTF8&iwloc=&output=embed"

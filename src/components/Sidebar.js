@@ -1,49 +1,68 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  FiHome, FiGrid, FiMessageCircle, FiPlus, FiBookmark, FiBarChart, FiList, FiDatabase, FiHelpCircle, FiSettings, FiUserX, FiLogOut
+  FiHome, FiGrid, FiMessageCircle, FiPlus, FiBookmark, FiBarChart,
+  FiList, FiDatabase, FiHelpCircle, FiSettings, FiUserX, FiLogOut, FiCreditCard
 } from 'react-icons/fi';
-import { useAuth } from '../AuthContext'; // Import Auth Context
-import { useNavigate } from 'react-router-dom'; // For navigation
+import { useAuth } from '../AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 import Tooltip from '../components/Tooltip';
+import { useAccounts } from '../AccountContext';
 
-function Sidebar({ isSidebarOpen, toggleSidebar, setIsSidebarOpen, setCurrentPage }) {
-  const { logout } = useAuth(); // Get the logout function from context
+function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
+  const { logout, user, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [localLogoutMessage, setLocalLogoutMessage] = useState("");
   const sidebarRef = useRef(null);
+  const { accounts, activeAccount, setActiveAccount } = useAccounts();
+  const [toastMessage, setToastMessage] = useState("");
+
+  const handleAddAccountClick = () => {
+    // Set toast message when user tries clicking disabled button
+    setToastMessage("Feature Coming Soon!");
+    setTimeout(() => {
+      setToastMessage("");
+    }, 4000);
+  };
+
+  const switchAccount = async (accountName) => {
+    const account = accounts.find(acc => acc.name === accountName);
+    if (!account) {
+      console.error("Account not found");
+      return;
+    }
+    try {
+      await logout();
+      await login(account.user.email, account.password);
+      setActiveAccount(account.name);
+      console.log(`Switched to ${account.user.email}`);
+    } catch (error) {
+      console.error("Error switching account:", error);
+      alert("Failed to switch account. Please try logging in again.");
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (
-        isSidebarOpen &&
-        sidebarRef.current &&
-        !sidebarRef.current.contains(event.target)
-      ) {
+      if (isSidebarOpen && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
         setIsSidebarOpen(false);
       }
     }
-  
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isSidebarOpen]);
-  
 
   const handleLogout = async () => {
     try {
       console.log("Attempting to log out...");
-      await logout(); // Log out the user
-
+      await logout();
       setLocalLogoutMessage("You have been logged out successfully.");
-
       setTimeout(() => {
-        navigate("/login"); // Redirect to login page after 2 seconds
+        navigate("/login");
       }, 2000);
-
     } catch (error) {
       console.error("Logout failed:", error.message);
       setLocalLogoutMessage("Logout failed. Please try again.");
@@ -51,38 +70,60 @@ function Sidebar({ isSidebarOpen, toggleSidebar, setIsSidebarOpen, setCurrentPag
   };
 
   const navItems = [
-    { name: 'Home', icon: <FiHome />, path: '/home' },
-    { name: 'Dashboard', icon: <FiGrid />, path: '/dashboard' },
-    { name: 'Partner Chat', icon: <FiMessageCircle />, path: '/partner-chat' },
-    { name: 'New Scenario', icon: <FiPlus />, path: 'new-scenario' },
-    { name: 'Saved Scenarios', icon: <FiBookmark />, path: '/saved-scenarios' },
-    { name: 'Analytics', icon: <FiBarChart />, path: '/analytics' },
-    { name: 'Activity Log', icon: <FiList />, path: '/activity-log' },
-    { name: 'Resources', icon: <FiDatabase />, path: '/resources' },
-    { name: 'Support', icon: <FiHelpCircle />, path: '/support' },
-    { name: 'Settings', icon: <FiSettings />, path: '/settings' },
-    { name: 'User Profile', icon: <FiUserX />, path: '/user-profile' }
-    
-  ];
+  { name: 'Home', icon: <FiHome />, path: '/home' },
+  { name: 'Dashboard', icon: <FiGrid />, path: '/dashboard' },
+  { name: 'Partner Chat', icon: <FiMessageCircle />, path: '/partner-chat' },
+  { name: 'New Scenario', icon: <FiPlus />, path: '/new-scenario' },
+  { name: 'Saved Scenarios', icon: <FiBookmark />, path: '/saved-scenarios' },
+  { name: 'Analytics', icon: <FiBarChart />, path: '/analytics' },
+  { name: 'Activity Log', icon: <FiList />, path: '/activity-log' },
+  { name: 'Resources', icon: <FiDatabase />, path: '/resources' },
+  { name: 'Payments', icon: <FiCreditCard />, path: '/payments' }, // ✅ Added here
+  { name: 'Support', icon: <FiHelpCircle />, path: '/support' },
+  { name: 'Settings', icon: <FiSettings />, path: '/settings' },
+  { name: 'My Profile', icon: <FiUserX />, path: '/user-profile' }
+];
 
   return (
     <aside
-    ref={sidebarRef}
-
+      ref={sidebarRef}
       id="sidebar"
-      className={`h-full left-0 w-64 p-6 transition-all fixed inset-y-0 duration-300 z-30 bg-gradient-to-r from-blue-600 to-green-500 text-white dark:bg-gray-800 overflow-y-auto ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}
+      className={`h-full left-0 w-64 p-4 transition-all fixed inset-y-0 duration-300 z-30 
+        bg-gradient-to-r from-blue-600 to-green-500 text-white dark:bg-gray-800 overflow-y-auto
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
     >
-     <button
-  onClick={() => setIsSidebarOpen(false)}
-  id="sidebar-button"
-  className="ml-auto p-2 rounded bg-white text-green-900 hover:bg-red-100 dark:bg-gray-700 dark:text-white"
->
-  ✖
-</button>
+      {/* Toast message */}
+      {toastMessage && (
+        <div className="absolute left-1/2 transform -translate-x-1/2 bg-blue-600 text-white py-2 px-6 rounded-md shadow-lg"
+          style={{ top: 'auto', bottom: '120px' }}>
+          {toastMessage}
+        </div>
+      )}
 
-      <h2 className="text-4xl font-bold mt-2">Menu</h2>
+      {/* Logout message */}
+      {localLogoutMessage && (
+        <div className="absolute bottom-0 left-0 right-0 bg-green-100 p-2 text-center">
+          <p>{localLogoutMessage}</p>
+        </div>
+      )}
+
+      {/* User info block */}
+      <div className="flex flex-col items-center mt-12 mb-6">
+        {user?.profilePicture ? (
+          <img
+            src={user.profilePicture}
+            alt="User Avatar"
+            className="w-20 h-20 rounded-full border-4 border-white shadow-lg transform transition-transform hover:scale-105"
+          />
+        ) : (
+          <div className="w-20 h-20 rounded-full bg-gray-300 animate-pulse" />
+        )}
+        <h2 className="mt-3 text-lg font-semibold text-center">
+          {user?.firstName || 'User'} {user?.lastName || 'Name'}
+        </h2>
+      </div>
+
+      {/* Navigation links */}
       <ul className="space-y-4">
         {navItems.map(({ name, icon, path }) => {
           const isActive = location.pathname === path;
@@ -109,50 +150,81 @@ function Sidebar({ isSidebarOpen, toggleSidebar, setIsSidebarOpen, setCurrentPag
         })}
       </ul>
 
-      {/* Mobile-only icons */}
-<div className="sm:hidden mt-2 flex bg-gray-300 rounded-xl p-2 justify-around text-sm">
-  <ThemeToggle />
-  
-  <Tooltip text="Notifications" position="top">
-    <Link 
-      to="/notifications" 
-      className="cursor-pointer hover:text-blue-200"
-      onClick={() => setIsSidebarOpen(false)}
-    >
-      🔔
-    </Link>
-  </Tooltip>
-  
-  <Tooltip text="Account" position="top">
-    <Link 
-      to="/account" 
-      className="cursor-pointer hover:text-blue-200"
-      onClick={() => setIsSidebarOpen(false)}
-    >
-      👤
-    </Link>
-  </Tooltip>
-</div>
-
-      {/* Mobile logout */}
-      <div className="sm:hidden mt-20">
-        <Tooltip text="Log Out" position="top">
-          <li
-            onClick={handleLogout}
-            className="flex items-center space-x-3 py-3 cursor-pointer text-red-600 hover:text-red-500"
+      {/* Account switching */}
+      <div className="mt-8 border-t border-white/30 pt-4">
+        <h4 className="text-sm font-bold uppercase tracking-wider text-white/80 mb-2">
+          Accounts
+        </h4>
+        {accounts.map((acc) => (
+          <button
+            key={acc.name}
+            onClick={() => switchAccount(acc.name)}
+            className={`block w-full mb-20 text-left px-4 py-2 rounded-lg ${
+              acc.name === activeAccount
+                ? 'bg-white/20 text-white font-semibold'
+                : 'hover:bg-white/10'
+            }`}
           >
-            <FiLogOut />
-            <span>Log Out</span>
-          </li>
+            {acc.user.email}
+          </button>
+        ))}
+       <button
+  onClick={handleAddAccountClick}
+  aria-disabled="true"
+  className="mt-2 block w-full text-left px-4 py-2  z-60 rounded-lg bg-green-600 opacity-80 cursor-not-allowed flex items-center gap-2"
+>
+
+          <span>+ Add Account</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M12 11V17M12 7h.01M17 21H7a2 2 0 01-2-2V7a2 2 0 012-2h3m4 0h3a2 2 0 012 2v12a2 2 0 01-2 2z" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Mobile icons */}
+      <div className="sm:hidden mt-4 flex bg-gray-300 rounded-xl p-2 justify-around text-sm">
+        <ThemeToggle />
+        <Tooltip text="Notifications" position="top">
+          <Link
+            to="/notifications"
+            className="cursor-pointer hover:text-blue-200"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            🔔
+          </Link>
+        </Tooltip>
+        <Tooltip text="Account" position="top">
+          <Link
+            to="/account"
+            className="cursor-pointer hover:text-blue-200"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            👤
+          </Link>
         </Tooltip>
       </div>
 
-      {/* Display logout message */}
-      {localLogoutMessage && (
-        <div className="absolute bottom-0 left-0 right-0 bg-green-100 p-2">
-          <p>{localLogoutMessage}</p>
-        </div>
-      )}
+      {/* Mobile logout */}
+      <div className="sm:hidden mt-20">
+        <ul>
+          <Tooltip text="Log Out" position="top">
+            <li
+              onClick={handleLogout}
+              className="flex items-center space-x-3 py-3 cursor-pointer text-red-600 hover:text-red-500"
+            >
+              <FiLogOut />
+              <span>Log Out</span>
+            </li>
+          </Tooltip>
+        </ul>
+      </div>
     </aside>
   );
 }

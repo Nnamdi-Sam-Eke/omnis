@@ -7,8 +7,7 @@ import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
 import { onSnapshot } from "firebase/firestore";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import ProfilePage from "../components/SimpleProfilePage";
-import AccountPage from "../components/AccountPage";
+
 
 // ── SubscriptionCard with Stripe checkout & skeleton on expand ─────────────────────────────
 const SubscriptionCard = ({ userDetails }) => {
@@ -250,28 +249,27 @@ const UserProfilePage = () => {
     });
   };
 
- return (
-  <div className="p-4 space-y-6 min-h-screen">
-    <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">
-      Personal Settings & Preferences
-    </h1>
-    
-    <div className="flex flex-col lg:flex-row gap-6">
-      <div className="w-full lg:w-1/2">
-        <Suspense fallback={<div>Loading Profile…</div>}>
-          <ProfilePage userDetails={userData} isLoading={isLoading} />
-        </Suspense>
+  return (
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex-1">
+          <section
+            className="bg-white  border dark:bg-gray-800 p-6 rounded-xl shadow-lg transition hover:shadow-blue-500/50"
+            role="region"
+            aria-labelledby="sub-bill-heading"
+          >
+            <h2 id="sub-bill-heading" className="text-xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
+              Subscription & Billing
+            </h2>
+            <SubscriptionCard userDetails={userData} onUpdateSubscription={handleUpdateSubscription} />
+            <div className="mt-6">
+              <BillingInfoForm onSaveBillingInfo={handleSaveBillingInfo} />
+            </div>
+          </section>
+        </div>
       </div>
-      <div className="w-full lg:w-1/2 mr-8">
-        <Suspense fallback={<div>Loading Account…</div>}>
-          <AccountPage userDetails={userData} isLoading={isLoading} />
-        </Suspense>
-      </div>
-    </div>
-  </div>
-);
 
+  );
 };
 
 export { SubscriptionCard, BillingInfoForm };
-export default UserProfilePage;
+

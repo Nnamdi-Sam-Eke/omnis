@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import { Toaster } from 'react-hot-toast';
 import { signOut } from "firebase/auth";
 import { auth } from "./firebase";
 
 // Pages
+import SplashScreen from './components/SplashScreen';
+import OmnisOnboarding from './pages/OmnisOnboarding';
 import Home from './pages/Home';
 import PartnerChat from './pages/PartnerChat';
 import SavedScenarios from './pages/SavedScenarios';
 import UserProfilePage from './pages/UserProfilePage';
 import Support from './pages/Support';
+import PaymentsPage from './pages/PaymentsPage';
 import ResourcesPage from './pages/ResourcesPage';
 import Settings from './pages/Settings';
 import AnalyticsPage from './pages/AnalyticsPage';
@@ -30,67 +33,120 @@ import { MemoryProvider } from './MemoryContext';
 import AuthForm from './components/AuthForm';
 import ProfilePage from './components/SimpleProfilePage';
 import AccountPage from './pages/ProfilePage';
+import { AccountProvider } from './AccountContext';
 
-// ✅ PrivateRoute component
+// ✅ PrivateRoute
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return <div>Loading...</div>;
   return user ? children : <Navigate to="/login" />;
 };
 
-// ✅ PublicRoute component
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return <div>Loading...</div>;
   return !user ? children : <Navigate to="/dashboard" />;
 };
 
-function AppContent() {
-  const [currentPage, setCurrentPage] = useState('');
-  const [logoutMessage, setLogoutMessage] = useState("");
+const noLayoutRoutes = ['/login'];
 
-  // Sidebar state
+const AppContent = () => {
+  const location = useLocation();
+  const { user, loading } = useAuth();
+
+  // Sidebar & UI state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  // Profile menu state
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState('dashboard');
 
-  const location = useLocation(); // 👈 Get current route
-
-  // Function to toggle the sidebar
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+  // Logout handler
+  const handleLogout = () => {
+    signOut(auth).catch(error => {
+      console.error("Error signing out:", error);
+    });
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setLogoutMessage("You have been logged out successfully.");
-      setTimeout(() => {
-        setLogoutMessage("");
-        window.location.href = "/login";
-      }, 2000);
-    } catch (err) {
-      console.error("❌ Error logging out:", err.message);
-    }
-  };
-
-  // ❗ Define which routes should NOT show the UI
-  const noLayoutRoutes = ['/login'];
   const hideLayout = noLayoutRoutes.includes(location.pathname);
 
+  // Splash states
+  const [initialSplashDone, setInitialSplashDone] = useState(false);
+  const [postLoginSplash, setPostLoginSplash] = useState(false);
+
+  // Onboarding
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding') === 'true';
+
+  // Run splash on initial app load (before login)
+  useEffect(() => {
+    const timer = setTimeout(() => setInitialSplashDone(true), 7000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Run splash after login
+  useEffect(() => {
+    if (user) {
+      setPostLoginSplash(true);
+      setShowOnboarding(false);
+      const timer = setTimeout(() => {
+        setPostLoginSplash(false);
+        if (!hasCompletedOnboarding) {
+          setShowOnboarding(true);
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowOnboarding(false);
+      setPostLoginSplash(false);
+    }
+  }, [user, hasCompletedOnboarding]);
+
+  if (loading) return <div>Loading...</div>;
+
+  // Splash on first visit (before login)
+  if (!initialSplashDone) {
+    return <SplashScreen />;
+  }
+
+  // If user not logged in, show login page
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/login" element={<PublicRoute><AuthForm /></PublicRoute>} />
+        <Route path="*" element={<Navigate to="/login" />} />
+      </Routes>
+    );
+  }
+
+  // Splash after login
+  if (postLoginSplash) {
+    return <SplashScreen />;
+  }
+
+  // Show onboarding for new users
+  if (showOnboarding) {
+    return (
+      <OmnisOnboarding
+        onFinish={() => {
+          localStorage.setItem('hasCompletedOnboarding', 'true');
+          setShowOnboarding(false);
+        }}
+      />
+    );
+  }
+
+  // After all that, show main app UI with layout
   return (
     <div className="scale-95 lg:scale-75 origin-top-left w-[105.26%] lg:w-[133.33%]">
       <div className="min-h-full w-full bg-white dark:bg-gray-900">
-        <main className="min-h-full w-full bg-white dark:bg-gray-900">
-          <AuthProvider>
+        <main className="min-h-full w-full pt-28 px-2 bg-white dark:bg-gray-900">
+          <AccountProvider>
             <Toaster position="top-right" />
 
-            {/* ✅ Conditionally show Header & Sidebar */}
+            {/* Header & Sidebar */}
             {!hideLayout && (
               <>
                 <Header
-                  toggleSidebar={toggleSidebar}
+                  toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
                   currentPage={currentPage}
                   isProfileMenuOpen={isProfileMenuOpen}
                   setIsProfileMenuOpen={setIsProfileMenuOpen}
@@ -109,159 +165,48 @@ function AppContent() {
               <MemoryProvider>
                 <Routes>
                   {/* Public Route */}
-                  <Route
-                    path="/login"
-                    element={
-                      <PublicRoute>
-                        <AuthForm />
-                      </PublicRoute>
-                    }
-                  />
+                  <Route path="/login" element={<PublicRoute><AuthForm /></PublicRoute>} />
 
                   {/* Private Routes */}
-                  <Route
-                    path="/"
-                    element={
-                      <PrivateRoute>
-                        <OmnisDashboard />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/home"
-                    element={
-                      <PrivateRoute>
-                        <Home />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <PrivateRoute>
-                        <OmnisDashboard />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/partner-chat"
-                    element={
-                      <PrivateRoute>
-                        <PartnerChat />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/saved-scenarios"
-                    element={
-                      <PrivateRoute>
-                        <SavedScenarios />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/user-profile"
-                    element={
-                      <PrivateRoute>
-                        <UserProfilePage />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/support"
-                    element={
-                      <PrivateRoute>
-                        <Support />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/activity-log"
-                    element={
-                      <PrivateRoute>
-                        <ActivityLog />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/resources"
-                    element={
-                      <PrivateRoute>
-                        <ResourcesPage />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/new-scenario"
-                    element={
-                      <PrivateRoute>
-                        <ScenarioTabs />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/settings"
-                    element={
-                      <PrivateRoute>
-                        <Settings />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/analytics"
-                    element={
-                      <PrivateRoute>
-                        <AnalyticsPage />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/notifications"
-                    element={
-                      <PrivateRoute>
-                        <NotificationsPage />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/account"
-                    element={
-                      <PrivateRoute>
-                        <AccountPage />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/profile"
-                    element={
-                      <PrivateRoute>
-                        <ProfilePage />
-                      </PrivateRoute>
-                    }
-                  />
+                  <Route path="/" element={<PrivateRoute><OmnisDashboard /></PrivateRoute>} />
+                  <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
+                  <Route path="/dashboard" element={<PrivateRoute><OmnisDashboard /></PrivateRoute>} />
+                  <Route path="/partner-chat" element={<PrivateRoute><PartnerChat /></PrivateRoute>} />
+                  <Route path="/saved-scenarios" element={<PrivateRoute><SavedScenarios /></PrivateRoute>} />
+                  <Route path="/user-profile" element={<PrivateRoute><UserProfilePage /></PrivateRoute>} />
+                  <Route path="/support" element={<PrivateRoute><Support /></PrivateRoute>} />
+                  <Route path="/activity-log" element={<PrivateRoute><ActivityLog /></PrivateRoute>} />
+                  <Route path="/resources" element={<PrivateRoute><ResourcesPage /></PrivateRoute>} />
+                  <Route path="/new-scenario" element={<PrivateRoute><ScenarioTabs /></PrivateRoute>} />
+                  <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+                  <Route path="/analytics" element={<PrivateRoute><AnalyticsPage /></PrivateRoute>} />
+                  <Route path="/payments" element={<PrivateRoute><PaymentsPage /></PrivateRoute>} />
+                  <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
+                  <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
+                  <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
                 </Routes>
               </MemoryProvider>
             </OmnisProvider>
 
-            {/* 👇 FOOTER & OTHER BOTTOM ELEMENTS */}
-            {!hideLayout && (
-              <>
-                <Footer />
-                <CreatorsCorner />
-                <FeedbackButton />
-              </>
-            )}
-          </AuthProvider>
+            {/* Footer & Bottom UI */}
+            {!hideLayout && <Footer />}
+            {!hideLayout && <CreatorsCorner />}
+            {!hideLayout && <FeedbackButton />}
+
+          </AccountProvider>
         </main>
       </div>
     </div>
   );
-}
+};
 
+// ✅ Top-Level App with BrowserRouter
 export default function App() {
   return (
-   
-    <AppContent />
+  
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     
   );
 }

@@ -56,7 +56,7 @@ const ActivityLogPage = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 min-h-screen">
       <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
         Activity Log
       </h1>

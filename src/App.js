@@ -7,7 +7,6 @@ import { auth } from "./firebase";
 
 // Pages
 import SplashScreen from './components/SplashScreen';
-import OmnisOnboarding from './pages/OmnisOnboarding';
 import Home from './pages/Home';
 import PartnerChat from './pages/PartnerChat';
 import SavedScenarios from './pages/SavedScenarios';
@@ -72,10 +71,6 @@ const AppContent = () => {
   const [initialSplashDone, setInitialSplashDone] = useState(false);
   const [postLoginSplash, setPostLoginSplash] = useState(false);
 
-  // Onboarding
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const hasCompletedOnboarding = localStorage.getItem('hasCompletedOnboarding') === 'true';
-
   // Run splash on initial app load (before login)
   useEffect(() => {
     const timer = setTimeout(() => setInitialSplashDone(true), 7000);
@@ -86,19 +81,14 @@ const AppContent = () => {
   useEffect(() => {
     if (user) {
       setPostLoginSplash(true);
-      setShowOnboarding(false);
       const timer = setTimeout(() => {
         setPostLoginSplash(false);
-        if (!hasCompletedOnboarding) {
-          setShowOnboarding(true);
-        }
       }, 3000);
       return () => clearTimeout(timer);
     } else {
-      setShowOnboarding(false);
       setPostLoginSplash(false);
     }
-  }, [user, hasCompletedOnboarding]);
+  }, [user]);
 
   if (loading) return <div>Loading...</div>;
 
@@ -120,18 +110,6 @@ const AppContent = () => {
   // Splash after login
   if (postLoginSplash) {
     return <SplashScreen />;
-  }
-
-  // Show onboarding for new users
-  if (showOnboarding) {
-    return (
-      <OmnisOnboarding
-        onFinish={() => {
-          localStorage.setItem('hasCompletedOnboarding', 'true');
-          setShowOnboarding(false);
-        }}
-      />
-    );
   }
 
   // After all that, show main app UI with layout
@@ -203,10 +181,8 @@ const AppContent = () => {
 // ✅ Top-Level App with BrowserRouter
 export default function App() {
   return (
-  
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

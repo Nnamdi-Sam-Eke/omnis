@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Tooltip from "../components/Tooltip";
-import favicon from '../images/favicon1.png';
+
 
 function Home() {
   const navigate = useNavigate(); // React Router navigation
@@ -62,11 +62,11 @@ function Home() {
 
 
       </div>
-      <div >
+      {/* <div >
         <img src={favicon}
         alt="Motif"
         className="w-[800px] h-[800px] mt-8 lg:mt-0 sm:w-[400px] sm:h-[400px]" />
-      </div>
+      </div> */}
     </div>
   );
 

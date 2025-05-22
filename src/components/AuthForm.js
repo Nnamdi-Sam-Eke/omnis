@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { doc, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { getAuth } from "firebase/auth";
 import { Eye, EyeOff } from "lucide-react";
+import imageCompression from 'browser-image-compression';
+
+
 
 const AuthForm = () => {
   const { signup, login, resetPassword } = useAuth();
@@ -18,12 +21,15 @@ const AuthForm = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [location, setLocation] = useState("");
   const [country, setCountry] = useState("");
+  const [profilePicture, setProfilePicture] = useState("");
   const [error, setError] = useState("");
   const [isSignUp, setIsSignUp] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+
 
   const fetchUserData = async () => {
     const user = getAuth().currentUser;
@@ -46,7 +52,7 @@ const AuthForm = () => {
           setError("Passwords do not match");
           return;
         }
-        await signup(firstname, lastname, phone, email, password, location, country);
+        await signup(firstname, lastname, phone, email, password, location, country, profilePicture);
       } else {
         await login(email, password);
         const user = getAuth().currentUser;
@@ -61,6 +67,7 @@ const AuthForm = () => {
       console.error("Auth Error:", err);
       setError(err.message || "An unexpected error occurred");
     }
+    
   };
 
   const handleResetPassword = async (e) => {
@@ -97,8 +104,11 @@ const AuthForm = () => {
     }
   };
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen mb-8 space-y-4 bg-gray-100 px-4 sm:px-6 w-full max-w-md mx-auto overflow-y-auto">
+
+
+
+return (
+   <div className="flex flex-col items-center justify-center min-h-screen space-y-4 bg-white py-8 px-4 sm:px-6 sm:py-8 w-full max-w-md lg:max-w-xl xl:max-w-2xl mx-auto overflow-y-auto">
 
       {!showForm ? (
         <div className="flex flex-col items-center justify-center space-y-4">
@@ -113,7 +123,7 @@ const AuthForm = () => {
       ) : showResetPassword ? (
         <div className="flex flex-col items-center justify-center h-full text-gray-900">
           <h2 className="text-3xl font-light mb-6">Reset Your Password</h2>
-          {error && <p className="text-red-500 mb-4">{String(error.message)}</p>}
+          {error && <p className="text-red-500 mb-4">{error}</p>}
           <form onSubmit={handleResetPassword} className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
             <input
               type="email"
@@ -146,7 +156,7 @@ const AuthForm = () => {
           <h2 className="text-3xl font-light mb-6 mt-8">
             {isSignUp ? "Create Your Omnis Account" : "Welcome Back!"}
           </h2>
-          {error && <p className="text-red-500 mb-4">{String(error.message)}</p>}
+          {error && <p className="text-red-500 mb-4">{error}</p>}
           <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md space-y-4">
             {isSignUp && (
               <>
@@ -190,6 +200,24 @@ const AuthForm = () => {
                   required
                   className="p-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const options = { maxSizeMB: 1, maxWidthOrHeight: 500 };
+                      try {
+                        const compressedFile = await imageCompression(file, options);
+                        const base64 = await imageCompression.getDataUrlFromFile(compressedFile);
+                        setProfilePicture(base64); // or upload to storage & set URL
+                      } catch (error) {
+                        console.error("Image compression error", error);
+                      }
+                    }
+                  }}
+                  className="p-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
               </>
             )}
             <input
@@ -220,48 +248,51 @@ const AuthForm = () => {
             </div>
             {isSignUp && (
               <>
-                <p className={`text-sm ${getStrengthColor(getPasswordStrength())}`}>
-                  Password Strength: {getPasswordStrength()}
-                </p>
-                <div className="relative w-full">
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm Password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    className="p-3 border rounded-lg w-full pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500"
-                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                  >
-                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </>
-            )}
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-green-500 text-white py-3  transform transition duration-150 ease-in-out hover:scale-105 active:scale-95 rounded-full"
-            >
-              {isSignUp ? "Sign Up" : "Log In"}
-            </button>
-          </form>
-          <div className="flex space-x-4 mt-4">
-            <button className="text-blue-600 hover:underline mb-8" onClick={() => setIsSignUp(!isSignUp)}>
-              {isSignUp ? "Already have an account? Log In" : "Don't have an account? Sign Up"}
-            </button>
-            <button className="text-blue-600 hover:underline mb-8" onClick={() => setShowResetPassword(true)}>
-              Forgot Password?
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+                <p
+className="text-sm text-gray-500 mt-2">Password strength: <span className={getStrengthColor(getPasswordStrength())}>{getPasswordStrength()}</span></p>
+<div className="relative w-full">
+<input
+type={showConfirmPassword ? "text" : "password"}
+placeholder="Confirm Password"
+value={confirmPassword}
+onChange={(e) => setConfirmPassword(e.target.value)}
+required
+className="p-3 border rounded-lg w-full pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400"
+/>
+<button
+type="button"
+onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500"
+aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+>
+{showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+</button>
+</div>
+</>
+)}
+<button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-green-500 text-white py-3 rounded-full" >
+{isSignUp ? "Sign Up" : "Login"}
+</button>
+{!isSignUp && (
+<button
+type="button"
+className="text-blue-600 mt-4 hover:underline w-full"
+onClick={() => setShowResetPassword(true)}
+>
+Forgot Password?
+</button>
+)}
+</form>
+<button
+className="text-blue-600 mt-4 hover:underline"
+onClick={() => setIsSignUp(!isSignUp)}
+>
+{isSignUp ? "Already have an account? Log in" : "Don't have an account? Sign up"}
+</button>
+</div>
+)}
+</div>
+);
 };
 
 export default AuthForm;

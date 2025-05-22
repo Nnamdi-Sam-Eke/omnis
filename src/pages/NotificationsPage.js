@@ -140,7 +140,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 min-h-screen">
       <Toaster position="top-right" reverseOrder={false} />
 
       <h1 className="text-2xl text-blue-600 dark:text-blue-300 font-bold mb-4">Notifications</h1>

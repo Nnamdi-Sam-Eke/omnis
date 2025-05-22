@@ -168,7 +168,7 @@ const UptimeChart = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 mt-8 rounded-3xl shadow border w-full transition-all duration-300 ease-in-out">
+    <div className="w-full  hover:shadow-blue-500/50 transition px-6 py-6 border p-6 mt-8 bg-white dark:bg-gray-800 rounded-3xl shadow-lg transition-all duration-300 ease-in-out">
       <button
         className="w-full text-left mb-4 text-blue-500 dark:text-blue-300 flex justify-between items-center"
         onClick={()=>setIsOpen(o=>!o)}

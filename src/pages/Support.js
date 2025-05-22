@@ -109,10 +109,10 @@ const SupportPage = () => {
             }
           >
             <div id="FAQs-panel" role="tabpanel" aria-labelledby="FAQs-tab" className="space-y-4">
-              <h3 className="text-xl font-semibold text-green-500 dark:text-green-500">Frequently Asked Questions</h3>
+              <h3 className="text-xl font-semibold text-black dark:text-green-500">Frequently Asked Questions</h3>
               {faqCategories.map((category, categoryIdx) => (
                 <div key={categoryIdx} className="space-y-4">
-                  <h4 className="text-lg font-semibold text-green-500">{category.category}</h4>
+                  <h4 className="text-lg font-semibold text-green-500 dark:text-white">{category.category}</h4>
                   {category.faqs.map((faq, faqIdx) => (
                     <div
                       key={faqIdx}

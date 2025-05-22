@@ -16,7 +16,6 @@ import CommandPalette from '../components/CommandPalette';
 import AchievementsTab from '../components/AchievementsTab';
 import SkeletonLoader from '../components/SkeletonLoader'; 
 import QuickActions from '../components/QuickActionButtons';
-// import OmnisOnboarding from '../pages/OmnisOnboarding';
 
 // Lazy-loaded components
 const ActivityFeed = lazy(() => import('../components/ActivityFeed'));
@@ -31,20 +30,10 @@ const OmnisDashboard = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [activeTab, setActiveTab] = useState('quickStats');
   const [showShortcuts, setShowShortcuts] = useState(false);
-    // Check if new user to show onboarding only once
-  // const [showTour, setShowTour] = React.useState(false);
 
   const auth = getAuth();
   const db = getFirestore();
   const user = auth.currentUser;
-
-
-  // useEffect(() => {
-  //   const onboarded = localStorage.getItem('onboarded');
-  //   if (!onboarded) {
-  //     setShowTour(true);
-  //   }
-  // }, []);
 
   useEffect(() => {
     const fetchFilteredData = async () => {
@@ -125,13 +114,6 @@ const OmnisDashboard = () => {
     <>
       <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setCommandPaletteOpen} setActiveTab={setActiveTab} />
 
-          {/* Onboarding modal */}
-    {/* {showTour && (
-      // <OmnisOnboarding onClose={() => {
-      //   setShowTour(false);
-      //   localStorage.setItem('onboarded', 'true');
-      // }} />
-    )} */}
       <div className="p-4 flex-1 overflow-y-auto space-y-4 max-h-screen pb-24 transition-all duration-300">
         <h1 className="text-3xl font-semibold text-green-500 mb-6">
           {getGreeting()}, {userFirstName || 'there'} 👋
@@ -249,41 +231,37 @@ const OmnisDashboard = () => {
           >
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md relative">
               <button
-                className="absolute top-2 right-2 text-gray-500 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onClick={() => setShowShortcuts(false)}
-                aria-label="Close"
-              >
-                ✖️
-              </button>
-              <h2 className="text-lg font-bold text-blue-600 dark:text-blue-400 mb-4">Keyboard Shortcuts</h2>
-              <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-200">
-                <li>
-                  <kbd>/</kbd> – Focus search
-                </li>
-                <li>
-                  <kbd>Alt</kbd> + <kbd>1</kbd> – Go to Quick Stats
-                </li>
-                <li>
-                  <kbd>Alt</kbd> + <kbd>2</kbd> – Go to Analytics
-                </li>
-                <li>
-                  <kbd>Alt</kbd> + <kbd>3</kbd> – Go to Achievements
-                </li>
-                <li>
-                  <kbd>Esc</kbd> – Clear focus or close modal
-                </li>
-                <li>
-                  <kbd>?</kbd> – Show this help window
-                </li>
-              </ul>
-            </div>
-          </div>
-        )}
-      </div>
-    </>
-  );
+                className="absolute top-2 right-2 text-gray-500 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring
+
+
+
+
+
+
+ChatGPT said:
+-blue-500 rounded"
+onClick={() => setShowShortcuts(false)}
+aria-label="Close keyboard shortcuts"
+>
+✕
+</button>
+<h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Keyboard Shortcuts</h2>
+<ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
+<li><kbd className="px-2 py-1 bg-gray-200 rounded">/</kbd>: Focus search</li>
+<li><kbd className="px-2 py-1 bg-gray-200 rounded">Alt + 1</kbd>: Quick Stats Tab</li>
+<li><kbd className="px-2 py-1 bg-gray-200 rounded">Alt + 2</kbd>: Analytics Tab</li>
+<li><kbd className="px-2 py-1 bg-gray-200 rounded">Alt + 3</kbd>: Achievements Tab</li>
+<li><kbd className="px-2 py-1 bg-gray-200 rounded">Esc</kbd>: Blur input / Close modals</li>
+<li><kbd className="px-2 py-1 bg-gray-200 rounded">?</kbd>: Toggle this help dialog</li>
+<li><kbd className="px-2 py-1 bg-gray-200 rounded">Enter</kbd>: Close this dialog</li>
+<li><kbd className="px-2 py-1 bg-gray-200 rounded">Ctrl + K / Cmd + K</kbd>: Open Command Palette</li>
+</ul>
+</div>
+</div>
+)}
+</div>
+</>
+);
 };
 
 export default OmnisDashboard;
-// Note: The above code is a simplified version of the original code.
-// It includes the main structure and functionality of the OmnisDashboard component.

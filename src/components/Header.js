@@ -51,13 +51,13 @@ const Header = ({
   className="fixed top-0 left-0 right-0 z-30 px-6 py-4 flex justify-between items-center bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md transition-all duration-300"
 > <button
         onClick={toggleSidebar}
-        className="p-2 rounded bg-gradient-to-r from-blue-600 to-green-500 text-white dark:bg-gray-700"
+        className="p-2 rounded bg-gradient-to-r from-blue-600 to-green-500 text-white dark:bg-gray-700"  
       >
         ☰
       </button>
 
       {/* Omnis logo */}
-      <h1 className="text-3xl italic font-bold capitalize text-blue-600 font-poppins dark:text-blue-400">
+      <h1 className="text-3xl font-bold capitalize text-blue-600 font-poppins dark:text-blue-400">
         Omnis
       </h1>
 

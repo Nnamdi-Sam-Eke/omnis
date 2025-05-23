@@ -31,7 +31,7 @@ function Home() {
 
   // 🔹 Hero Section Component
   const HeroSection = () => (
-    <div className="flex flex-col lg:flex-row items-center justify-between p-6 sm:p-12 md:p-16 lg:p-20 min-h-screen dark:bg-black">
+    <div className="flex flex-col lg:flex-row items-center justify-between mt-8 p-6 sm:p-12 md:p-16 lg:p-20 min-h-screen dark:bg-black">
       {/* Text Content */}
       <div className="lg:w-1/2 space-y-6">
         <h2 className=" transition text-4xl dark:text-blue-500 sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gray-900 max-w-2xl">
@@ -40,7 +40,7 @@ function Home() {
         <p className="text-base sm:text-lg md:text-xl lg:text-2xl max-w-2xl mb-6 p-4 text-gray-700 dark:text-gray-200">
           Experience the power of AI-driven simulations to make informed decisions and explore endless possibilities.
         </p>
-        <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 p-6 sm:p-8">
+        <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y- sm:space-x-6 p-6 sm:p-8">
   <Tooltip text="Join our Discord community for live support!">
     <a
       href="#"
@@ -72,7 +72,7 @@ function Home() {
 
   // 🔹 Omnis Section with Animated Spiral Circles
   const OmnisSection = () => (
-    <section className="py-32 bg-black text-white flex flex-col rounded-t-3xl md:flex-row items-center justify-between px-6 sm:px-16 dark:bg-white dark:text-black">
+    <section className="py-32 bg-black text-white sm:mt-12 sm:h-98px flex flex-col rounded-t-3xl md:flex-row items-center justify-between px-6 sm:px-16 dark:bg-white dark:text-black">
       <div className="max-w-2xl">
         <h2 className="text-3xl sm:text-4xl font-light mb-6 text-gray-200 dark:text-gray-900">
           What is <br />

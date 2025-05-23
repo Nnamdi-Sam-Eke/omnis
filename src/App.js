@@ -114,7 +114,7 @@ const AppContent = () => {
 
   // After all that, show main app UI with layout
   return (
-    <div className="scale-95 lg:scale-75 origin-top-left w-[105.26%] lg:w-[133.33%]">
+    <div className="scale-75 origin-top-left w-[133.33%]">
       <div className="min-h-full w-full bg-white dark:bg-gray-900">
         <main className="min-h-full w-full pt-28 px-2 bg-white dark:bg-gray-900">
           <AccountProvider>

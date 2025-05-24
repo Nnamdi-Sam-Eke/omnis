@@ -3,6 +3,7 @@ import { FiUser, FiUsers, FiLogOut } from 'react-icons/fi';
 import ThemeToggle from './ThemeToggle';
 import { useNavigate, Link, useLocation } from 'react-router-dom'; // Simplify imports
 import { useAuth } from '../AuthContext';  // Make sure your AuthContext is set up properly
+import favicon from '../images/SVG.svg'; // Import your favicon image
 
 
 const Header = ({
@@ -48,13 +49,19 @@ const Header = ({
 
   return (
     <div
-  className="fixed top-0 left-0 right-0 z-30 px-6 py-4 flex justify-between items-center bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md transition-all duration-300"
+  className="fixed top-0 left-0 right-0 z-30 px-6 py-4 text-bold flex justify-between items-center bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md transition-all duration-300"
 > <button
-        onClick={toggleSidebar}
-        className="p-2 rounded bg-gradient-to-r from-blue-600 to-green-500 text-white dark:bg-gray-700"  
-      >
-        ☰
-      </button>
+  onClick={toggleSidebar}
+  className="p-2 rounded relative"
+>
+  <img
+    src={favicon}
+    alt="Open Sidebar"
+    className="w-[30px] h-[30px] object-contain"
+  />
+</button>
+
+
 
       {/* Omnis logo */}
       <h1 className="text-3xl font-bold capitalize text-blue-600 font-poppins dark:text-blue-400">

@@ -57,7 +57,7 @@ const Header = ({
   <img
     src={favicon}
     alt="Open Sidebar"
-    className="w-[30px] h-[30px] object-contain"
+    className="w-[30px] h-[30px] object-contain dark:invert"
   />
 </button>
 

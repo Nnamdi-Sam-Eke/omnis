@@ -1,64 +1,61 @@
 import { motion } from "framer-motion";
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import clsx from "clsx";
+import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
 
 const QuickActions = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // ✅ Get the navigate function
 
   const actions = [
     {
       label: "+ New Scenario",
       bgColor: "bg-primary",
+      textColor: "text-black",
       hoverColor: "hover:bg-primary/90",
-      glowClass: "from-blue-400 via-blue-300 to-blue-500",
-      onClick: () => navigate("/new-scenario"),
+      glow: "rgba(59, 130, 246, 0.6)", // blue glow
+      onClick: () => {
+        console.log("New Scenario clicked");
+        navigate("/new-scenario"); // ✅ Route to the new page
+      },
     },
     {
       label: "📂 Saved Scenarios",
       bgColor: "bg-secondary",
+      textColor: "text-black",
       hoverColor: "hover:bg-secondary/90",
-      glowClass: "from-emerald-400 via-emerald-300 to-emerald-500",
-      onClick: () => navigate("/saved-scenarios"),
+      glow: "rgba(16, 185, 129, 0.6)", // green glow
+      onClick: () => {
+        console.log("Saved Scenarios clicked");
+        navigate("/saved-scenarios"); // ✅ Route to saved scenarios
+      },
     },
     {
       label: "💬 Open Partner Chat",
       bgColor: "bg-accent",
+      textColor: "text-black",
       hoverColor: "hover:bg-accent/90",
-      glowClass: "from-pink-400 via-pink-300 to-pink-500",
-      onClick: () => navigate("/partner-chat"),
+      glow: "rgba(236, 72, 153, 0.6)", // pink glow
+      onClick: () => {
+        console.log("Partner Chat clicked");
+        navigate("/partner-chat"); // ✅ Route to partner chat
+      },
     },
   ];
 
   return (
     <div className="flex flex-wrap justify-center gap-4 mt-8">
       {actions.map((action, index) => (
-        <motion.div
+        <motion.button
           key={index}
-          whileHover={{ scale: 1.05 }}
-          className="relative rounded-2xl p-[2px] transition-transform duration-300"
+          whileHover={{
+            scale: 1.05,
+            boxShadow: `0px 0px 12px ${action.glow}`,
+          }}
+          whileTap={{ scale: 0.95 }}
+          onClick={action.onClick}
+          className={`${action.bgColor} ${action.hoverColor} text-gray-500 dark:text-white rounded-2xl px-6 py-3 text-lg shadow-md transition-all`}
         >
-          {/* Glowing border layer */}
-          <div
-            className={clsx(
-              "absolute inset-0 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300",
-              `bg-gradient-to-br ${action.glowClass}`
-            )}
-          ></div>
-
-          {/* Button */}
-          <button
-            onClick={action.onClick}
-            className={clsx(
-              "relative z-10 group",
-              action.bgColor,
-              action.hoverColor,
-              "text-black dark:text-white rounded-2xl px-6 py-3 text-lg font-medium transition-colors duration-300"
-            )}
-          >
-            {action.label}
-          </button>
-        </motion.div>
+          {action.label}
+        </motion.button>
       ))}
     </div>
   );

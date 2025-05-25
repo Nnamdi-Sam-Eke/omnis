@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
 
 const QuickActions = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // ✅ Get the navigate function
 
   const actions = [
     {
@@ -14,7 +14,7 @@ const QuickActions = () => {
       glow: "rgba(59, 130, 246, 0.6)", // blue glow
       onClick: () => {
         console.log("New Scenario clicked");
-        navigate("/new-scenario");
+        navigate("/new-scenario"); // ✅ Route to the new page
       },
     },
     {
@@ -25,7 +25,7 @@ const QuickActions = () => {
       glow: "rgba(16, 185, 129, 0.6)", // green glow
       onClick: () => {
         console.log("Saved Scenarios clicked");
-        navigate("/saved-scenarios");
+        navigate("/saved-scenarios"); // ✅ Route to saved scenarios
       },
     },
     {
@@ -36,7 +36,7 @@ const QuickActions = () => {
       glow: "rgba(236, 72, 153, 0.6)", // pink glow
       onClick: () => {
         console.log("Partner Chat clicked");
-        navigate("/partner-chat");
+        navigate("/partner-chat"); // ✅ Route to partner chat
       },
     },
   ];
@@ -48,11 +48,11 @@ const QuickActions = () => {
           key={index}
           whileHover={{
             scale: 1.05,
-            boxShadow: `0px 0px 12px ${action.glow}`, // ✅ Interpolated string
+            boxShadow: `0px 0px 12px ${action.glow}`,
           }}
           whileTap={{ scale: 0.95 }}
           onClick={action.onClick}
-          className={`${action.bgColor} hover:${action.hoverColor} ${action.textColor} dark:text-white rounded-2xl px-6 py-3 text-lg shadow-md transition-all`}
+          className={`${action.bgColor} ${action.hoverColor} text-gray-500 dark:text-white rounded-2xl px-6 py-3 text-lg shadow-md transition-all`}
         >
           {action.label}
         </motion.button>

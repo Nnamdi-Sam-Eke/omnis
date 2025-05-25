@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import React from "react";
-import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
+import { useNavigate } from "react-router-dom";
 
 const QuickActions = () => {
-  const navigate = useNavigate(); // ✅ Get the navigate function
+  const navigate = useNavigate();
 
   const actions = [
     {
@@ -12,10 +12,7 @@ const QuickActions = () => {
       textColor: "text-black",
       hoverColor: "hover:bg-primary/90",
       glow: "rgba(59, 130, 246, 0.6)", // blue glow
-      onClick: () => {
-        console.log("New Scenario clicked");
-        navigate("/new-scenario"); // ✅ Route to the new page
-      },
+      onClick: () => navigate("/new-scenario"),
     },
     {
       label: "📂 Saved Scenarios",
@@ -23,10 +20,7 @@ const QuickActions = () => {
       textColor: "text-black",
       hoverColor: "hover:bg-secondary/90",
       glow: "rgba(16, 185, 129, 0.6)", // green glow
-      onClick: () => {
-        console.log("Saved Scenarios clicked");
-        navigate("/saved-scenarios"); // ✅ Route to saved scenarios
-      },
+      onClick: () => navigate("/saved-scenarios"),
     },
     {
       label: "💬 Open Partner Chat",
@@ -34,10 +28,7 @@ const QuickActions = () => {
       textColor: "text-black",
       hoverColor: "hover:bg-accent/90",
       glow: "rgba(236, 72, 153, 0.6)", // pink glow
-      onClick: () => {
-        console.log("Partner Chat clicked");
-        navigate("/partner-chat"); // ✅ Route to partner chat
-      },
+      onClick: () => navigate("/partner-chat"),
     },
   ];
 
@@ -48,11 +39,16 @@ const QuickActions = () => {
           key={index}
           whileHover={{
             scale: 1.05,
-            boxShadow: `0px 0px 12px ${action.glow}`,
+            boxShadow: `0 0 15px 4px ${action.glow}`,
           }}
           whileTap={{ scale: 0.95 }}
           onClick={action.onClick}
-          className={`${action.bgColor} ${action.hoverColor} text-gray-500 dark:text-white rounded-2xl px-6 py-3 text-lg shadow-md transition-all`}
+          className={`
+            ${action.bgColor} ${action.hoverColor} 
+            ${action.textColor} 
+            rounded-2xl px-6 py-3 text-lg shadow-md transition-all
+          `}
+          style={{ transition: "box-shadow 0.3s ease" }}
         >
           {action.label}
         </motion.button>
@@ -62,3 +58,5 @@ const QuickActions = () => {
 };
 
 export default QuickActions;
+// This component renders quick action buttons with hover effects and navigation.
+// Each button has a unique glow effect and navigates to different routes on click.

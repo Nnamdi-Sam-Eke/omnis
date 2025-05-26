@@ -6,6 +6,8 @@
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@react-google-maps/api": "^2.20.6",
+    "@stripe/react-stripe-js": "^3.7.0",
+    "@stripe/stripe-js": "^7.3.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -35,6 +37,7 @@
     "react-router-dom": "^7.5.3",
     "react-scripts": "^5.0.1",
     "react-tooltip": "^5.28.1",
+    "stripe": "^18.1.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

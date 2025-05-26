@@ -33,6 +33,9 @@ import AuthForm from './components/AuthForm';
 import ProfilePage from './components/SimpleProfilePage';
 import AccountPage from './pages/ProfilePage';
 import { AccountProvider } from './AccountContext';
+import StripeProvider from './StripeProvider';
+import UpgradeModal from './components/UpgradeModal';
+
 
 // ✅ PrivateRoute
 const PrivateRoute = ({ children }) => {
@@ -141,6 +144,7 @@ const AppContent = () => {
 
             <OmnisProvider>
               <MemoryProvider>
+              <StripeProvider>
                 <Routes>
                   {/* Public Route */}
                   <Route path="/login" element={<PublicRoute><AuthForm /></PublicRoute>} />
@@ -163,6 +167,9 @@ const AppContent = () => {
                   <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
                   <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
                 </Routes>
+              </StripeProvider>
+              {location.pathname === '/dashboard' && <UpgradeModal />}
+
               </MemoryProvider>
             </OmnisProvider>
 

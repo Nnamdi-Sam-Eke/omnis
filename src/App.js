@@ -168,7 +168,9 @@ const AppContent = () => {
                   <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
                 </Routes>
               </StripeProvider>
-              {location.pathname === '/dashboard', '/' && <UpgradeModal />}
+        
+{(location.pathname === '/dashboard' || location.pathname === '/') && <UpgradeModal />}
+
 
               </MemoryProvider>
             </OmnisProvider>

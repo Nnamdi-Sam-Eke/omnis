@@ -200,8 +200,8 @@ useEffect(() => {
               setBio(userData.bio || "");
               setEmail(userData.email || "");
               setPhone(userData.phone || "");
-              setCity(userData.location?.city || "");
-              setCountry(userData.location?.country || "");
+              setCity(userData.city || "");
+              setCountry(userData.country || "");
 
               // 👉 Add this to handle profile picture
               setProfilePicture(userData.profilePicture || null);

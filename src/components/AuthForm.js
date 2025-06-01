@@ -19,7 +19,7 @@ const AuthForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [location, setLocation] = useState("");
+ const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
   const [profilePicture, setProfilePicture] = useState("");
   const [error, setError] = useState("");
@@ -52,7 +52,7 @@ const AuthForm = () => {
           setError("Passwords do not match");
           return;
         }
-        await signup(firstname, lastname, phone, email, password, location, country, profilePicture);
+        await signup(firstname, lastname, phone, email, password, city, country, profilePicture);
       } else {
         await login(email, password);
         const user = getAuth().currentUser;
@@ -187,8 +187,8 @@ return (
                 <input
                   type="text"
                   placeholder="Location/City"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
                   required
                   className="p-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />

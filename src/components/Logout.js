@@ -1,66 +1,88 @@
 import { useState } from "react";
-import { useAuth } from "../AuthContext"; // Import Auth Context
-import { useNavigate } from "react-router-dom"; // For navigation
-import { Loader } from "lucide-react"; // Import spinner icon
+import { useAuth } from "../AuthContext";
+import { useNavigate } from "react-router-dom";
+import { Loader } from "lucide-react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Logout = () => {
-  const { logout } = useAuth(); // ✅ Get logout function from context
+  const { logout } = useAuth();
   const navigate = useNavigate();
+
   const [localLogoutMessage, setLocalLogoutMessage] = useState("");
-  const [isLoggingOut, setIsLoggingOut] = useState(false); // Add state for overlay
+  const [isLoggingOut, setIsLoggingOut] = useState(true);
+  const [fade, setFade] = useState(true);
 
   const handleLogout = async () => {
-    try {
-      console.log("Attempting to log out..."); // Debugging log
-      setIsLoggingOut(true); // Start showing overlay + spinner
+  try {
+    toast.info("You are being logged out.", {
+      position: "top-center",
+      autoClose: 2000,
+      hideProgressBar: false,
+      pauseOnHover: false,
+      draggable: false,
+      theme: "dark",
+    });
 
-      await logout(); // ✅ Ensure this function is correctly called
+    setIsLoggingOut(true);
+    setLocalLogoutMessage("Logging you out...");
+    setFade(true);
 
-      setLocalLogoutMessage("You have been logged out successfully.");
+    setTimeout(() => {
+      setFade(false); // Start fade out
+      setTimeout(async () => {
+        setLocalLogoutMessage("Redirecting you to login page...");
+        setFade(true);
 
-      setTimeout(() => {
-        navigate("/login"); // ✅ Redirect to login
-      }, 2000); // Redirect after 2 seconds
-    } catch (error) {
-      console.error("Logout failed:", error.message);
-      setLocalLogoutMessage("Logout failed. Please try again.");
-      setIsLoggingOut(false); // Stop overlay if there's an error
-    }
-  };
+        await logout(500); // Delay actual sign-out by 500ms
+
+        setTimeout(() => {
+          navigate("/login");
+        }, 1000); // Navigate after another delay
+      }, 500); // After fade out
+    }, 2000); // After initial message
+  } catch (error) {
+    console.error("Logout failed:", error.message);
+    toast.error("Logout failed. Please try again.", {
+      position: "top-center",
+      autoClose: 3000,
+      theme: "dark",
+    });
+    setIsLoggingOut(false);
+  }
+};
+  // Ensure the logout function is called with a delay
+  // to allow the UI to update before navigating away
+  // const handleLogout = async () => {
+  //   setIsLoggingOut(true);
+  //   setLocalLogoutMessage("Logging you out...");
+  //   setFade(true); 
 
   return (
     <div>
-      <button onClick={handleLogout} className="bg-white text-red-600 dark:text-red-400">
+      <button
+        onClick={handleLogout}
+        className="bg-white text-red-600 dark:text-red-400 px-4 py-2 rounded"
+      >
         Log Out
       </button>
 
-      {/* Display logout message if it exists */}
-      {/* {localLogoutMessage && (
-        <div className="flex flex-col items-center justify-center h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white">
-          <p className="text-lg font-semibold bg-green-100 text-green-800 px-4 py-2 rounded-md">
-            {localLogoutMessage}
-          </p>
-          <button
-            onClick={() => {
-              setLocalLogoutMessage(""); // Hide message
-              navigate("/login"); // Redirect immediately if OK is clicked
-            }}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-          >
-            OK
-          </button>
-        </div> */}
-      {/* )} */}
-
-      {/* Overlay + spinner while logging out */}
       {isLoggingOut && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="flex flex-col items-center space-y-4">
+          <div className="flex flex-col items-center space-y-4 scale-[0.75] origin-center">
             <Loader className="animate-spin text-white w-12 h-12" />
-            <p className="text-white text-lg">Logging out...</p>
+            <p
+              className={`text-white text-lg transition-opacity duration-500 ${
+                fade ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              {localLogoutMessage}
+            </p>
           </div>
         </div>
       )}
+
+      <ToastContainer />
     </div>
   );
 };

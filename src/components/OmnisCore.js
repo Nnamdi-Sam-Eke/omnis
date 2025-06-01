@@ -26,7 +26,7 @@ const NewScenarioPage = () => {
 
         {/* Right: Live Preview */}
         <div className="bg-white dark:bg-gray-800 border shadow-lg hover:shadow-blue-500/50 rounded-lg p-6 ">
-          <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300 mb-2">
+          <h2 className="text-xl max-h-48px font-semibold text-blue-500 dark:text-blue-300 mb-2">
             Scenario Preview
           </h2>
           <p className="text-gray-500  dark:text-gray-400 text-center mt-6">
@@ -36,17 +36,12 @@ const NewScenarioPage = () => {
       </section>
 
       {/* Simulation Output Section */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <section className="grid grid-cols-1 sm:grid-cols-1 gap-6">
         {/* Left: Simulation Result */}
-        <div>
-          <ScenarioSimulationCard />
-        </div>
-
-        {/* Right: Scenario Insights */}
-        <div>
+        
+  
           <ScenarioInsightsCard />
-        </div>
-      </section>
+        </section>
 
     </div>
   );

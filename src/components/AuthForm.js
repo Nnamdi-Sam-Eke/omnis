@@ -108,7 +108,7 @@ const AuthForm = () => {
 
 
 return (
-   <div className="flex flex-col items-center justify-center min-h-screen space-y-4 bg-white py-8 px-4 sm:px-6 sm:py-8 w-full max-w-md lg:max-w-xl xl:max-w-2xl mx-auto overflow-y-auto">
+   <div className="flex flex-col scale-[0.70] origin-center items-center justify-center min-h-screen space-y-4 bg-white py-8 px-4 sm:px-6 sm:py-8 w-full max-w-md lg:max-w-xl xl:max-w-2xl mx-auto overflow-y-auto">
 
       {!showForm ? (
         <div className="flex flex-col items-center justify-center space-y-4">

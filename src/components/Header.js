@@ -49,7 +49,7 @@ const Header = ({
 
   return (
     <div
-  className="fixed top-0 left-0 right-0 z-30 px-6 py-4 text-bold flex justify-between items-center bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md transition-all duration-300"
+  className="fixed top-0 left-0 right-0 z-30 mb-16 px-6 py-4 text-bold flex justify-between items-center bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md transition-all duration-300"
 > <button
   onClick={toggleSidebar}
   className="p-2 rounded bg-white dark:bg-gray-800 relative"

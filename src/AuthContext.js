@@ -128,17 +128,23 @@ export function AuthProvider({ children }) {
 
 
   // ✅ Logout (primary only)
-  const logout = async () => {
-    try {
-      await signOut(auth);
-      setUser(null);
-      localStorage.removeItem("sessionVersion");
-      console.log("✅ User logged out successfully");
-    } catch (error) {
-      console.error("❌ Logout error:", error.message);
-      throw error;
+  // ✅ Logout (primary only)
+const logout = async (delay = 0) => {
+  try {
+    if (delay > 0) {
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
-  };
+
+    await signOut(auth);
+    setUser(null);
+    localStorage.removeItem("sessionVersion");
+    console.log("✅ User logged out successfully");
+  } catch (error) {
+    console.error("❌ Logout error:", error.message);
+    throw error;
+  }
+};
+
 
   // ✅ Password Reset
   const resetPassword = async (email) => {

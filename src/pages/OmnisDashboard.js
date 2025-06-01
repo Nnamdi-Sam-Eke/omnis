@@ -16,6 +16,7 @@ import CommandPalette from '../components/CommandPalette';
 import AchievementsTab from '../components/AchievementsTab';
 import SkeletonLoader from '../components/SkeletonLoader'; 
 import QuickActions from '../components/QuickActionButtons';
+import DiscountBanner from '../components/DiscountBanner';
 
 // Lazy-loaded components
 const ActivityFeed = lazy(() => import('../components/ActivityFeed'));
@@ -30,11 +31,59 @@ const OmnisDashboard = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [activeTab, setActiveTab] = useState('quickStats');
   const [showShortcuts, setShowShortcuts] = useState(false);
-
+  const [showDiscountBanner, setShowDiscountBanner] = useState(true);
+  const [discountEndDate, setDiscountEndDate] = useState(null);
+  const [showBanner, setShowBanner] = useState(true);
   const auth = getAuth();
   const db = getFirestore();
   const user = auth.currentUser;
+    const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
 
+  
+  // Fetch user data and check subscription status
+  useEffect(() => {
+    async function fetchUserData() {
+      if (!user) return;
+
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+
+        // Check subscription tier
+        if (data.subscriptionTier && data.subscriptionTier !== "free") {
+          // User upgraded - no banner
+          setDiscountEndDate(null);
+          setShowBanner(false);
+          return;
+        }
+
+        if (data.discountAvailableUntil) {
+          const discountUntilDate = data.discountAvailableUntil.toDate
+            ? data.discountAvailableUntil.toDate()
+            : new Date(data.discountAvailableUntil);
+
+          if (discountUntilDate > new Date()) {
+            setDiscountEndDate(discountUntilDate);
+            setShowBanner(true);
+          } else {
+            setDiscountEndDate(null);
+            setShowBanner(false);
+          }
+        }
+      }
+    }
+
+    fetchUserData();
+  }, [user]);
+
+  
   useEffect(() => {
     const fetchFilteredData = async () => {
       if (searchQuery.trim() === '') {
@@ -73,12 +122,6 @@ const OmnisDashboard = () => {
     }
   }, [user, db]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
 
   useEffect(() => {
     const handler = (e) => {
@@ -104,6 +147,13 @@ const OmnisDashboard = () => {
     return () => window.removeEventListener('keydown', handler);
   }, [showShortcuts]);
 
+  
+  if (!user) {
+    return <p>Please login to see your dashboard.</p>;
+  }
+  
+
+
   const tabLabels = {
     quickStats: 'Pilot Dashboard',
     analytics: 'Analytics',
@@ -111,10 +161,17 @@ const OmnisDashboard = () => {
   };
 
   return (
-    <>
+     <>
+      {showBanner && discountEndDate && (
+        <DiscountBanner
+          discountEndDate={discountEndDate}
+          onClose={() => setShowBanner(false)}
+        />
+      )}
+    
       <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setCommandPaletteOpen} setActiveTab={setActiveTab} />
 
-      <div className="p-4 flex-1 overflow-y-auto space-y-4 max-h-screen pb-24 transition-all duration-300">
+      <div className="p-4 flex-1 overflow-y-auto space-y-4 max-h-screen pb-24 mt-10 transition-all duration-300">
         <h1 className="text-3xl font-semibold text-green-500 mb-6">
           {getGreeting()}, {userFirstName || 'there'} 👋
         </h1>

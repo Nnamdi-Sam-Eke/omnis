@@ -40,7 +40,7 @@ function Home() {
         <p className="text-base sm:text-lg md:text-xl lg:text-2xl max-w-2xl mb-6 p-4 text-gray-700 dark:text-gray-200">
           Experience the power of AI-driven simulations to make informed decisions and explore endless possibilities.
         </p>
-        <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y- sm:space-x-6 p-6 sm:p-8">
+        <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-6 sm:space-x-6 p-6 sm:p-8">
   <Tooltip text="Join our Discord community for live support!">
     <a
       href="#"
@@ -99,7 +99,8 @@ function Home() {
         ))}
       </div>
 
-      <style jsx="true">{`
+     <style jsx>{`
+
         @keyframes spiralMove {
           0% { transform: translateY(50px) scale(0.5); opacity: 0; }
           50% { transform: translateY(-10px) scale(1); opacity: 1; }
@@ -145,7 +146,7 @@ function Home() {
         onMouseEnter={stopAuto}
         onMouseLeave={startAuto}
       >
-        <h2 className="text-4xl sm:text-5xl font-bold mb-12 text:black dark:text-white">How It Works</h2>
+        <h2 className="text-4xl sm:text-5xl font-bold mb-12 text-black dark:text-white">How It Works</h2>
         <div className="max-w-4xl mx-auto px-6 flex flex-col items-center">
           <div className="relative w-full h-48">
             {steps.map((step, i) => (

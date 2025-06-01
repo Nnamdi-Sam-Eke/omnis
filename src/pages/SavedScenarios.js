@@ -3,11 +3,17 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
 
-const HistoryComponent = lazy(() => import("../components/History"));
 const SavedComponent = lazy(() => import("../components/Saved"));
+const HistoryComponent = lazy(() => import("../components/History"));
 
-const SavedScenariosPage = () => {
+const tabLabels = {
+  saved: "Saved Scenarios",
+  history: "History",
+};
+
+const SavedScenariosTabs = () => {
   const { currentUser } = useAuth();
+  const [activeTab, setActiveTab] = useState("saved");
   const [savedScenarios, setSavedScenarios] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -32,7 +38,10 @@ const SavedScenariosPage = () => {
           where("userId", "==", currentUser.uid)
         );
         const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        const data = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
         setSavedScenarios(data);
       } catch (error) {
         console.error("❌ Error retrieving saved scenarios:", error);
@@ -66,53 +75,43 @@ const SavedScenariosPage = () => {
   }, [searchQuery, savedScenarios]);
 
   return (
-    <div className="p-4 space-y-6 min-h-screen ">
+    <div className="p-6 min-h-screen mx-auto">
       <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
         Archive of Genius...
       </h1>
 
-      {/* Search Input with Tooltip */}
-      <div className="mt-4 relative">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search Saved Scenarios"
-          className="pl-10 pr-4 py-2 w-1/4 border rounded-lg text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          aria-label="Search saved scenarios"
-          title="Type to search for saved scenarios"  // Tooltip for the search input
-        />
-        {suggestions.length > 0 && (
-          <ul
-            className="mt-2 bg-white dark:bg-gray-800 shadow-lg rounded-md max-h-40 overflow-y-auto"
-            role="listbox"
-            aria-live="polite"
-            title="Click a suggestion to autofill the search"
+      {/* Tabs Navigation */}
+      <div
+        role="tablist"
+        aria-label="Saved and History Tabs"
+        className="flex gap-4 justify-center sm:justify-start mb-6"
+      >
+        {Object.entries(tabLabels).map(([key, label]) => (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={activeTab === key}
+            aria-controls={`${key}-panel`}
+            id={`${key}-tab`}
+            onClick={() => setActiveTab(key)}
+            className={`px-4 py-2 rounded-full font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              activeTab === key
+                ? "bg-blue-500 text-white border border-blue-700"
+                : "bg-gray-300 text-gray-800 hover:bg-green-300"
+            }`}
           >
-            {suggestions.map((s, i) => (
-              <li
-                key={i}
-                role="option"
-                tabIndex={0}
-                onClick={() => setSearchQuery(s)}
-                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setSearchQuery(s)}
-                className="px-4 py-2 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-600"
-                title={`Click to search for "${s}"`}  // Tooltip for each suggestion
-              >
-                {s}
-              </li>
-            ))}
-          </ul>
-        )}
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* Full-screen Spinner with Tooltip */}
+      {/* Loading Spinner */}
       {isLoading && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition"
           role="status"
           aria-live="polite"
-          title="Loading saved scenarios..."  // Tooltip for the loading spinner
+          title="Loading saved scenarios..."
         >
           <div className="relative flex items-center justify-center">
             <div className="absolute w-16 h-16 border-8 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -121,25 +120,56 @@ const SavedScenariosPage = () => {
         </div>
       )}
 
-      {/* Content */}
+      {/* Tabs Content */}
       {!isLoading && (
-        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 p-6">
-          <div className="w-full">
-            <Suspense fallback={<div>Loading Saved...</div>}>
-              <SavedComponent scenarios={filteredSavedScenarios} />
+        <div className="relative transition-all">
+          {activeTab === "saved" && (
+            <Suspense
+              fallback={
+                <div className="flex justify-center items-center h-40">
+                  <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                </div>
+              }
+            >
+              <div
+                id="saved-panel"
+                role="tabpanel"
+                aria-labelledby="saved-tab"
+                tabIndex={0}
+              >
+                <SavedComponent scenarios={filteredSavedScenarios} />
+              </div>
             </Suspense>
-          </div>
-          <div className="w-full">
-            <Suspense fallback={<div>Loading History...</div>}>
-              <HistoryComponent />
+          )}
+
+          {activeTab === "history" && (
+            <Suspense
+              fallback={
+                <div className="flex justify-center items-center h-40">
+                  <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                </div>
+              }
+            >
+              <div
+                id="history-panel"
+                role="tabpanel"
+                aria-labelledby="history-tab"
+                tabIndex={0}
+              >
+                <HistoryComponent />
+              </div>
             </Suspense>
-          </div>
+          )}
         </div>
       )}
 
       {/* No Results Message */}
-      {!isLoading && filteredSavedScenarios.length === 0 && (
-        <div className="text-center text-gray-500 dark:text-gray-400" role="status" aria-live="polite">
+      {!isLoading && activeTab === "saved" && filteredSavedScenarios.length === 0 && (
+        <div
+          className="text-center text-gray-500 dark:text-gray-400 mt-8"
+          role="status"
+          aria-live="polite"
+        >
           No saved scenarios found.
         </div>
       )}
@@ -147,4 +177,4 @@ const SavedScenariosPage = () => {
   );
 };
 
-export default SavedScenariosPage;
+export default SavedScenariosTabs;

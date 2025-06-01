@@ -94,8 +94,8 @@ function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
     >
       {/* Toast message */}
       {toastMessage && (
-        <div className="absolute left-1/2 transform -translate-x-1/2 bg-blue-600 text-white py-2 px-6 rounded-md shadow-lg"
-          style={{ top: 'auto', bottom: '120px' }}>
+        <div className="absolute left-1/2 transform -translate-x-1/2 backdrop-blur-lg bg-red-600 text-white py-2 px-6 rounded-md shadow-lg"
+          style={{ top: 'auto', bottom: '120px', zIndex: 1000 }}>
           {toastMessage}
         </div>
       )}

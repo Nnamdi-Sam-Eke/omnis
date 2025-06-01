@@ -320,6 +320,33 @@ export default function ScenarioInput({ onSimulate }) {
         )}
       </div>
 
+      {/* ✅ Display User Interactions (you can pass this to a history component) */}
+      {userInteractions.length > 0 && (
+        <div className="mt-8 bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 border">
+          <h3 className="text-lg font-semibold text-blue-500 dark:text-blue-300 mb-4">
+            Recent User Interactions
+          </h3>
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+            {userInteractions.slice(0, 5).map((interaction) => (
+              <div key={interaction.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex justify-between items-start">
+                  <span className="font-medium text-sm text-blue-600 dark:text-blue-400">
+                    {interaction.action}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {interaction.timestamp?.toDate?.()?.toLocaleDateString?.() || 'Recent'}
+                  </span>
+                </div>
+                {interaction.details?.scenarios && (
+                  <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    Scenarios: {interaction.details.scenarios.join(', ')}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Upgrade Modal */}
       {showUpgradeModal && (

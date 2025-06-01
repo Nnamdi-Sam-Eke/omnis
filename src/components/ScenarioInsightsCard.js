@@ -1,12 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronUp } from "lucide-react";
+import {
+  Bar,
+  Line,
+  Pie,
+  Doughnut,
+} from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Title,
+  Filler
+} from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
+
+// Register all required chart elements and plugins
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Title,
+  Filler,
+  zoomPlugin
+);
 
 const ScenarioInsightsCard = ({ processedData = [] }) => {
   const [chartType, setChartType] = useState("bar");
   const [isOpen, setIsOpen] = useState(false);
+  const [filterValue, setFilterValue] = useState(0);
 
-  // Dummy Data for testing purposes (remove or replace as needed)
-  if (processedData.length === 0) {
+  // Dummy fallback
+  if (!processedData || processedData.length === 0) {
     processedData = [
       { label: "Scenario A", value: 45 },
       { label: "Scenario B", value: 75 },
@@ -14,76 +50,147 @@ const ScenarioInsightsCard = ({ processedData = [] }) => {
     ];
   }
 
-  // Load the collapse/expand state from localStorage on component mount
   useEffect(() => {
     const savedState = localStorage.getItem('scenarioCardIsOpen');
-    if (savedState !== null) {
-      setIsOpen(JSON.parse(savedState)); // Set the state based on localStorage value
-    }
+    if (savedState !== null) setIsOpen(JSON.parse(savedState));
   }, []);
 
-  // Save the collapse/expand state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('scenarioCardIsOpen', JSON.stringify(isOpen));
   }, [isOpen]);
 
-  const renderChart = () => {
-    if (!processedData || processedData.length === 0) {
-      return <p className="text-gray-500">No data available</p>; // Handle empty data
-    }
+  // Filter data dynamically
+  const filteredData = processedData.filter(item => item.value >= filterValue);
 
-    // Example dummy chart logic (replace with your real chart)
-    return (
-      <div className="border p-4 rounded-lg bg-gray-100">
-        <h3 className="text-lg font-bold mb-2">Chart Preview ({chartType})</h3>
-        <ul className="space-y-2">
-          {processedData.map((item, index) => (
-            <li key={index} className="flex justify-between">
-              <span>{item.label}</span>
-              <span>{item.value}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
+  const chartData = {
+    labels: filteredData.map(item => item.label),
+    datasets: [
+      {
+        label: "Scenario Values",
+        data: filteredData.map(item => item.value),
+        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+        borderColor: '#1e3a8a',
+        borderWidth: 1,
+        fill: true,
+        tension: 0.4,
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      title: {
+        display: true,
+        text: `Chart Preview (${chartType})`,
+        color: '#3b82f6',
+        font: { size: 16 },
+      },
+      tooltip: {
+        enabled: true,
+        mode: 'index',
+        intersect: false,
+      },
+      legend: {
+        display: true,
+        labels: {
+          color: '#6b7280',
+        },
+      },
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: 'x',
+        },
+        zoom: {
+          wheel: { enabled: true },
+          pinch: { enabled: true },
+          mode: 'x',
+        },
+        limits: {
+          x: { min: 'original', max: 'original' },
+          y: { min: 0 },
+        },
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: '#6b7280' },
+        grid: { display: false },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { color: '#6b7280' },
+        grid: { color: '#e5e7eb' },
+      },
+    },
+  };
+
+  const renderChart = () => {
+    switch (chartType) {
+      case "bar": return <Bar data={chartData} options={chartOptions} />;
+      case "line": return <Line data={chartData} options={chartOptions} />;
+      case "pie": return <Pie data={chartData} options={chartOptions} />;
+      case "circular-progress": return <Doughnut data={chartData} options={chartOptions} />;
+      default: return <p className="text-gray-500">Chart type not supported.</p>;
+    }
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">
-          Scenario Insights
-        </h2>
+        <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">Scenario Insights</h2>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="text-blue-500 dark:text-blue-300 font-mediu"
+          className="text-blue-500 dark:text-blue-300 font-medium"
         >
-          {isOpen ? <ChevronUp /> :<ChevronRight/>}
+          {isOpen ? <ChevronUp /> : <ChevronRight />}
         </button>
       </div>
 
       {isOpen && (
-        <div className="mt-4">
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
+        <div className="mt-4 space-y-4">
+          <p className="text-gray-600 dark:text-gray-300">
             Analyze trends and patterns from scenario data.
           </p>
 
-          <label className="block text-gray-700 dark:text-gray-300 mb-2">
-            Select Chart Type:
-          </label>
-          <select
-            value={chartType}
-            onChange={(e) => setChartType(e.target.value)}
-            className="mb-6 p-2 border rounded w-full dark:bg-gray-700 dark:text-white"
-          >
-            <option value="bar">Bar Chart</option>
-            <option value="line">Line Chart</option>
-            <option value="heatmap">Heatmap</option>
-            <option value="pie">Pie Chart</option>
-            <option value="circular-progress">Circular Progress</option>
-          </select>
+          {/* Chart Type Selector */}
+          <div>
+            <label className="block text-gray-700 dark:text-gray-300 mb-1">Select Chart Type:</label>
+            <select
+              value={chartType}
+              onChange={(e) => setChartType(e.target.value)}
+              className="p-2 border rounded w-full dark:bg-gray-700 dark:text-white"
+            >
+              <option value="bar">Bar Chart</option>
+              <option value="line">Line Chart</option>
+              <option value="pie">Pie Chart</option>
+              <option value="circular-progress">Circular Progress</option>
+            </select>
+          </div>
 
-          {renderChart()} {/* This will render dummy data */}
+          {/* Value Filter */}
+          <div>
+            <label className="block text-gray-700 dark:text-gray-300 mb-1">Minimum Value Filter:</label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              value={filterValue}
+              onChange={(e) => setFilterValue(Number(e.target.value))}
+              className="w-full"
+            />
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Showing items with value ≥ {filterValue}
+            </p>
+          </div>
+
+          {/* Chart Preview */}
+          <div className="h-96 bg-white dark:bg-gray-900 rounded-lg p-4 border">
+            {renderChart()}
+          </div>
         </div>
       )}
     </div>
@@ -91,4 +198,6 @@ const ScenarioInsightsCard = ({ processedData = [] }) => {
 };
 
 export default ScenarioInsightsCard;
-// In this code, we have added a new component called ScenarioInsightsCard that allows users to visualize scenario data using different chart types. The component uses dummy data for demonstration purposes, and you can replace it with your actual data processing logic. The collapse/expand functionality is implemented using localStorage to persist the state across page reloads.
+// This component provides insights into scenario data using various chart types.
+// It allows users to select chart types, filter data, and view dynamic visualizations.
+// The component is designed to be interactive and responsive, adapting to user inputs. 

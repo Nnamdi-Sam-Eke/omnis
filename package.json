@@ -17,6 +17,7 @@
     "browser-image-compression": "^2.0.2",
     "chart.js": "^4.4.9",
     "chartjs-adapter-date-fns": "^3.0.0",
+    "chartjs-plugin-zoom": "^2.2.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "emailjs-com": "^3.2.0",
@@ -36,6 +37,7 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.5.3",
     "react-scripts": "^5.0.1",
+    "react-toastify": "^11.0.5",
     "react-tooltip": "^5.28.1",
     "stripe": "^18.1.1",
     "web-vitals": "^2.1.4"

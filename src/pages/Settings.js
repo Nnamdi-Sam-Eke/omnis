@@ -345,7 +345,7 @@ const handleSessionLogout = async () => {
             </div>
           )}
           <div>
-            <Suspense fallback={<div>Loading Activity Log...</div>}>
+            <Suspense fallback={<div>Loading Account Page..</div>}>
               <AccountPage />
             </Suspense>
           </div>

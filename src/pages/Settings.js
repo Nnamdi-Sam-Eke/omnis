@@ -153,8 +153,8 @@ const handleSessionLogout = async () => {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
-        Deeper config and app-wide settings...
+      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mt-6 mb-4">
+        Deeper config and app-wide settings
       </h1>
 
       {showToast && (
@@ -172,7 +172,7 @@ const handleSessionLogout = async () => {
               role="region"
               aria-labelledby="settings-heading"
             >
-              <h2 id="settings-heading" className="text-2xl font-semibold text-blue-500 dark:text-blue-300 flex items-center justify-center">
+              <h2 id="settings-heading" className="text-2xl font-semibold text-green-600 dark:text-green-300 flex items-center justify-center">
                 <FiSettings className="mr-2" /> App Settings
               </h2>
 

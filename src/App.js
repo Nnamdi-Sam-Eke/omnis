@@ -36,6 +36,8 @@ import { AccountProvider } from './AccountContext';
 import StripeProvider from './StripeProvider';
 import UpgradeModal from './components/UpgradeModal';
 
+import { DiscountProvider, useDiscount } from './context/DiscountContext';
+import DiscountBanner from './components/DiscountBanner';
 
 // ✅ PrivateRoute
 const PrivateRoute = ({ children }) => {
@@ -93,6 +95,9 @@ const AppContent = () => {
     }
   }, [user]);
 
+  // Use discount context inside AppContent
+  const { showBanner, discountEndDate, setShowBanner } = useDiscount();
+
   if (loading) return <div>Loading...</div>;
 
   // Splash on first visit (before login)
@@ -117,33 +122,42 @@ const AppContent = () => {
 
   // After all that, show main app UI with layout
   return (
-    <div className="scale-75 origin-top-left w-[133.33%]">
-      <div className="min-h-full w-full bg-white dark:bg-gray-900">
-        <main className="min-h-full w-full pt-16 px-2 bg-white dark:bg-gray-900">
-          <AccountProvider>
-            <Toaster position="top-right" />
+  <div className="scale-75 origin-top-left w-[133.33%]">
+    <div className="min-h-full w-full bg-white dark:bg-gray-900">
 
-            {/* Header & Sidebar */}
-            {!hideLayout && (
-              <>
-                <Header
-                  toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-                  currentPage={currentPage}
-                  isProfileMenuOpen={isProfileMenuOpen}
-                  setIsProfileMenuOpen={setIsProfileMenuOpen}
-                  setCurrentPage={setCurrentPage}
-                  handleLogout={handleLogout}
-                />
-                <Sidebar
-                  isSidebarOpen={isSidebarOpen}
-                  setIsSidebarOpen={setIsSidebarOpen}
-                  handleLogout={handleLogout}
-                />
-              </>
-            )}
+      {/* Show banner everywhere except no-layout routes like /login */}
+      {!hideLayout && showBanner && discountEndDate && (
+        <DiscountBanner
+          discountEndDate={discountEndDate}
+          onClose={() => setShowBanner(false)}
+        />
+      )}
 
-            <OmnisProvider>
-              <MemoryProvider>
+      <main className="min-h-full w-full pt-16 px-2 bg-white dark:bg-gray-900">
+        <AccountProvider>
+          <Toaster position="top-right" />
+
+          {/* Header & Sidebar */}
+          {!hideLayout && (
+            <>
+              <Header
+                toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                currentPage={currentPage}
+                isProfileMenuOpen={isProfileMenuOpen}
+                setIsProfileMenuOpen={setIsProfileMenuOpen}
+                setCurrentPage={setCurrentPage}
+                handleLogout={handleLogout}
+              />
+              <Sidebar
+                isSidebarOpen={isSidebarOpen}
+                setIsSidebarOpen={setIsSidebarOpen}
+                handleLogout={handleLogout}
+              />
+            </>
+          )}
+
+          <OmnisProvider>
+            <MemoryProvider>
               <StripeProvider>
                 <Routes>
                   {/* Public Route */}
@@ -167,31 +181,31 @@ const AppContent = () => {
                   <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
                   <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
                 </Routes>
+
+                {(location.pathname === '/dashboard' || location.pathname === '/') && <UpgradeModal />}
               </StripeProvider>
-        
-{(location.pathname === '/dashboard' || location.pathname === '/') && <UpgradeModal />}
+            </MemoryProvider>
+          </OmnisProvider>
 
-
-              </MemoryProvider>
-            </OmnisProvider>
-
-            {/* Footer & Bottom UI */}
-            {!hideLayout && <Footer />}
-            {!hideLayout && <CreatorsCorner />}
-            {!hideLayout && <FeedbackButton />}
-
-          </AccountProvider>
-        </main>
-      </div>
+          {/* Footer & Bottom UI */}
+          {!hideLayout && <Footer />}
+          {!hideLayout && <CreatorsCorner />}
+          {!hideLayout && <FeedbackButton />}
+        </AccountProvider>
+      </main>
     </div>
-  );
-};
+  </div>
+);
+}
 
-// ✅ Top-Level App with BrowserRouter
+
+// ✅ Top-Level App with BrowserRouter and DiscountProvider added
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <DiscountProvider>
+        <AppContent />
+      </DiscountProvider>
     </AuthProvider>
   );
 }

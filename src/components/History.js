@@ -147,7 +147,7 @@ const History = () => {
   }
   return (
     <div className="max-w-6xl overflow-y-auto max-h-[500px] mx-auto mt-8 p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border">
-      <h1 className="text-2xl font-bold text-center text-blue-600 dark:text-blue-300 mb-4">
+      <h1 className="text-2xl font-bold text-center text-green-600 dark:text-green-300 mb-4">
         Interaction History
       </h1>
 

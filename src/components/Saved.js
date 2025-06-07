@@ -72,7 +72,7 @@ const SavedComponent = () => {
 
   return (
     <div className="max-w-6xl mx-auto mt-8 p-8 border bg-white dark:bg-gray-900 rounded-2xl shadow-lg hover:shadow-blue-500/50 rounded-lg">
-      <h1 className="text-2xl font-bold text-center p-2 text-blue-600 dark:text-blue-300 mb-4">
+      <h1 className="text-2xl font-bold text-center p-2 text-green-600 dark:text-green-300 mb-4">
         Saved Queries
       </h1>
 

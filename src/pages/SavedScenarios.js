@@ -77,7 +77,7 @@ const SavedScenariosTabs = () => {
   return (
     <div className="p-6 min-h-screen mx-auto">
       <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
-        Archive of Genius...
+        Archive of Genius
       </h1>
 
       {/* Tabs Navigation */}

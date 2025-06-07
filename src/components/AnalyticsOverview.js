@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Chart, registerables } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import { Line } from 'react-chartjs-2';
 import { motion } from 'framer-motion';
+import { useNavigate } from "react-router-dom";
 
 Chart.register(...registerables);
 
@@ -20,6 +21,53 @@ const KpiCard = ({ title, value, icon }) => (
     <p className="text-3xl font-bold text-green-500 mt-2">{value}</p>
   </motion.div>
 );
+
+function AnalyticsButton() {
+  const navigate = useNavigate();
+
+  const actions = [
+    {
+      label: "View Full Analytics",
+      // Light theme colors:
+      bgColor: "bg-amber-600", // (usually blue)
+      textColor: "text-black",
+      hoverColor: "hover:bg-primary/90",
+      // Dark theme colors (override using dark: prefix):
+      darkBgColor: "dark:bg-yellow-400",
+      darkTextColor: "dark:text-black",
+      darkHoverColor: "dark:hover:bg-yellow-500",
+      glow: "rgba(59, 130, 246, 0.6)", // blue glow for light mode
+      darkGlow: "rgba(202, 138, 4, 0.6)", // golden glow for dark mode
+      onClick: () => {
+        navigate("/analytics");
+      },
+    },
+  ];
+
+  return (
+    <div className="flex justify-center mt-2">
+      {actions.map((action, index) => (
+        <motion.button
+          key={index}
+          whileHover={{
+            scale: 1.05,
+            boxShadow: `0px 0px 12px ${document.documentElement.classList.contains('dark') ? action.darkGlow : action.glow}`,
+          }}
+          whileTap={{ scale: 0.95 }}
+          onClick={action.onClick}
+          className={`
+            ${action.bgColor} ${action.hoverColor} ${action.textColor} 
+            ${action.darkBgColor} ${action.darkHoverColor} ${action.darkTextColor}
+            rounded-2xl px-6 py-3 text-lg shadow-2xl transition-all
+          `}
+        >
+          {action.label}
+        </motion.button>
+      ))}
+    </div>
+  );
+}
+
 
 export default function AnalyticsOverview() {
   const [totalSessions, setTotalSessions] = useState(0);
@@ -37,7 +85,6 @@ export default function AnalyticsOverview() {
     return `${h}h ${m}m`;
   };
 
-  // Start session logic
   const startSession = () => {
     if (!sessionActive) {
       const now = Date.now();
@@ -47,7 +94,6 @@ export default function AnalyticsOverview() {
     }
   };
 
-  // End session logic
   const endSession = () => {
     const startTs = parseInt(localStorage.getItem('sessionStart'), 10);
     if (startTs) {
@@ -62,7 +108,6 @@ export default function AnalyticsOverview() {
     setSessionActive(false);
   };
 
-  // Mount: restore session and uptime
   useEffect(() => {
     const active = localStorage.getItem('sessionActive') === 'true';
     setSessionActive(active);
@@ -77,7 +122,6 @@ export default function AnalyticsOverview() {
     };
   }, []);
 
-  // Tick every minute to update uptime
   useEffect(() => {
     const interval = setInterval(() => {
       if (sessionActive) {
@@ -99,13 +143,11 @@ export default function AnalyticsOverview() {
     return () => clearInterval(interval);
   }, [sessionActive]);
 
-  // Load total sessions (for demo, using localStorage)
   useEffect(() => {
     const sessions = parseInt(localStorage.getItem('sessionCount') || '0', 10);
     setTotalSessions(sessions);
   }, []);
 
-  // Fetch today's scenarios from Firestore
   useEffect(() => {
     const fetchScenarios = async () => {
       const startOfDay = new Date();
@@ -177,6 +219,14 @@ export default function AnalyticsOverview() {
         >
           End Session
         </button>
+      </div>
+
+      {/* New section for overview to full analytics link */}
+      <div className="mt-12 text-center text-gray-700 dark:text-gray-400">
+        <p className="mb-4 text-lg font-medium">
+          Click this button to view the full analytics
+        </p>
+        <AnalyticsButton />
       </div>
     </div>
   );

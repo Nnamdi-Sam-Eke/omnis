@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { saveUserInteraction } from "../services/userBehaviourService";
 import { useMemory } from "../MemoryContext"; // ✅ Import Memory Context
 import { db } from "../firebase"; // Import Firestore database
+import { Timestamp } from "firebase/firestore";
+
 import {
   collection,
   addDoc,
@@ -31,6 +33,9 @@ export default function ScenarioInput({ onSimulate }) {
   const [trialExpired, setTrialExpired] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { user } = useAuth(); // ✅ Get current user
+  const [discountDeadline, setDiscountDeadline] = useState(null);
+  // ✅ Get current user from Auth context
+  
 
   useEffect(() => {
     if (user) {
@@ -98,59 +103,68 @@ export default function ScenarioInput({ onSimulate }) {
     }
   };
 
-  const checkTrialStatus = async () => {
-    if (!user) return;
-    try {
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-      if (!userSnap.exists()) return;
+const checkTrialStatus = async () => {
+  if (!user) return;
 
-      const userData = userSnap.data();
-      const tier = userData.subscriptionTier || "free";
-      const trialStart = userData.trialStartedAt?.toDate?.();
-      const now = new Date();
+  try {
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) return;
 
-      if (tier === "free") {
-        if (!trialStart) {
-          await setDoc(
-            userRef,
-            {
-              trialStartedAt: serverTimestamp(),
-              hasUsedSimulationTrial: true,
-            },
-            { merge: true }
-          );
-          setTrialExpired(false);
-          setShowUpgradeModal(false);
-        } else {
-          const trialEnd = new Date(trialStart);
-          trialEnd.setDate(trialEnd.getDate() + 7);
+    const userData = userSnap.data();
+    const tier = userData.subscriptionTier || "free";
+    const trialStart = userData.trialStartedAt?.toDate?.();
+    const now = new Date();
 
-          if (now > trialEnd) {
-            setTrialExpired(true);
-            setShowUpgradeModal(true);
-
-            if (
-              !userData.discountAvailableUntil ||
-              now > userData.discountAvailableUntil.toDate()
-            ) {
-              const discountEnd = new Date();
-              discountEnd.setDate(discountEnd.getDate() + 7);
-              await setDoc(userRef, { discountAvailableUntil: discountEnd }, { merge: true });
-            }
-          } else {
-            setTrialExpired(false);
-            setShowUpgradeModal(false);
-          }
-        }
-      } else {
+    if (tier === "free") {
+      if (!trialStart) {
+        await setDoc(
+          userRef,
+          {
+            trialStartedAt: serverTimestamp(),
+            hasUsedSimulationTrial: true,
+          },
+          { merge: true }
+        );
         setTrialExpired(false);
         setShowUpgradeModal(false);
+      } else {
+        const trialEnd = new Date(trialStart);
+        trialEnd.setDate(trialEnd.getDate() + 7);
+
+        if (now > trialEnd) {
+          setTrialExpired(true);
+          setShowUpgradeModal(true);
+
+          // Handle discount availability
+          const discountDeadline = userData.discountAvailableUntil?.toDate?.();
+          if (!discountDeadline || now > discountDeadline) {
+            const newDiscountEnd = new Date();
+            newDiscountEnd.setDate(now.getDate() + 7);
+
+            const discountEndTimestamp = Timestamp.fromDate(newDiscountEnd);
+            await setDoc(userRef, { discountAvailableUntil: discountEndTimestamp }, { merge: true });
+            setDiscountDeadline(newDiscountEnd);
+          } else {
+            setDiscountDeadline(discountDeadline);
+          }
+        } else {
+          setTrialExpired(false);
+          setShowUpgradeModal(false);
+        }
       }
-    } catch (err) {
-      console.error("❌ Error checking trial:", err);
+    } else {
+      // User is not on a free tier
+      setTrialExpired(false);
+      setShowUpgradeModal(false);
     }
-  };
+
+    console.log("✅ Trial status checked for user:", user.uid);
+  } catch (err) {
+    console.error("❌ Error checking trial:", err);
+  }
+};
+
 
   const handleScenarioSubmit = async (query, response) => {
     try {
@@ -166,82 +180,98 @@ export default function ScenarioInput({ onSimulate }) {
       console.error("❌ Error saving history:", error);
     }
   };
+const handleSimulate = async () => {
+  if (!user) return;
 
-  const handleSimulate = async () => {
-    if (!user) return;
+  const userRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userRef);
 
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
+  if (!userSnap.exists()) {
+    await setDoc(userRef, {
+      subscriptionTier: "free",
+      trialStartedAt: serverTimestamp(),
+      hasUsedSimulationTrial: true,
+    });
+  } else {
+    const userData = userSnap.data();
+    if (!userData.trialStartedAt || userData.hasUsedSimulationTrial !== true) {
+      await setDoc(
+        userRef,
+        {
+          trialStartedAt: serverTimestamp(),
+          hasUsedSimulationTrial: true,
+        },
+        { merge: true }
+      );
+    }
+  }
 
-    if (!userSnap.exists()) {
-      await setDoc(userRef, {
-        subscriptionTier: "free",
-        trialStartedAt: serverTimestamp(),
-        hasUsedSimulationTrial: true,
-      });
-    } else {
-      const userData = userSnap.data();
-      if (!userData.trialStartedAt || userData.hasUsedSimulationTrial !== true) {
-        await setDoc(
-          userRef,
-          {
-            trialStartedAt: serverTimestamp(),
-            hasUsedSimulationTrial: true,
+  const filteredScenarios = scenarios.filter((s) => s.trim() !== "");
+  if (!filteredScenarios.length) return;
+
+  console.log("📊 Simulating scenarios:", filteredScenarios);
+  await saveUserInteraction(user.uid, "simulate_scenario", { scenarios: filteredScenarios });
+
+  await loadUserInteractions();
+
+  setLoading(true);
+  setError(null);
+  setResults([]);
+
+  try {
+    const simulationStart = Date.now();
+
+    const simulationPromises = filteredScenarios.map(async (scenario) => {
+    const payload = {
+  input_type: "text",
+  text: scenario,
+  user_id: user?.uid
+};
+
+
+      console.log("📤 Sending to /api/simulate:", payload);
+
+      try {
+        const response = await fetch("http://localhost:5000/api/simulate", {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: {
+            "Content-Type": "application/json",
           },
-          { merge: true }
-        );
-      }
-    }
+        });
 
-    const filteredScenarios = scenarios.filter((s) => s.trim() !== "");
-    if (!filteredScenarios.length) return;
-
-    console.log("📊 Simulating scenarios:", filteredScenarios);
-    await saveUserInteraction(user.uid, "simulate_scenario", { scenarios: filteredScenarios });
-
-    // ✅ Reload user interactions after saving new one
-    await loadUserInteractions();
-
-    setLoading(true);
-    setError(null);
-    setResults([]); // Clear previous results
-
-    try {
-      const simulationStart = Date.now();
-
-      const simulationPromises = filteredScenarios.map(async (scenario) => {
-        try {
-          const response = await fetch("/api/simulate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ input_type: "text", text: scenario }),
-          });
-          const result = await response.json();
-          await handleScenarioSubmit(scenario, result);
-          return { query: scenario, response: result };
-        } catch (err) {
-          return { query: scenario, response: { error: err.message } };
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "Simulation request failed");
         }
-      });
 
-      const allResults = await Promise.all(simulationPromises);
+        const result = await response.json();
+        await handleScenarioSubmit(scenario, result);
+        return { query: scenario, response: result };
+      } catch (err) {
+        console.error("❌ Simulation fetch error:", err);
+        return { query: scenario, response: { error: err.message } };
+      }
+    });
 
-      // ⏳ Ensure at least 4 seconds of loading
-      const elapsed = Date.now() - simulationStart;
-      const delay = Math.max(0, 4000 - elapsed);
+    const allResults = await Promise.all(simulationPromises);
 
-      setTimeout(() => {
-        setResults(allResults);
-        setLoading(false);
-      }, delay);
-    } catch (err) {
-      setError("An error occurred during simulation.");
-      console.error("Simulation error:", err);
+    const elapsed = Date.now() - simulationStart;
+    const delay = Math.max(0, 4000 - elapsed);
+
+    setTimeout(() => {
+      setResults(allResults);
       setLoading(false);
-    }
+    }, delay);
+  } catch (err) {
+    setError("An error occurred during simulation.");
+    console.error("Simulation error:", err);
+    setLoading(false);
+  }
 
-    if (onSimulate) onSimulate(filteredScenarios);
-  };
+  if (onSimulate) onSimulate(filteredScenarios);
+};
+  // Handle input changes for scenarios
 
   const handleInputChange = (index, value) => {
     const updated = [...scenarios];

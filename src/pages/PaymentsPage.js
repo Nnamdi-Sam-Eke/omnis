@@ -3,11 +3,9 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../AuthContext";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
-
 import SubscriptionHistory from "../components/SubscriptionHistory";
 import ReceiptGenerator from "../components/RecieptGenerator";
 import SavedCardDetails from "../components/SavedCardDetails";
-import UserProfilePage from "./UserProfilePage";
 import BillingAndSubscriptionsTab from "./BillingAndSubscriptionsTab";
 
 const PaymentsPage = () => {
@@ -87,7 +85,7 @@ const PaymentsPage = () => {
                 id="user-profile-heading"
                 className="text-xl font-semibold text-green-500 dark:text-green-500 mb-4"
               >
-                User Profile
+                Billing And Subscriptions
               </h2>
               <BillingAndSubscriptionsTab />
             </section>

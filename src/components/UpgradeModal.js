@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import {useNavigate} from "react-router-dom"
+
 
 const tiers = [
   {
@@ -63,10 +65,15 @@ function formatTime(ms) {
 }
 
 export default function UpgradeModal() {
+  const navigate = useNavigate()
   const [showModal, setShowModal] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+   // New state for button animation
+  const [isClicked, setIsClicked] = useState(false);
   const [selectedTier, setSelectedTier] = useState("Free");
   const [timeLeft, setTimeLeft] = useState(7 * 24 * 3600 * 1000); // 7 days in ms
+  
+
 
   // Simulate splash delay then show modal
   useEffect(() => {
@@ -86,10 +93,15 @@ export default function UpgradeModal() {
     return () => clearInterval(interval);
   }, [showModal]);
 
+  
   const handleUpgrade = () => {
     if (selectedTier === "Free") return;
-    alert(`Proceed to upgrade to ${selectedTier} tier`);
-    // TODO: implement actual upgrade flow
+
+    setIsClicked(true);
+
+    setTimeout(() => {
+      navigate("/payments");
+    }, 200);
   };
 
   const handleClose = () => {
@@ -115,6 +127,8 @@ export default function UpgradeModal() {
           right: 0;
           bottom: 0;
           background: rgba(0, 0, 0, 0.8);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
           z-index: 999;
         }
         
@@ -253,7 +267,7 @@ export default function UpgradeModal() {
         }
       `}</style>
 
-      {/* Backdrop */}
+      {/* Backdrop with blur effect */}
       <div className={`backdrop ${isClosing ? "backdrop-close" : "backdrop-open"}`} />
 
       {/* Modal container */}
@@ -411,6 +425,7 @@ export default function UpgradeModal() {
                   </button>
                 ) : (
                   <button
+                  className={isClicked ? "btn-clicked" : ""}
                     onClick={handleUpgrade}
                     style={{
                       marginTop: 22,
@@ -423,6 +438,7 @@ export default function UpgradeModal() {
                       cursor: "pointer",
                       fontSize: 17,
                       transition: "all 0.3s ease",
+                      transform: isClicked ? "scale(1.1)" : "scale(1)",
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = "#f4a261";
@@ -433,6 +449,8 @@ export default function UpgradeModal() {
                       e.currentTarget.style.transform = "scale(1)";
                     }}
                     aria-label={`Upgrade to ${tier.name} plan`}
+    
+    
                   >
                     Upgrade
                   </button>

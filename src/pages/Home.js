@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Tooltip from "../components/Tooltip";
-
+import favicon from "../images/Gif.png"; // Adjust the path as necessary
 
 function Home() {
-  const navigate = useNavigate(); // React Router navigation
+  const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
-
 
   // 🔹 Use Case Data
   const useCases = [
@@ -31,44 +30,49 @@ function Home() {
 
   // 🔹 Hero Section Component
   const HeroSection = () => (
-    <div className="flex flex-col lg:flex-row items-center justify-between mt-8 p-6 sm:p-12 md:p-16 lg:p-20 min-h-screen dark:bg-black">
+    <div className="flex flex-col lg:flex-row items-center justify-between mt-8 p-6 sm:p-12 md:p-16 lg:p-20 min-h-screen dark:bg-black relative">
       {/* Text Content */}
-      <div className="lg:w-1/2 space-y-6">
-        <h2 className=" transition text-4xl dark:text-blue-500 sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gray-900 max-w-2xl">
+      <div className="lg:w-1/2 space-y-6 z-10">
+        <h2 className="transition text-4xl dark:text-blue-500 sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gray-900 max-w-2xl">
           Revolutionizing Scenario Simulations with Digital Twin Intelligence.
         </h2>
         <p className="text-base sm:text-lg md:text-xl lg:text-2xl max-w-2xl mb-6 p-4 text-gray-700 dark:text-gray-200">
           Experience the power of AI-driven simulations to make informed decisions and explore endless possibilities.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-6 sm:space-x-6 p-6 sm:p-8">
-  <Tooltip text="Join our Discord community for live support!">
-    <a
-      href="#"
-      className="w-full sm:w-auto mb-4 sm:mb-0 hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-gradient-to-r from-blue-600 to-green-500 text-white rounded-2xl shadow-lg hover:bg-blue-700"
-    >
-      Join on Discord
-    </a>
-  </Tooltip>
-  <p className="mt-14"></p>
-  <Tooltip text="Follow us on X for updates!">
-    <a
-      href="#"
-      className="w-full sm:mt-20 sm:w-auto hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-white text-blue-600 border-2 border-blue-600 rounded-2xl hover:shadow-lg"
-    >
-      Join on X
-    </a>
-  </Tooltip>
-</div>
-
-
+          <Tooltip text="Join our Discord community for live support!">
+            <a
+              href="#"
+              className="w-full sm:w-auto mb-4 sm:mb-0 hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-gradient-to-r from-blue-600 to-green-500 text-white rounded-2xl shadow-lg hover:bg-blue-700"
+            >
+              Join on Discord
+            </a>
+          </Tooltip>
+          <Tooltip text="Follow us on X for updates!">
+            <a
+              href="#"
+              className="w-full sm:w-auto hover:shadow-blue-500/50 transition px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-xl font-semibold bg-white text-blue-600 border-2 border-blue-600 rounded-2xl hover:shadow-lg"
+            >
+              Join on X
+            </a>
+          </Tooltip>
+        </div>
       </div>
-      {/* <div >
-        <img src={favicon}
-        alt="Motif"
-        className="w-[800px] h-[800px] mt-8 lg:mt-0 sm:w-[400px] sm:h-[400px]" />
-      </div> */}
+
+      {/* Fixed Image on Right */}
+      <div className="fixed right-0 top-0 h-full w-1/2 lg:w-1/3 xl:w-1/4 px-4 sm:px-6 lg:px-8 z-50 flex items-center justify-center">
+        {/* Favicon Image */}
+        <img
+          src={favicon}
+          alt="Motif"
+         
+        />
+      </div>
     </div>
   );
+
+
+
 
   // 🔹 Omnis Section with Animated Spiral Circles
   const OmnisSection = () => (

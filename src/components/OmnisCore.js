@@ -1,6 +1,5 @@
 import React from 'react';
 import ScenarioInput from './ScenarioInput'; // Input Form
-import ScenarioSimulationCard from './SimulationResult'; // Results
 import ScenarioInsightsCard from './ScenarioInsightsCard'; // Insights
 
 const NewScenarioPage = () => {

@@ -1,7 +1,10 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
+import { useAuth } from '../AuthContext';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import SkeletonLoader from '../components/SkeletonLoader';
+import useAccessControl from '../hooks/useAccessControl';
+import UpgradeModal from '../components/UpgradeModal';
 
 // Lazy-loaded components
 const AnalyticsCard = lazy(() => import('../components/AnalyticsCard'));
@@ -16,10 +19,30 @@ const AnalyticsPage = () => {
   const [scenarioAccuracy, setScenarioAccuracy] = useState(0);
   const [categoryDistribution, setCategoryDistribution] = useState([]);
   const [narrativeInsights, setNarrativeInsights] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { user } = useAuth(); // or however you get user
+  const userTier = user?.tier || 'Free';
+
+  // Access control hook
+  const { checkAccess, showUpgradeModal, openModal, closeModal } = useAccessControl(userTier);
+  const handleUpgradeClick = () => {
+  setLoading(true); // show loading indicator
+  openModal();      // then open the modal
+  // Optionally, if you have async logic here, handle that and setLoading(false) when done
+};
+ const handleCloseModal = () => {
+  closeModal();
+  setLoading(false);
+};
+
 
   useEffect(() => {
+    if (!checkAccess('fullAnalytics')) {
+      setLoading(false);
+      return; // Don't fetch data if no access
+    }
+
     let isMounted = true; // Cleanup-ready flag
 
     const fetchAnalyticsData = async () => {
@@ -73,7 +96,29 @@ const AnalyticsPage = () => {
     return () => {
       isMounted = false; // Cleanup
     };
-  }, []);
+  }, [userTier]); // Re-run if userTier changes
+
+  if (!checkAccess('fullAnalytics')) {
+    return (
+      <div className="p-6 min-h-screen text-center">
+        <h2 className="text-xl font-semibold text-red-500 mb-4">
+          Access Denied: Upgrade Required</h2>
+        <p className="text-xl font-semibold text-red-500 mb-4">Upgrade your subscription to Pro or Enterprise to unlock full analytics features.</p>
+<button
+  onClick={handleUpgradeClick}
+      className="px-4 py-2 bg-blue-600 text-white mt-10 rounded hover:bg-blue-700"
+      disabled={loading}
+    >
+      {loading ? 'Loading...' : 'Upgrade Now'}
+    </button>
+  
+
+  {showUpgradeModal && (
+      <UpgradeModal onClose={handleCloseModal} />
+    )}
+      </div>
+    );
+  }
 
   return (
     <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab" className="p-6 space-y-4 min-h-screen">
@@ -128,3 +173,5 @@ const AnalyticsPage = () => {
 };
 
 export default AnalyticsPage;
+// This component fetches and displays user analytics data, including total time spent, simulations run, scenario accuracy, category distribution, and narrative insights.
+// It uses lazy loading for performance, and includes access control to restrict features based on user subscription tier.

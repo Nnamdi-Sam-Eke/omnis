@@ -147,14 +147,14 @@ useEffect(() => {
 
 
   return (
-    <div className="flex flex-col min-h-screen dark:bg-[#0b0f19] bg-gray-50">
+    <div className="flex flex-col h-full dark:bg-[#0b0f19] bg-gray-50">
       {/* Assistant Header */}
       <div className="bg-white dark:bg-[#1e2a3b] shadow-md rounded-lg p-2">
-        <div className="text-xl font-semibold text-gray-800 dark:text-white">Assistant</div>
+        <div className="text-xl font-semibold py-2 text-gray-800 dark:text-white">Assistant</div>
         <p className="text-sm text-green-600 dark:text-green-300">Converse with Omnis</p>
       </div>
       {/* Scrollable Messages Area */}
-      <div className="flex-1 overflow-y-auto space-y-4 px-4 m-2 lg:m-6" ref={messagesEndRef}>
+      <div className="flex-1 overflow-y-auto space-y-4 min-h-screen px-4 m-2 lg:m-6" ref={messagesEndRef}>
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
             <motion.div

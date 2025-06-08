@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../AuthContext";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import SkeletonLoader from "../components/SkeletonLoader";
+import { Suspense } from "react";
 import SubscriptionHistory from "../components/SubscriptionHistory";
 import ReceiptGenerator from "../components/RecieptGenerator";
 import SavedCardDetails from "../components/SavedCardDetails";
@@ -60,7 +62,7 @@ const PaymentsPage = () => {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
+      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300  mt-10 mb-4">
         Manage Billing & Subscription
       </h1>
 
@@ -70,14 +72,20 @@ const PaymentsPage = () => {
           <div className="flex flex-col lg:flex-row gap-10">
             {/* Left column: stacked vertically */}
             <section className="flex flex-col flex-1 space-y-8">
+              <Suspense fallback={<SkeletonLoader height="h-[250px]" />}>
               <SubscriptionHistory setReceiptData={setReceiptData} />
+              </Suspense>
+              <Suspense fallback={<SkeletonLoader height="h-[250px]" />}>
               <ReceiptGenerator receiptData={receiptData} />
-              <SavedCardDetails />
+              </Suspense>
+              <Suspense fallback={<SkeletonLoader height="h-[250px]" />}>
+              <SavedCardDetails onSave={handleSaveBillingInfo} />
+              </Suspense>
             </section>
 
             {/* Right column: UserProfilePage takes full height & width of right column */}
             <section
-              className="flex-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition hover:shadow-blue-500/50"
+              className="flex-1 bg-white dark:bg-gray-800  border p-6 rounded-xl shadow-lg transition hover:shadow-blue-500/50"
               role="region"
               aria-labelledby="user-profile-heading"
             >
@@ -87,7 +95,9 @@ const PaymentsPage = () => {
               >
                 Billing And Subscriptions
               </h2>
+              <Suspense fallback={<SkeletonLoader height="h-[250px]" />}>
               <BillingAndSubscriptionsTab />
+              </Suspense>
             </section>
           </div>
         </div>

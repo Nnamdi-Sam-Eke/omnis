@@ -56,13 +56,13 @@ const AiMatchPage = () => {
         <form onSubmit={handleSubmit} className="w-full md:w-3/4 space-y-4">
           <div className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white">
             <div className="p-3 rounded-md">
-              <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
+              <h2 className="text-xl font-semibold  text-green-500 dark:text-green-500 mb-4">
                 Scenario Input
               </h2>
 
               <label
                 htmlFor="userInput"
-                className="block text-sm font-medium text-green-700 dark:text-green-500 mb-1"
+                className="block text-sm font-medium text-black dark:text-white mb-6"
               >
                 Enter your criteria
               </label>

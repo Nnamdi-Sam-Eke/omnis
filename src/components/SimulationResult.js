@@ -12,7 +12,7 @@ const ScenarioSimulationCard = ({ results, setResults, loading }) => {
   if (!results || results.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 shadow-lg border hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white">
-        <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">Scenario Output</h2>
+        <h2 className="text-xl font-semibold  text-green-500 dark:text-green-500">Scenario Output</h2>
         <p className="text-gray-500 text-center mt-4">No results to display.</p>
       </div>
     );

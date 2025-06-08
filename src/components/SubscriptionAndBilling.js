@@ -1,5 +1,5 @@
 // src/components/UserProfilePage.js
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect} from "react";
 // import { useStripe } from "@stripe/react-stripe-js";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { doc, updateDoc } from "firebase/firestore";
@@ -249,8 +249,30 @@ const UserProfilePage = () => {
     });
   };
 
+   const [loading, setLoading] = React.useState(true);
+  
+  
+  
+    // Timer to switch off loading after 4 seconds (on mount)
+    useEffect(() => {
+      const timer = setTimeout(() => setLoading(false), 4000);
+      return () => clearTimeout(timer);
+    }, []);
+  
+    // If subscriptions is undefined, show loading state
+   if (loading) {
+      return (
+        <div className="animate-pulse space-y-4">
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
+        </div>
+      );
+    }
+  
+
   return (
-      <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex flex-col md:flex-row border gap-6">
         <div className="flex-1">
           <section
             className="bg-white  border dark:bg-gray-800 p-6 rounded-xl shadow-lg transition hover:shadow-blue-500/50"

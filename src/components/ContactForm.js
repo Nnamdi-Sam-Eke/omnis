@@ -70,13 +70,35 @@ const ContactForm = () => {
     }
   };
 
+   const [loading, setLoading] = React.useState(true);
+  
+  
+  
+    // Timer to switch off loading after 4 seconds (on mount)
+    useEffect(() => {
+      const timer = setTimeout(() => setLoading(false), 4000);
+      return () => clearTimeout(timer);
+    }, []);
+  
+    // If subscriptions is undefined, show loading state
+   if (loading) {
+      return (
+        <div className="animate-pulse mx-auto w-10/12 space-y-4 transition duration-500 ease-in-out">
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
+        </div>
+      );
+    }
+  
+
   return (
     <div className="w-full px-6 py-10 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white space-y-10 ">
       {/* Contact Section Layout */}
       <div className="flex flex-col lg:flex-row gap-10 max-w-6xl mx-auto">
         {/* Left: Contact Form */}
         <div className="flex-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition">
-          <h2 className="text-2xl font-semibold text-blue-600 dark:text-white mb-6">Contact Us</h2>
+          <h2 className="text-2xl font-semibold text-green-600 dark:text-green-500 mb-6">Contact Us</h2>
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             {/* Name Field */}
             <div className="relative">
@@ -167,14 +189,14 @@ const ContactForm = () => {
         {/* Right: Info + Hours */}
         <div className="flex-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition space-y-6">
           <div>
-            <h3 className="text-xl font-semibold text-blue-600 mb-2">Our Information</h3>
+            <h3 className="text-xl font-semibold text-green-600 mb-2">Our Information</h3>
             <p>Omnis Intelligence Ltd</p>
             <p>123 Future Lane, Innovation City</p>
             <p>Email: support@omnis.ai</p>
             <p>Phone: +1 234 567 8900</p>
           </div>
           <div>
-            <h3 className="text-xl font-semibold text-blue-600 mb-2">Opening Hours</h3>
+            <h3 className="text-xl font-semibold text-green-600 mb-2">Opening Hours</h3>
             <ul className="space-y-1">
               <li>Mon – Fri: 9:00 AM – 6:00 PM</li>
               <li>Sat: 10:00 AM – 4:00 PM</li>

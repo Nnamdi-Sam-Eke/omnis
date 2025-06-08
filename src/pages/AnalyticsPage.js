@@ -23,6 +23,8 @@ const AnalyticsPage = () => {
   const [error, setError] = useState(null);
   const { user } = useAuth(); // or however you get user
   const userTier = user?.tier || 'Free';
+  console.log("🧪 User tier:", userTier);
+
 
   // Access control hook
   const { checkAccess, showUpgradeModal, openModal, closeModal } = useAccessControl(userTier);
@@ -36,6 +38,7 @@ const AnalyticsPage = () => {
   setLoading(false);
 };
 
+const canAccessAnalytics = true; // <-- Force bypass temporarily
 
   useEffect(() => {
     if (!checkAccess('fullAnalytics')) {
@@ -122,7 +125,7 @@ const AnalyticsPage = () => {
 
   return (
     <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab" className="p-6 space-y-4 min-h-screen">
-      <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">User Analytics + Insights</h2>
+      <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300  mt-10 mb-4">User Analytics + Insights</h2>
 
       {loading ? (
         <SkeletonLoader height="h-[300px]" />
@@ -132,13 +135,11 @@ const AnalyticsPage = () => {
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             <div title="Total time spent on the platform">
-              <h3 className="font-semibold text-green-500">Total Time Spent</h3>
               <Suspense fallback={<SkeletonLoader height="h-[150px]" />}>
                 <AnalyticsCard value={totalTime} label="hours" />
               </Suspense>
             </div>
             <div title="Total number of simulations run">
-              <h3 className="font-semibold text-green-500">Total Simulations</h3>
               <Suspense fallback={<SkeletonLoader height="h-[150px]" />}>
                 <DashboardCharts total={totalSimulations} />
               </Suspense>
@@ -146,7 +147,6 @@ const AnalyticsPage = () => {
           </div>
 
           <div>
-            <h3 className="font-semibold text-green-500">Scenario Accuracy</h3>
             <Suspense fallback={<SkeletonLoader height="h-[300px]" />}>
               <ScenarioAccuracyChart accuracy={scenarioAccuracy} />
             </Suspense>
@@ -154,13 +154,11 @@ const AnalyticsPage = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             <div title="Distribution of scenarios across categories">
-              <h3 className="font-semibold text-green-500">Category Distribution</h3>
               <Suspense fallback={<SkeletonLoader height="h-[250px]" />}>
                 <CategoryDistributionChart data={categoryDistribution} />
               </Suspense>
             </div>
             <div title="Narrative insights based on your simulations">
-              <h3 className="font-semibold text-green-500">Narrative Insights</h3>
               <Suspense fallback={<SkeletonLoader height="h-[250px]" />}>
                 <NarrativePanel insights={narrativeInsights} />
               </Suspense>

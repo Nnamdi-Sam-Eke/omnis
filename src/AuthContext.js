@@ -16,34 +16,40 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Track auth state for primary user
+  // ✅ Unified Auth State + Firestore User Data
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        const userRef = doc(db, "users", currentUser.uid);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userRef = doc(db, "users", firebaseUser.uid);
         const docSnap = await getDoc(userRef);
+        const data = docSnap.exists() ? docSnap.data() : {};
 
-        if (docSnap.exists()) {
-          const profileData = docSnap.data();
-          setUser({
-            ...currentUser,
-            firstName: profileData.firstname,
-            lastName: profileData.lastname,
-            profilePicture: profileData.profilePicture || null
-          });
-        } else {
-          setUser(currentUser);
-        }
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          tier: data.tier || "Free",
+          firstName: data.firstname || "",
+          lastName: data.lastname || "",
+          profilePicture: data.profilePicture || null,
+          ...data
+        });
+
+        // Store session version locally
+        const sessionVersion = data.sessionVersion || 1;
+        localStorage.setItem("sessionVersion", sessionVersion.toString());
       } else {
         setUser(null);
+        localStorage.removeItem("sessionVersion");
       }
+
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // ✅ Real-time session version check
+  // ✅ Real-time Session Version Check
   useEffect(() => {
     if (!user) return;
 
@@ -61,26 +67,7 @@ export function AuthProvider({ children }) {
     return () => unsub();
   }, [user]);
 
-  // ✅ One-time session version check on load
-  useEffect(() => {
-    const checkSession = async () => {
-      if (!user) return;
-
-      const userRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(userRef);
-      const sessionVersion = docSnap.data()?.sessionVersion || 1;
-      const localVersion = localStorage.getItem("sessionVersion") || "1";
-
-      if (sessionVersion.toString() !== localVersion) {
-        alert("You've been signed out because your session expired or was revoked.");
-        await signOut(auth);
-      }
-    };
-
-    checkSession();
-  }, [user]);
-
-  // ✅ Signup (primary)
+  // ✅ Signup
   const signup = async (firstname, lastname, phone, email, password, location, country, profilePicture) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -95,6 +82,7 @@ export function AuthProvider({ children }) {
         location,
         country,
         profilePicture,
+        tier: "Free",
         sessionVersion: 1,
         createdAt: new Date()
       });
@@ -107,7 +95,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // ✅ Login (primary)
+  // ✅ Login
   const login = async (email, password) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -116,35 +104,31 @@ export function AuthProvider({ children }) {
       const userRef = doc(db, "users", user.uid);
       const docSnap = await getDoc(userRef);
       const sessionVersion = docSnap.data()?.sessionVersion || 1;
-      localStorage.setItem("sessionVersion", sessionVersion.toString());
 
-      console.log("✅ Primary user logged in successfully");
+      localStorage.setItem("sessionVersion", sessionVersion.toString());
+      console.log("✅ User logged in successfully");
     } catch (error) {
       console.error("❌ Login error:", error.message);
       throw error;
     }
   };
 
+  // ✅ Logout
+  const logout = async (delay = 0) => {
+    try {
+      if (delay > 0) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
 
-
-  // ✅ Logout (primary only)
-  // ✅ Logout (primary only)
-const logout = async (delay = 0) => {
-  try {
-    if (delay > 0) {
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await signOut(auth);
+      setUser(null);
+      localStorage.removeItem("sessionVersion");
+      console.log("✅ User logged out successfully");
+    } catch (error) {
+      console.error("❌ Logout error:", error.message);
+      throw error;
     }
-
-    await signOut(auth);
-    setUser(null);
-    localStorage.removeItem("sessionVersion");
-    console.log("✅ User logged out successfully");
-  } catch (error) {
-    console.error("❌ Logout error:", error.message);
-    throw error;
-  }
-};
-
+  };
 
   // ✅ Password Reset
   const resetPassword = async (email) => {
@@ -158,22 +142,25 @@ const logout = async (delay = 0) => {
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      setUser,
-      signup,
-      login,
-      logout,
-      resetPassword
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        setUser,
+        signup,
+        login,
+        logout,
+        resetPassword
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
+// Hook
 export function useAuth() {
   return useContext(AuthContext);
 }
+
 export default AuthContext;
-export { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail };

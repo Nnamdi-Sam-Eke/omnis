@@ -272,7 +272,7 @@ useEffect(() => {
       )}
     <div className='animate-fade-in max-w-lg mx-auto bg-white border p-8 bg-white dark:bg-gray-900 mb-20 mt-16 rounded-2xl shadow-lg hover:shadow-blue-500/50 transition-all'>
       <div className="animate-fade-in max-w-lg mx-auto bg-white border p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-lg hover:shadow-blue-500/50 transition-all">
-        <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Profile details</h2>
+        <h2 className="text-2xl font-semibold text-green-500">Profile details</h2>
 
         {/* Avatar Card */}
         <div className="p-4">

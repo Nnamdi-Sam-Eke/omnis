@@ -39,7 +39,7 @@ const TaskPlanner = ({ scenarioTasks = [] }) => {
         className="flex justify-between items-center cursor-pointer"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        <h3 className="text-2xl font-semibold text-blue-500 dark:text-blue-300">Task Planner</h3>
+        <h3 className="text-2xl font-semibold  text-green-500 dark:text-green-500">Task Planner</h3>
         {isExpanded ? (
           <ChevronUp className="w-5 h-5 text-blue-600 dark:text-white" />
         ) : (

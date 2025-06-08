@@ -26,7 +26,7 @@ const ScenarioTabs = () => {
 
   return (
     <div className="p-4 sm:p-6 dark:bg-gray-900 min-h-screen">
-      <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-300 mb-4 sm:mb-6">
+      <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-300  mt-8 mb-8">
         Creation Playground
       </h1>
 

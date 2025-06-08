@@ -136,11 +136,31 @@ const ScenarioInsightsCard = ({ processedData = [] }) => {
       default: return <p className="text-gray-500">Chart type not supported.</p>;
     }
   };
-
+  const [loading, setLoading] = React.useState(true);
+ 
+ 
+ 
+   // Timer to switch off loading after 4 seconds (on mount)
+   useEffect(() => {
+     const timer = setTimeout(() => setLoading(false), 4000);
+     return () => clearTimeout(timer);
+   }, []);
+ 
+   // If subscriptions is undefined, show loading state
+  if (loading) {
+     return (
+       <div className="animate-pulse space-y-4">
+         <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+         <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+         <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
+       </div>
+     );
+   }
+  // Render the component
   return (
     <div className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">Scenario Insights</h2>
+        <h2 className="text-xl font-semibold  text-green-500 dark:text-green-500">Scenario Insights</h2>
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="text-blue-500 dark:text-blue-300 font-medium"

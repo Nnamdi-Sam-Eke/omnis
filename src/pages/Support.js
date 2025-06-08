@@ -109,7 +109,7 @@ const SupportPage = () => {
             }
           >
             <div id="FAQs-panel" role="tabpanel" aria-labelledby="FAQs-tab" className="space-y-4">
-              <h3 className="text-xl font-semibold text-green-600 dark:text-green-500">Frequently Asked Questions</h3>
+              <h3 className="text-xl font-semibold text-blue-600 dark:text-blue-300">Frequently Asked Questions</h3>
               {faqCategories.map((category, categoryIdx) => (
                 <div key={categoryIdx} className="space-y-4">
                   <h4 className="text-lg font-semibold text-black dark:text-white">{category.category}</h4>
@@ -128,11 +128,11 @@ const SupportPage = () => {
                         onKeyDown={e =>
                           (e.key === 'Enter' || e.key === ' ') && handleFaqToggle(categoryIdx, faqIdx)
                         }
-                        className="w-full text-left flex justify-between items-center text-base md:text-lg font-medium text-blue-600 dark:text-blue-400"
+                        className="w-full text-left flex justify-between items-center text-base md:text-lg font-medium text-green-500"
                       >
                         {faq.question}
                         <span className="ml-2 text-xl">
-                          {isOpen(categoryIdx, faqIdx) ? <ChevronUp /> : <ChevronRight />}
+                          {isOpen(categoryIdx, faqIdx) ? <ChevronUp className='text-black dark:text-white'/> : <ChevronRight />}
                         </span>
                       </button>
                       {isOpen(categoryIdx, faqIdx) && (
@@ -161,7 +161,7 @@ const SupportPage = () => {
             }
           >
             <div id="Contact-panel" role="tabpanel" aria-labelledby="Contact-tab" className="space-y-4">
-              <h3 className="text-xl font-semibold text-green-500 dark:text-green-500">Contact Us</h3>
+              <h3 className="text-xl font-semibold text-blue-600 dark:text-blue-300">Contact Us</h3>
               <ContactForm />
             </div>
           </Suspense>

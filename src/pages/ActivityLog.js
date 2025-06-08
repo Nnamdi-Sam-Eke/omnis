@@ -9,6 +9,17 @@ const ActivityLogPage = () => {
   const { currentUser } = useAuth();
   const [logs, setLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+   const [loading, setLoading] = React.useState(true);
+  
+  
+  
+    // Timer to switch off loading after 4 seconds (on mount)
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+  
+   
 
   useEffect(() => {
     if (currentUser?.uid) {
@@ -55,9 +66,21 @@ const ActivityLogPage = () => {
     setIsLoading(false);
   };
 
+   // If subscriptions is undefined, show loading state
+   if (loading) {
+      return (
+        <div className="animate-pulse  w-10/12 item-center justify-center mx-auto space-y-4">
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+        </div>
+      );
+    }
+  
+
   return (
     <div className="p-4 min-h-screen">
-      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
+      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300  mt-6 mb-8">
         Activity Log
       </h1>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React,{ useState, useEffect } from "react";
 import { saveUserInteraction } from "../services/userBehaviourService";
 import { useMemory } from "../MemoryContext"; // ✅ Import Memory Context
 import { db } from "../firebase"; // Import Firestore database
@@ -25,7 +25,6 @@ export default function ScenarioInput({ onSimulate }) {
   const [scenarios, setScenarios] = useState([""]);
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
   const { memory, saveToFirestore } = useMemory(); // ✅ AI Memory Hook
   const [error, setError] = useState(null);
   const [chatHistory, setChatHistory] = useState([]); // ✅ Store previous interactions
@@ -36,7 +35,12 @@ export default function ScenarioInput({ onSimulate }) {
   const [discountDeadline, setDiscountDeadline] = useState(null);
   // ✅ Get current user from Auth context
   
-
+    // Timer to switch off loading after 4 seconds (on mount)
+    useEffect(() => {
+      const timer = setTimeout(() => setLoading(false), 4000);
+      return () => clearTimeout(timer);
+    }, []);
+  
   useEffect(() => {
     if (user) {
       loadFirestoreMemory();
@@ -287,6 +291,34 @@ const handleSimulate = async () => {
     }
   };
 
+  
+  
+  
+
+    // If subscriptions is undefined, show loading state
+ const [loading, setLoading] = React.useState(true);
+
+
+
+  // Timer to switch off loading after 4 seconds (on mount)
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // If subscriptions is undefined, show loading state
+ if (loading) {
+    return (
+      <div className="animate-pulse space-y-4">
+        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-12 bg-blue-300 dark:bg-blue-700 rounded" />
+      </div>
+    );
+  }
+
+  
+
   return (
     <>
       <div className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white mt-8">
@@ -294,7 +326,7 @@ const handleSimulate = async () => {
           className="flex justify-between items-center cursor-pointer p-3 bg-white rounded-md dark:bg-gray-800"
           onClick={() => setIsOpen(!isOpen)}
         >
-          <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">Scenario Input</h2>
+          <h2 className="text-xl font-semibold  text-green-500 dark:text-green-500">Scenario Input</h2>
           <span className="text-blue-500 dark:text-blue-300 font-medium">
             {isOpen ? <ChevronUp /> : <ChevronRight />}
           </span>

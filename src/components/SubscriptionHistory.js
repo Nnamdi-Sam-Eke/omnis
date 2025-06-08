@@ -1,8 +1,28 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 
 const SubscriptionHistory = ({ subscriptions }) => {
   // Provide default empty array if undefined
   const safeSubscriptions = subscriptions || [];
+  const [loading, setLoading] = React.useState(true);
+
+
+
+  // Timer to switch off loading after 4 seconds (on mount)
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // If subscriptions is undefined, show loading state
+ if (loading) {
+    return (
+      <div className="animate-pulse space-y-4">
+        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white  border dark:bg-gray-800 p-6 rounded-xl shadow-lg transition hover:shadow-blue-500/50"

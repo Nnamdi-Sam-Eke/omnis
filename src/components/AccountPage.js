@@ -166,7 +166,7 @@ const AccountPage = () => {
   return (
    <div className="flex flex-col bg-gray-100 dark:bg-gray-900 p-4 w-full" role="main">
   <div className="bg-white w-full dark:bg-gray-800 border-2 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition mx-auto" role="region" aria-label="Account settings section">
-    <h2 className="text-2xl font-semibold text-center text-blue-500 dark:text-blue-300 flex items-center justify-center" role="heading" aria-level="2">
+    <h2 className="text-2xl font-semibold text-center text-green-500 flex items-center justify-center" role="heading" aria-level="2">
       <FiSettings className="mr-2" /> Account Settings
     </h2>
 

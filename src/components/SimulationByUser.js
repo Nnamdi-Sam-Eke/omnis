@@ -87,7 +87,7 @@ export default function SimulationByUserChart() {
         onClick={() => setIsExpanded((prev) => !prev)}
         aria-expanded={isExpanded}
       >
-        <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">
+        <h2 className="text-xl font-semibold  text-green-500 dark:text-green-500">
           Simulation By User
         </h2>
         {isExpanded ? (

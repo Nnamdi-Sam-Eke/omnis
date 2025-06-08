@@ -1,6 +1,24 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const SavedCardDetails = ({ card, onUpdate, onRemove }) => {
+  const [loading, setLoading] = useState(true);
+
+  // Timer to switch off loading after 4 seconds (on mount)
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="animate-pulse space-y-4">
+        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
+      </div>
+    );
+  }
+
   if (!card) {
     return (
       <div
@@ -10,7 +28,7 @@ const SavedCardDetails = ({ card, onUpdate, onRemove }) => {
       >
         <section>
           <h2 className="text-xl font-semibold mb-4 text-green-500">Saved Card Details</h2>
-          <p className=' dark:text-gray-100'>No saved card details available.</p>
+          <p className="dark:text-gray-100">No saved card details available.</p>
         </section>
       </div>
     );

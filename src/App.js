@@ -54,6 +54,7 @@ const PublicRoute = ({ children }) => {
 
 const noLayoutRoutes = ['/login'];
 
+
 const AppContent = () => {
   const location = useLocation();
   const { user, loading } = useAuth();
@@ -123,7 +124,7 @@ const AppContent = () => {
   // After all that, show main app UI with layout
   return (
   <div className="scale-75 origin-top-left w-[133.33%]">
-    <div className="min-h-full w-full bg-white dark:bg-gray-900">
+    <div className="min-h-screen w-full bg-white dark:bg-gray-900">
 
       {/* Show banner everywhere except no-layout routes like /login */}
       {!hideLayout && showBanner && discountEndDate && (

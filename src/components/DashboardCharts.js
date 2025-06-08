@@ -119,7 +119,7 @@ export default function DashboardCharts() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between cursor-pointer mb-4"
       >
-        <h3 className="text-xl font-semibold text-blue-500 dark:text-blue-300">
+        <h3 className="text-xl font-semibold  text-green-500 dark:text-green-500">
           Total Simulations Run
         </h3>
         {isOpen ? (

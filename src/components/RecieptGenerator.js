@@ -1,8 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const ReceiptGenerator = ({ subscriptions }) => {
   const safeSubscriptions = subscriptions || [];
   const [selectedId, setSelectedId] = useState(null);
+  const [loading, setLoading] = React.useState(true);
+  
+  
+  
+    // Timer to switch off loading after 4 seconds (on mount)
+    useEffect(() => {
+      const timer = setTimeout(() => setLoading(false), 4000);
+      return () => clearTimeout(timer);
+    }, []);
+  
+    // If subscriptions is undefined, show loading state
+   if (loading) {
+      return (
+        <div className="animate-pulse space-y-4">
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
+        </div>
+      );
+    }
+  
 
   const handleDownload = () => {
     const subscription = safeSubscriptions.find(sub => sub.id === selectedId);

@@ -82,7 +82,7 @@ export default function CategoryDistributionChart() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between cursor-pointer mb-4"
       >
-        <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">
+        <h2 className="text-xl font-semibold  text-green-500 dark:text-green-500">
           🌍 Scenario Category Distribution
         </h2>
         {isOpen ? (

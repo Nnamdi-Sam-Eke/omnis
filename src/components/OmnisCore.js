@@ -3,6 +3,7 @@ import ScenarioInput from './ScenarioInput'; // Input Form
 import ScenarioInsightsCard from './ScenarioInsightsCard'; // Insights
 
 const NewScenarioPage = () => {
+  
   return (
     <div className="p-6 space-y-10">
 
@@ -25,7 +26,7 @@ const NewScenarioPage = () => {
 
         {/* Right: Live Preview */}
         <div className="bg-white dark:bg-gray-800 border shadow-lg hover:shadow-blue-500/50 rounded-lg p-6 ">
-          <h2 className="text-xl max-h-48px font-semibold text-blue-500 dark:text-blue-300 mb-2">
+          <h2 className="text-xl max-h-48px font-semibold text-green-500 dark:text-green-500 mb-2">
             Scenario Preview
           </h2>
           <p className="text-gray-500  dark:text-gray-400 text-center mt-6">

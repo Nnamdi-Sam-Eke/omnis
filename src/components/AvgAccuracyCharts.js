@@ -131,7 +131,7 @@ export default function AvgAccuracyChartTabs() {
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">
+        <h2 className="text-xl font-semibold text-green-500 dark:text-green-500">
           Scenario Accuracy Stats
         </h2>
         {isOpen ? (

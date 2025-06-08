@@ -36,13 +36,10 @@ const SavedComponent = () => {
 
   // Timer to switch off loading after 4 seconds (on mount)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 4000);
-
+    const timer = setTimeout(() => setLoading(false), 4000);
     return () => clearTimeout(timer);
   }, []);
-
+  
   // Filter saved queries based on the search query
   const filteredSavedQueries = savedQueries.filter((item) =>
     item.query.toLowerCase().includes(searchQuery.toLowerCase())

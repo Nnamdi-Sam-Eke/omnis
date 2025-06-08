@@ -6,6 +6,19 @@ const TaskPlanner = ({ scenarioTasks = [] }) => {
   const [tasks, setTasks] = useState([]);
   const [inputTask, setInputTask] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [loading, setLoading] = React.useState(true);
+  
+  
+  
+    // Timer to switch off loading after 4 seconds (on mount)
+    useEffect(() => {
+      const timer = setTimeout(() => setLoading(false), 4000);
+      return () => clearTimeout(timer);
+    }, []);
+  
+    // If subscriptions is undefined, show loading state
+
+  
 
   useEffect(() => {
     if (scenarioTasks.length > 0 && tasks.length === 0) {
@@ -34,13 +47,23 @@ const TaskPlanner = ({ scenarioTasks = [] }) => {
     setTasks([]);
   };
 
+     if (loading) {
+      return (
+        <div className="animate-pulse space-y-4">
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
+        </div>
+      );
+    }
+
   return (
     <div className="bg-white dark:bg-gray-800 hover:shadow-blue-500/50 transition px-6 py-6 rounded-2xl shadow-md mt-6  border">
       <div
         className="flex justify-between items-center cursor-pointer"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        <h3 className="text-xl font-semibold text-blue-500 dark:text-blue-300">Task Planner</h3>
+        <h3 className="text-xl font-semibold  text-green-500 dark:text-green-5000">Task Planner</h3>
         {isCollapsed ? (
                  <ChevronRight className="w-5 h-5 text-blue-600 dark:text-white" />
                ) : (

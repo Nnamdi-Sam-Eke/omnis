@@ -75,8 +75,8 @@ const SavedScenariosTabs = () => {
   }, [searchQuery, savedScenarios]);
 
   return (
-    <div className="p-6 min-h-screen mx-auto">
-      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
+    <div className="p-4 min-h-screen mx-auto">
+      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300  mt-8 mb-8">
         Archive of Genius
       </h1>
 

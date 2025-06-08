@@ -33,7 +33,7 @@ const NarrativePanel = () => {
         onClick={() => setIsOpen(prevState => !prevState)}
         className="flex items-center justify-between cursor-pointer mb-4"
       >
-        <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-300">
+        <h2 className="text-xl font-semibold  text-green-500 dark:text-green-500">
           Narrative Insights from Omnis
         </h2>
         {isOpen ? (

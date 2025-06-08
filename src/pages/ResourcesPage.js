@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { ChevronRight, ChevronUp } from "lucide-react";
 
 const ResourcesPage = () => {
@@ -32,9 +32,31 @@ const ResourcesPage = () => {
     downloads: "Access templates, whitepapers, and software",
   };
 
+   const [loading, setLoading] = React.useState(true);
+  
+  
+  
+    // Timer to switch off loading after 4 seconds (on mount)
+    useEffect(() => {
+      const timer = setTimeout(() => setLoading(false), 4000);
+      return () => clearTimeout(timer);
+    }, []);
+  
+    // If subscriptions is undefined, show loading state
+   if (loading) {
+      return (
+        <div className="animate-pulse mx-auto w-10/12  space-y-4">
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
+        </div>
+      );
+    }
+  
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen dark:bg-gray-900">
-      <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
+      <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300  mt-10 mb-4">
         Docs, Guides, maybe FAQs?
       </h2>
 

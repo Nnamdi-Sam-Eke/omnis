@@ -120,7 +120,7 @@ export default function SimulationTrendsChart() {
         onClick={() => setIsExpanded((prev) => !prev)}
         aria-expanded={isExpanded}
       >
-        <h2 className="text-xl font-semibold text-blue-500 mb-4 dark:text-blue-300">
+        <h2 className="text-xl font-semibold  text-green-500 dark:text-green-500 mb-4">
           Simulation Trend
         </h2>
         {isExpanded ? (

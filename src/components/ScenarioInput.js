@@ -396,7 +396,7 @@ const handleSimulate = async () => {
               className="bg-blue-600 hover:bg-blue-800 text-white py-2 px-6 rounded font-semibold"
               onClick={() => {
                 // Link to upgrade page or open subscription modal
-                window.location.href = "/pricing";
+                window.location.href = "/payments";
               }}
             >
               Upgrade Now

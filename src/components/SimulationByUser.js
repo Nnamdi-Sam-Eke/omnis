@@ -91,9 +91,9 @@ export default function SimulationByUserChart() {
           Simulation By User
         </h2>
         {isExpanded ? (
-          <ChevronUp className="w-5 h-5 text-blue-600 dark:text-white" />
+          <ChevronUp  className='text-blue-300 dark:text-white'/>
         ) : (
-          <ChevronRight className="w-5 h-5 text-blue-600 dark:text-white" />
+          <ChevronRight  className='text-blue-300 dark:text-white'/>
         )}
       </div>
 

@@ -65,9 +65,9 @@ const TaskPlanner = ({ scenarioTasks = [] }) => {
       >
         <h3 className="text-xl font-semibold  text-green-500 dark:text-green-5000">Task Planner</h3>
         {isCollapsed ? (
-                 <ChevronRight className="w-5 h-5 text-blue-600 dark:text-white" />
+                 <ChevronRight  className='text-blue-300 dark:text-white' />
                ) : (
-                 <ChevronUp className="w-5 h-5 text-blue-600 dark:text-white" />
+                 <ChevronUp  className='text-blue-300 dark:text-white' />
                )}
       </div>
 

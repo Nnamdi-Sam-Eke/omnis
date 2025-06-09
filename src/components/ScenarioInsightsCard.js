@@ -165,7 +165,7 @@ const ScenarioInsightsCard = ({ processedData = [] }) => {
           onClick={() => setIsOpen(!isOpen)}
           className="text-blue-500 dark:text-blue-300 font-medium"
         >
-          {isOpen ? <ChevronUp /> : <ChevronRight />}
+          {isOpen ? <ChevronUp  className='text-blue-300 dark:text-white'/> : <ChevronRight  className='text-blue-300 dark:text-white'/>}
         </button>
       </div>
 

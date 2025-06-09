@@ -312,9 +312,9 @@ const UptimeChart = () => {
               Uptime Analytics
             </h3>
             {isOpen ? (
-              <ChevronDown className="w-5 h-5 text-blue-500" />
+              <ChevronDown  className='text-blue-300 dark:text-white' />
             ) : (
-              <ChevronRight className="w-5 h-5 text-blue-500" />
+              <ChevronRight  className='text-blue-300 dark:text-white'/>
             )}
           </div>
 

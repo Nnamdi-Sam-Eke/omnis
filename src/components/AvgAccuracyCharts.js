@@ -135,9 +135,9 @@ export default function AvgAccuracyChartTabs() {
           Scenario Accuracy Stats
         </h2>
         {isOpen ? (
-          <ChevronDown className="w-5 h-5 text-blue-600 dark:text-white" />
+          <ChevronDown  className='text-blue-300 dark:text-white' />
         ) : (
-          <ChevronRight className="w-5 h-5 text-blue-600 dark:text-white" />
+          <ChevronRight  className='text-blue-300 dark:text-white' />
         )}
       </div>
 

@@ -158,9 +158,9 @@ const ScenarioInsightsCard = ({ processedData = [] }) => {
    }
   // Render the component
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white">
+    <div className="bg-white overflow-y-auto max-h-[380px] dark:bg-gray-800 shadow-lg hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold  text-green-500 dark:text-green-500">Scenario Insights</h2>
+        <h2 className="text-xl font-semibold text-green-500 mb-12 dark:text-green-500">Scenario Insights</h2>
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="text-blue-500 dark:text-blue-300 font-medium"

@@ -25,26 +25,17 @@ const NewScenarioPage = () => {
           <ScenarioInput />
         </div>
 
-        {/* Right: Live Preview */}
-        <div className="bg-white dark:bg-gray-800 border shadow-lg hover:shadow-blue-500/50 rounded-lg p-6 ">
-          <h2 className="text-xl max-h-48px font-semibold text-green-500 dark:text-green-500 mb-2">
-            Scenario Preview
-          </h2>
-          <div className="max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 p-2">
-            {/* Placeholder for live scenario preview */}
-           <ScenarioPreview />
+          <div className="max-h-50 p-2">
+          {/* Simulation Insights Section */}
+            <ScenarioInsightsCard />
           </div>
-        </div>
       </section>
 
-      {/* Simulation Output Section */}
+      {/* Placeholder for live scenario preview */}
       <section className="grid grid-cols-1 sm:grid-cols-1 gap-6">
-        {/* Left: Simulation Result */}
         
-  
-          <ScenarioInsightsCard />
-        </section>
-
+      <ScenarioPreview />
+      </section>
     </div>
   );
 };

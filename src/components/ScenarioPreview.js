@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { CheckSquare, Trash2, FileEdit, PlayCircle, List, Grid, Filter, BarChart3, Loader2, ChevronDown, Expand, Minimize2, X } from 'lucide-react';
+import { CheckSquare, Trash2, FileEdit, PlayCircle, List, Grid, Filter, BarChart3, Loader2, ChevronDown, Expand, Minimize2, X, ChevronRight, ChevronUp } from 'lucide-react';
 
 const mockScenarios = [
   { id: '1', name: 'Q3 Market Forecast', category: 'Finance', inputs: { revenue: 10000, cost: 8000 }, lastSimulated: '2025-06-08', result: { profit: 2000 } },
@@ -33,9 +33,6 @@ const Button = ({ children, variant = 'default', size = 'default', className = '
     </button>
   );
 };
- 
-
- 
 
 // Custom Input Component
 const Input = ({ className = '', ...props }) => {
@@ -57,8 +54,7 @@ const Card = ({ children, className = '', onClick }) => {
 };
 
 const CardContent = ({ children, className = '' }) => {
-  return <div className={`p-6 ${className}`}>{children}</div>
-
+  return <div className={`p-6 ${className}`}>{children}</div>;
 };
 
 // Custom Dropdown Component
@@ -108,7 +104,8 @@ const DropdownMenuItem = ({ children, onClick, setIsOpen }) => {
   );
 };
 
-export default function ScenarioPreview() {
+// Scenario Preview Component
+const ScenarioPreview = () => {
   const [view, setView] = useState('card');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState([]);
@@ -119,13 +116,11 @@ export default function ScenarioPreview() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
 
-
-    // Timer to switch off loading after 4 seconds (on mount)
-    useEffect(() => {
-      const timer = setTimeout(() => setLoading(false), 3000);
-      return () => clearTimeout(timer);
-    }, []);
-  
+  // Timer to switch off loading after 3 seconds (on mount)
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Handle escape key to close expanded view
   useEffect(() => {
@@ -168,18 +163,12 @@ export default function ScenarioPreview() {
       alert('Simulation complete for scenario: ' + id);
     }, 1500);
   };
-    // Timer to switch off loading after 4 seconds (on mount)
-    useEffect(() => {
-      const timer = setTimeout(() => setLoading(false), 3000);
-      return () => clearTimeout(timer);
-    }, []);
 
   const toggleSelection = (id) => {
     setSelected(prev => prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]);
   };
 
   const categories = ['All', ...new Set(mockScenarios.map(s => s.category))];
-
 
   const ComponentContent = () => (
     <div className="space-y-4">
@@ -357,9 +346,7 @@ export default function ScenarioPreview() {
     </div>
   );
 
-  
-
-   if (loading) {
+  if (loading) {
     return (
       <div className="animate-pulse space-y-4">
         <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
@@ -426,7 +413,6 @@ export default function ScenarioPreview() {
                   variant="outline" 
                   size="sm"
                   onClick={() => {
-                    // Scroll to top of comparison panel
                     const comparisonPanel = document.querySelector('[data-comparison-panel]');
                     if (comparisonPanel) {
                       comparisonPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -501,8 +487,6 @@ export default function ScenarioPreview() {
             ))}
           </div>
           
-          
-          
           {isExpanded && (
             <div className="mt-4 pt-3 border-t border-gray-200 text-center">
               <div className="text-xs text-gray-500">
@@ -513,5 +497,46 @@ export default function ScenarioPreview() {
         </div>
       )}
     </>
+  );
+};
+
+// Main Collapsible Container Component
+export default function CollapsibleScenarioPreview() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Save/load state from memory (not localStorage as per restrictions)
+  useEffect(() => {
+    // Could save state in a parent component or context if needed
+    // For now, starts collapsed by default
+  }, []);
+
+  return (
+    <div className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white max-h-[600px] overflow-y-auto">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-green-500 dark:text-green-400">
+          Scenario Management Dashboard
+        </h2>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-blue-500 dark:text-blue-300 font-medium hover:text-blue-700 dark:hover:text-blue-100 transition-colors"
+          title={isOpen ? "Collapse" : "Expand"}
+        >
+          {isOpen ? (
+            <ChevronUp className="text-blue-300" />
+          ) : (
+            <ChevronRight className="text-blue-300" />
+          )}
+        </button>
+      </div>
+
+      {isOpen && (
+        <div className="mt-4">
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            Manage, compare, and analyze your simulation scenarios with advanced filtering and visualization tools.
+          </p>
+          <ScenarioPreview />
+        </div>
+      )}
+    </div>
   );
 }

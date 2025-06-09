@@ -308,7 +308,7 @@ const UptimeChart = () => {
             onClick={() => setIsOpen(!isOpen)}
             className="flex items-center justify-between cursor-pointer mb-4"
           >
-            <h3 className="text-xl font-semibold  text-green-500 dark:text-green-500">
+            <h3 className="text-xl font-semibold text-green-500 dark:text-green-400">
               Uptime Analytics
             </h3>
             {isOpen ? (

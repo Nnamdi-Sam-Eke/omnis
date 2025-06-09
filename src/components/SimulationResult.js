@@ -61,7 +61,7 @@ const ScenarioSimulationCard = ({ results, setResults, loading }) => {
 
   return (
     <div className="bg-white shadow-lg hover:shadow-blue-500/50 dark:bg-gray-900 rounded-lg p-6 border dark:border text-gray-900 dark:text-white text-2xl col-span-2 w-full">
-      <h2 className="text-xl font-semibold text-blue-500 dark:text-blue-300">Scenario Output</h2>
+      <h2 className="text-xl font-semibold text-green-500 ">Scenario Output</h2>
 
       <div className="max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 p-2 mt-3">
         {results.filter(Boolean).map((result, index) => {

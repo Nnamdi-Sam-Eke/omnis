@@ -3,7 +3,8 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-route
 import { AuthProvider, useAuth } from './AuthContext';
 import { Toaster } from 'react-hot-toast';
 import { signOut } from "firebase/auth";
-import { auth } from "./firebase";
+import { auth, db } from "./firebase";
+import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
 
 // Pages
 import SplashScreen from './components/SplashScreen';
@@ -63,6 +64,9 @@ const AppContent = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const userTier = user?.tier || 'Free';
+  console.log("🧪 User tier:", userTier);
+
 
   // Logout handler
   const handleLogout = () => {
@@ -72,10 +76,108 @@ const AppContent = () => {
   };
 
   const hideLayout = noLayoutRoutes.includes(location.pathname);
-
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   // Splash states
   const [initialSplashDone, setInitialSplashDone] = useState(false);
   const [postLoginSplash, setPostLoginSplash] = useState(false);
+
+useEffect(() => {
+  async function checkUpgradeModal() {
+    if (!user || !user.uid || !user.tier) {
+      console.log('⏳ Waiting for user or tier...');
+      return;
+    }
+
+    const tier = user.tier.toLowerCase(); // 'free', 'pro', 'enterprise'
+    const userRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      console.warn('❌ User document not found.');
+      return;
+    }
+
+    const data = userSnap.data();
+    const expiryTimestamp = data.subscriptionExpiry;
+    const lastModalTimestamp = data.lastUpgradeModalShown;
+    const now = new Date();
+
+    const isFree = tier === 'free';
+    const isPro = tier === 'pro';
+    const isEnterprise = tier === 'enterprise';
+
+    // Handle expiration check
+    let isExpired = false;
+    if ((isPro || isEnterprise) && expiryTimestamp) {
+      const expiryDate = expiryTimestamp.toDate ? expiryTimestamp.toDate() : new Date(expiryTimestamp);
+      if (now > expiryDate) {
+        isExpired = true;
+        console.log('🔔 Subscription expired.');
+      }
+    }
+
+    // Show modal only if:
+    // 1. Free tier
+    // 2. Expired Pro or Enterprise
+    // 3. It's been >=30 days since last shown (for other tiers)
+    if (isFree) {
+      // For free users, show if never shown before in >=12 hours
+      if (!lastModalTimestamp) {
+        console.log('✅ Showing upgrade modal for Free user');
+      console.log('✅ Showing upgrade modal for Free or Expired user');
+      setShowUpgradeModal(true);
+      await updateDoc(userRef, { lastUpgradeModalShown: Timestamp.now() });
+      return;
+    }
+
+    const lastShownDate = lastModalTimestamp.toDate ? lastModalTimestamp.toDate() : new Date(lastModalTimestamp);
+      const diffInHours = (now - lastShownDate) / (1000 * 60 * 60);
+
+      if (diffInHours >= 1) {
+        setShowUpgradeModal(true);
+        await updateDoc(userRef, { lastUpgradeModalShown: Timestamp.now() });
+      } else {
+        setShowUpgradeModal(false);
+      }
+      return;
+    }
+
+
+    if (isExpired) {
+      console.log('✅ Showing upgrade modal for Free or Expired user');
+      setShowUpgradeModal(true);
+      await updateDoc(userRef, { lastUpgradeModalShown: Timestamp.now() });
+      return;
+    }
+
+    // Do NOT show modal if active Pro or Enterprise
+    if ((isPro || isEnterprise) && !isExpired) {
+      console.log('✅ Active Pro/Enterprise user – skipping modal');
+      setShowUpgradeModal(false);
+      return;
+    }
+
+    // Other case – show if last shown >= 30 days ago
+    if (!lastModalTimestamp) {
+      setShowUpgradeModal(true);
+      await updateDoc(userRef, { lastUpgradeModalShown: Timestamp.now() });
+      return;
+    }
+
+    const lastShownDate = lastModalTimestamp.toDate ? lastModalTimestamp.toDate() : new Date(lastModalTimestamp);
+    const diffInDays = (now - lastShownDate) / (1000 * 60 * 60 * 24);
+
+    if (diffInDays >= 30) {
+      setShowUpgradeModal(true);
+      await updateDoc(userRef, { lastUpgradeModalShown: Timestamp.now() });
+    } else {
+      setShowUpgradeModal(false);
+    }
+  }
+
+  checkUpgradeModal();
+}, [user]);
+
 
   // Run splash on initial app load (before login)
   useEffect(() => {
@@ -120,6 +222,12 @@ const AppContent = () => {
   if (postLoginSplash) {
     return <SplashScreen />;
   }
+
+  
+
+
+
+  // ...
 
   // After all that, show main app UI with layout
   return (
@@ -183,7 +291,10 @@ const AppContent = () => {
                   <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
                 </Routes>
 
-                {(location.pathname === '/dashboard' || location.pathname === '/') && <UpgradeModal />}
+                {showUpgradeModal && (location.pathname === '/dashboard' || location.pathname === '/') && (
+  <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
+)}
+
               </StripeProvider>
             </MemoryProvider>
           </OmnisProvider>

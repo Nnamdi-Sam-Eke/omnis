@@ -171,7 +171,7 @@ const OmnisDashboard = () => {
     
       <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setCommandPaletteOpen} setActiveTab={setActiveTab} />
 
-      <div className="p-4 flex-1 overflow-y-auto space-y-4 min-h-screen overflow-y-scroll mt-10 transition-all duration-300">
+      <div className="p-4 flex-1 overflow-y-auto pb-16 space-y-4 min-h-screen overflow-y-scroll mt-10 transition-all duration-300">
         <h1 className="text-3xl font-semibold text-green-500 mb-6">
           {getGreeting()}, {userFirstName || 'there'} 👋
         </h1>

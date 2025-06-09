@@ -27,14 +27,14 @@ function AnalyticsButton() {
 
   const actions = [
     {
-      label: "View Full Analytics",
+      label: "📈 View Full Analytics ",
       // Light theme colors:
-      bgColor: "bg-amber-600", // (usually blue)
+      bgColor: "bg-primary", // (usually blue)
       textColor: "text-black",
       hoverColor: "hover:bg-primary/90",
       // Dark theme colors (override using dark: prefix):
-      darkBgColor: "dark:bg-yellow-400",
-      darkTextColor: "dark:text-black",
+      darkBgColor: "dark:bg-yellow-500", // golden background for dark mode
+      darkTextColor: "dark:text-white",
       darkHoverColor: "dark:hover:bg-yellow-500",
       glow: "rgba(59, 130, 246, 0.6)", // blue glow for light mode
       darkGlow: "rgba(202, 138, 4, 0.6)", // golden glow for dark mode

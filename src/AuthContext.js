@@ -1,4 +1,9 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+} from "react";
 import {
   auth,
   db,
@@ -6,7 +11,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
 } from "./firebase";
 import { doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
 
@@ -16,7 +21,26 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Unified Auth State + Firestore User Data
+  // Real-time listener for user document changes
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const userRef = doc(db, "users", user.uid);
+    const unsubscribe = onSnapshot(userRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setUser((prev) => ({
+          ...prev,
+          ...data,
+          tier: data.tier || "Free", // Ensure tier is present
+        }));
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user?.uid]);
+
+  // Initial Auth State Setup
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -32,12 +56,10 @@ export function AuthProvider({ children }) {
           firstName: data.firstname || "",
           lastName: data.lastname || "",
           profilePicture: data.profilePicture || null,
-          ...data
+          ...data,
         });
 
-        // Store session version locally
-        const sessionVersion = data.sessionVersion || 1;
-        localStorage.setItem("sessionVersion", sessionVersion.toString());
+        localStorage.setItem("sessionVersion", (data.sessionVersion || 1).toString());
       } else {
         setUser(null);
         localStorage.removeItem("sessionVersion");
@@ -49,9 +71,9 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
-  // ✅ Real-time Session Version Check
+  // Real-time session version check
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) return;
 
     const userRef = doc(db, "users", user.uid);
     const unsub = onSnapshot(userRef, (docSnap) => {
@@ -65,80 +87,60 @@ export function AuthProvider({ children }) {
     });
 
     return () => unsub();
-  }, [user]);
+  }, [user?.uid]);
 
-  // ✅ Signup
+  // Signup
   const signup = async (firstname, lastname, phone, email, password, location, country, profilePicture) => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const newUser = userCredential.user;
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const newUser = userCredential.user;
 
-      const userRef = doc(db, "users", newUser.uid);
-      await setDoc(userRef, {
-        firstname,
-        lastname,
-        phone,
-        email,
-        location,
-        country,
-        profilePicture,
-        tier: "Free",
-        sessionVersion: 1,
-        createdAt: new Date()
-      });
+    const userRef = doc(db, "users", newUser.uid);
+    await setDoc(userRef, {
+      firstname,
+      lastname,
+      phone,
+      email,
+      location,
+      country,
+      profilePicture,
+      tier: "Free",
+      sessionVersion: 1,
+      createdAt: new Date(),
+    });
 
-      localStorage.setItem("sessionVersion", "1");
-      console.log("✅ User signed up and data saved");
-    } catch (error) {
-      console.error("❌ Signup error:", error.message);
-      throw error;
-    }
+    localStorage.setItem("sessionVersion", "1");
+    console.log("✅ User signed up and data saved");
   };
 
-  // ✅ Login
+  // Login
   const login = async (email, password) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-      const userRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(userRef);
-      const sessionVersion = docSnap.data()?.sessionVersion || 1;
+    const userRef = doc(db, "users", user.uid);
+    const docSnap = await getDoc(userRef);
+    const sessionVersion = docSnap.data()?.sessionVersion || 1;
 
-      localStorage.setItem("sessionVersion", sessionVersion.toString());
-      console.log("✅ User logged in successfully");
-    } catch (error) {
-      console.error("❌ Login error:", error.message);
-      throw error;
-    }
+    localStorage.setItem("sessionVersion", sessionVersion.toString());
+    console.log("✅ User logged in successfully");
   };
 
-  // ✅ Logout
+  // Logout
   const logout = async (delay = 0) => {
-    try {
-      if (delay > 0) {
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-
-      await signOut(auth);
-      setUser(null);
-      localStorage.removeItem("sessionVersion");
-      console.log("✅ User logged out successfully");
-    } catch (error) {
-      console.error("❌ Logout error:", error.message);
-      throw error;
+    if (delay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
+
+    await signOut(auth);
+    setUser(null);
+    localStorage.removeItem("sessionVersion");
+    console.log("✅ User logged out successfully");
   };
 
-  // ✅ Password Reset
+  // Password Reset
   const resetPassword = async (email) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-      console.log("📩 Password reset email sent!");
-    } catch (error) {
-      console.error("❌ Reset error:", error.message);
-      throw error;
-    }
+    await sendPasswordResetEmail(auth, email);
+    console.log("📩 Password reset email sent!");
   };
 
   return (
@@ -150,7 +152,7 @@ export function AuthProvider({ children }) {
         signup,
         login,
         logout,
-        resetPassword
+        resetPassword,
       }}
     >
       {children}
@@ -158,7 +160,7 @@ export function AuthProvider({ children }) {
   );
 }
 
-// Hook
+// Hook to use auth
 export function useAuth() {
   return useContext(AuthContext);
 }

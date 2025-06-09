@@ -203,7 +203,7 @@ const AccountPage = () => {
               <div><strong>Last Name:</strong> {user?.lastName || 'N/A'}</div>
               <div><strong>Email:</strong> {user?.email || 'N/A'}</div>
               <div><strong>Phone:</strong> {userData.phone || 'N/A'}</div>
-              <div><strong>City:</strong> {userData.city || 'N/A'}</div>
+              <div><strong>City:</strong> {userData?.location?.city || 'N/A'}</div>
               <div><strong>Country:</strong> {userData.country || 'N/A'}</div>
             </div>
           </div>

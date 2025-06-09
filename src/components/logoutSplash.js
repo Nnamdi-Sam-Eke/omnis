@@ -1,104 +1,85 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Loader } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Loader } from "lucide-react";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
-const Logout = () => {
+const LogoutSplash = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
 
-  const [message, setMessage] = useState("");
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const messages = ["Logging you out...", "Redirecting you to login page..."];
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [displayText, setDisplayText] = useState("");
   const [fade, setFade] = useState(true);
-  const [typingIndex, setTypingIndex] = useState(0);
-  const [fullText, setFullText] = useState("");
+  const [showCursor, setShowCursor] = useState(true);
 
+  // Typing effect
   useEffect(() => {
-    if (!fullText) return;
+    const text = messages[currentMessageIndex];
+    setDisplayText(""); // reset display text
+    setShowCursor(true); // show cursor when typing starts
+    let i = 0;
 
-    const interval = setInterval(() => {
-      setMessage((prev) => prev + fullText[typingIndex]);
-      setTypingIndex((prev) => prev + 1);
-    }, 40);
+    const typingInterval = setInterval(() => {
+      if (i <= text.length) {
+        setDisplayText(text.substring(0, i));
+        i++;
+      } else {
+        clearInterval(typingInterval);
+        // Hide cursor after typing is complete
+        setTimeout(() => setShowCursor(false), 1000);
+      }
+    }, 50);
 
-    if (typingIndex === fullText.length) clearInterval(interval);
-    return () => clearInterval(interval);
-  }, [typingIndex, fullText]);
+    return () => clearInterval(typingInterval);
+  }, [currentMessageIndex]);
 
-  const typeMessage = (text) => {
-    setMessage("");
-    setTypingIndex(0);
-    setFullText(text);
-  };
+  // Cursor blinking effect
+  useEffect(() => {
+    if (!showCursor) return;
 
-  const handleLogout = async () => {
-    toast.info("You are being logged out.", {
-      position: "top-center",
-      autoClose: 2000,
-      hideProgressBar: false,
-      pauseOnHover: false,
-      draggable: false,
-      theme: "dark",
-    });
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev);
+    }, 500);
 
-    setIsLoggingOut(true);
-    setFade(true);
-    typeMessage("Logging you out...");
+    return () => clearInterval(cursorInterval);
+  }, [showCursor]);
 
-    try {
+  // Control sequence
+  useEffect(() => {
+    const sequence = async () => {
+      await new Promise((res) => setTimeout(res, 2000));
+      setFade(false); // fade out
+
+      await new Promise((res) => setTimeout(res, 500));
+      setCurrentMessageIndex(1); // switch message
+      setFade(true); // fade in
+
+      await new Promise((res) => setTimeout(res, 2000));
       await logout();
+      navigate("/login");
+    };
 
-      setTimeout(() => {
-        setFade(false); // fade out
-        setTimeout(() => {
-          typeMessage("Redirecting to login page...");
-          setFade(true); // fade in again
-
-          setTimeout(() => {
-            navigate("/login");
-          }, 2000); // time before navigating
-        }, 600); // time to wait before showing redirect message
-      }, 2500); // duration to show first message
-    } catch (error) {
-      console.error("Logout failed:", error.message);
-      toast.error("Logout failed. Please try again.", {
-        position: "top-center",
-        autoClose: 3000,
-        theme: "dark",
-      });
-      setIsLoggingOut(false);
-    }
-  };
+    sequence();
+  }, [logout, navigate]);
 
   return (
-    <div>
-      <button
-        onClick={handleLogout}
-        className="bg-white text-red-600 dark:text-red-400 px-4 py-2 rounded"
-      >
-        Log Out
-      </button>
-
-      {isLoggingOut && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="flex flex-col items-center space-y-4">
-            <Loader className="animate-spin text-white w-12 h-12" />
-            <p
-              className={`text-white text-lg transition-opacity duration-500 ${
-                fade ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              {message}
-            </p>
-          </div>
-        </div>
-      )}
-
-      <ToastContainer />
+    <div className="fixed inset-0 bg-black bg-opacity-90 flex flex-col justify-center items-center z-50">
+      <div className="flex flex-col items-center space-y-6 scale-100 origin-center">
+        <Loader className="animate-spin text-white w-16 h-16" />
+        <p
+          className={`text-white text-2xl font-light tracking-wide select-none transition-opacity duration-1000 ${
+            fade ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          {displayText}
+          <span className={`${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>
+            |
+          </span>
+        </p>
+      </div>
     </div>
   );
 };
 
-export default Logout;
+export default LogoutSplash;

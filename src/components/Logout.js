@@ -1,62 +1,63 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Loader } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import LogoutSplash from "./components/LogoutSplash"; // Ensure this component exists and handles message + fade
 
 const Logout = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
 
   const [localLogoutMessage, setLocalLogoutMessage] = useState("");
-  const [isLoggingOut, setIsLoggingOut] = useState(true);
   const [fade, setFade] = useState(true);
+  const [showSplash, setShowSplash] = useState(false);
+
+  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
   const handleLogout = async () => {
-  try {
-    toast.info("You are being logged out.", {
-      position: "top-center",
-      autoClose: 2000,
-      hideProgressBar: false,
-      pauseOnHover: false,
-      draggable: false,
-      theme: "dark",
-    });
+    toast.info("You are being logged out...");
+    setShowSplash(true);
+    await delay(1000);
+      console.log("Navigating to /login");
+      navigate("/login");
 
-    setIsLoggingOut(true);
-    setLocalLogoutMessage("Logging you out...");
-    setFade(true);
+    try {
+      console.log("Logout started");
 
-    setTimeout(() => {
-      setFade(false); // Start fade out
-      setTimeout(async () => {
-        setLocalLogoutMessage("Redirecting you to login page...");
-        setFade(true);
+      setLocalLogoutMessage("Logging you out...");
+      setFade(true);
+      await delay(2000);
 
-        await logout(500); // Delay actual sign-out by 500ms
+      console.log("Fade out start");
+      setFade(false);
+      await delay(500);
 
-        setTimeout(() => {
-          navigate("/login");
-        }, 1000); // Navigate after another delay
-      }, 500); // After fade out
-    }, 2000); // After initial message
-  } catch (error) {
-    console.error("Logout failed:", error.message);
-    toast.error("Logout failed. Please try again.", {
-      position: "top-center",
-      autoClose: 3000,
-      theme: "dark",
-    });
-    setIsLoggingOut(false);
-  }
-};
-  // Ensure the logout function is called with a delay
-  // to allow the UI to update before navigating away
-  // const handleLogout = async () => {
-  //   setIsLoggingOut(true);
-  //   setLocalLogoutMessage("Logging you out...");
-  //   setFade(true); 
+      console.log("Fade out complete, starting redirect message");
+      setLocalLogoutMessage("Redirecting you to login page...");
+      setFade(true);
+
+      await logout(500); // optional delay
+      console.log("Logout completed");
+
+      await delay(1000);
+      console.log("Navigating to /login");
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error.message);
+      toast.error("Logout failed. Please try again.");
+      setShowSplash(false);
+    }
+  };
+
+  // Auto logout after 5 minutes of inactivity
+  useEffect(() => {
+    const inactivityTimeout = setTimeout(() => {
+      handleLogout();
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearTimeout(inactivityTimeout);
+  }, []);
 
   return (
     <div>
@@ -67,19 +68,8 @@ const Logout = () => {
         Log Out
       </button>
 
-      {isLoggingOut && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="flex flex-col items-center space-y-4 scale-[0.75] origin-center">
-            <Loader className="animate-spin text-white w-12 h-12" />
-            <p
-              className={`text-white text-lg transition-opacity duration-500 ${
-                fade ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              {localLogoutMessage}
-            </p>
-          </div>
-        </div>
+      {showSplash && (
+        <LogoutSplash message={localLogoutMessage} fade={fade} />
       )}
 
       <ToastContainer />

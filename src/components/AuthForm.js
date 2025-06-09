@@ -102,7 +102,7 @@ const AuthForm = () => {
   };
 
   return (
-    <div className="overflow-y-auto scale-75 max-h-screen bg-white flex flex-col md:flex-row items-center justify-center px-4 py-12">
+    <div className=" scale-75 max-h-screen bg-white flex flex-col md:flex-row items-center justify-center px-4 py-12">
       <div className="flex flex-col md:flex-row max-w-6xl w-full max-h-[600px] shadow-2xl rounded-xl overflow-hidden">
 
         {/* Logo Section */}

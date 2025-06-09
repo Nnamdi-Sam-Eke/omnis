@@ -364,7 +364,7 @@ export default function ScenarioPreview() {
       <div className="animate-pulse space-y-4">
         <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
         <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-12 bg-blue-300 dark:bg-blue-700 rounded" />
+        <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
       </div>
     );
   }

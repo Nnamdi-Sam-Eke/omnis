@@ -34,9 +34,6 @@ const NewScenarioPage = () => {
             {/* Placeholder for live scenario preview */}
            <ScenarioPreview />
           </div>
-          <p className="text-gray-500  dark:text-gray-400 text-center mt-6">
-            Your live scenario preview will appear here based on current inputs.
-          </p>
         </div>
       </section>
 

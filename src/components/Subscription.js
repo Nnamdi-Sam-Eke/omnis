@@ -9,7 +9,7 @@ const SubscriptionInfo = ({ userDetails, discountActive }) => {
   const { user } = useAuth();
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 4000);
+    const timer = setTimeout(() => setLoading(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 

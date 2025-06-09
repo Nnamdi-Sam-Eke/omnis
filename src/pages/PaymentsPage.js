@@ -62,7 +62,7 @@ const PaymentsPage = () => {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-2xl font-semibold text-blue-500 dark:text-blue-300  mt-10 mb-4">
+      <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-300 mt-10 mb-4">
         Manage Billing & Subscription
       </h1>
 

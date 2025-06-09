@@ -203,7 +203,7 @@ const OmnisDashboard = () => {
         <div className="relative grid h-full grid-cols-1 msm:grid-cols-2 lg:grid-cols-1 gap-6 transition-all">
           {activeTab === 'quickStats' && (
             <div id="quickStats-panel" role="tabpanel" aria-labelledby="quickStats-tab">
-              <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300  mt-8 mb-8">
+              <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-300 mt-4 mb-4">
                 Quick stats, activity logs etc..
               </h2>
               <div className="mb-4 mt-8">

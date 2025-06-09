@@ -1,6 +1,7 @@
 import React from 'react';
 import ScenarioInput from './ScenarioInput'; // Input Form
 import ScenarioInsightsCard from './ScenarioInsightsCard'; // Insights
+import ScenarioPreview from './ScenarioPreview';
 
 const NewScenarioPage = () => {
   
@@ -9,7 +10,7 @@ const NewScenarioPage = () => {
 
       {/* Page Header */}
       <header>
-        <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-300">
+        <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-300">
           Omnis' Core
         </h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
@@ -29,6 +30,10 @@ const NewScenarioPage = () => {
           <h2 className="text-xl max-h-48px font-semibold text-green-500 dark:text-green-500 mb-2">
             Scenario Preview
           </h2>
+          <div className="max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 p-2">
+            {/* Placeholder for live scenario preview */}
+           <ScenarioPreview />
+          </div>
           <p className="text-gray-500  dark:text-gray-400 text-center mt-6">
             Your live scenario preview will appear here based on current inputs.
           </p>

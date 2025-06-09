@@ -56,7 +56,7 @@ const ResourcesPage = () => {
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen dark:bg-gray-900">
-      <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300  mt-10 mb-4">
+      <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-300 mt-10 mb-4">
         Docs, Guides, maybe FAQs?
       </h2>
 

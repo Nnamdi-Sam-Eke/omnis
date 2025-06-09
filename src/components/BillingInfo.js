@@ -31,7 +31,7 @@ const BillingInfo = ({ onSaveBillingInfo }) => {
   const elements = useElements();
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 4000);
+    const timer = setTimeout(() => setLoading(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 

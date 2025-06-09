@@ -42,7 +42,7 @@ const AiMatchPage = () => {
     <div className="p-6 space-y-10">
       {/* Page Header */}
       <header>
-        <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-300">
+        <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-300">
           Smart Recommendations
         </h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">

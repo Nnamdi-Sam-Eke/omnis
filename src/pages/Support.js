@@ -132,7 +132,7 @@ const SupportPage = () => {
                       >
                         {faq.question}
                         <span className="ml-2 text-xl">
-                          {isOpen(categoryIdx, faqIdx) ? <ChevronUp className='text-black dark:text-white'/> : <ChevronRight />}
+                          {isOpen(categoryIdx, faqIdx) ? <ChevronUp className='text-blue-300 dark:text-white'/> : <ChevronRight className='text-blue-300 dark:text-white'/>}
                         </span>
                       </button>
                       {isOpen(categoryIdx, faqIdx) && (

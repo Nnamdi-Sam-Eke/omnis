@@ -5,7 +5,7 @@ const SavedCardDetails = ({ card, onUpdate, onRemove }) => {
 
   // Timer to switch off loading after 4 seconds (on mount)
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 4000);
+    const timer = setTimeout(() => setLoading(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 

@@ -116,7 +116,11 @@ const ScenarioSimulationCard = ({ results, setResults, loading }) => {
       </div>
 
       <div className="flex justify-end mt-4">
-        <button onClick={handleReset} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full transition-transform transform hover:scale-105 active:scale-95">
+        <button onClick={() => handleReset()}
+                    className="text-red-600 hover:text-red-800  text-lg mt-2"
+                    aria-label={`Remove scenario simulation results`
+        } 
+                  >
           Reset
         </button>
       </div>

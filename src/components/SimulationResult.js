@@ -1,15 +1,26 @@
 // This file is part of the Omnis AI project. 
 
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useOmnisContext } from "../context/OmnisContext";
 import { FiThumbsUp, FiThumbsDown } from "react-icons/fi";
 
 const ScenarioSimulationCard = ({ results, setResults, loading }) => {
   const { addFeedback } = useOmnisContext();
   const [clickedButtons, setClickedButtons] = useState({});
+  const [localResults, setLocalResults] = useState(results || []);
 
-  if (!results || results.length === 0) {
+  // Update local results when props change
+  useEffect(() => {
+    setLocalResults(results || []);
+  }, [results]);
+
+  const handleReset = () => {
+    // Simply clear the local results to hide the component content
+    setLocalResults([]);
+  };
+
+  if (!localResults || localResults.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 shadow-lg border hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white">
         <h2 className="text-xl font-semibold  text-green-500 dark:text-green-500">Scenario Output</h2>
@@ -17,10 +28,6 @@ const ScenarioSimulationCard = ({ results, setResults, loading }) => {
       </div>
     );
   }
-
-  const handleReset = () => {
-    if (setResults) setResults([]);
-  };
 
   const handleFeedback = (timestamp, feedback) => {
     if (!timestamp) return;
@@ -64,7 +71,7 @@ const ScenarioSimulationCard = ({ results, setResults, loading }) => {
       <h2 className="text-xl font-semibold text-green-500 ">Scenario Output</h2>
 
       <div className="max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 p-2 mt-3">
-        {results.filter(Boolean).map((result, index) => {
+        {localResults.filter(Boolean).map((result, index) => {
           const timestamp = result?.timestamp || index;
           return (
             <div key={timestamp} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-full shadow border border-gray-200 dark:border-gray-700 mb-3 group hover:scale-100 transition-transform duration-200">
@@ -167,4 +174,4 @@ function formatResponse(response) {
 export default ScenarioSimulationCard;
 // This component displays the results of scenario simulations, allowing users to provide feedback on each result.
 // It includes buttons for positive and negative feedback, which are tracked per result timestamp.
-// The component also handles resetting the results and formats the response data for display.  
+// The component also handles resetting the results and formats the response data for display.

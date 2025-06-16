@@ -133,7 +133,7 @@ useEffect(() => {
     const lastShownDate = lastModalTimestamp.toDate ? lastModalTimestamp.toDate() : new Date(lastModalTimestamp);
       const diffInHours = (now - lastShownDate) / (1000 * 60 * 60);
 
-      if (diffInHours >= 1) {
+      if (diffInHours >= 0) {
         setShowUpgradeModal(true);
         await updateDoc(userRef, { lastUpgradeModalShown: Timestamp.now() });
       } else {

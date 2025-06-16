@@ -1,7 +1,13 @@
-import React,{ useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
+import rehypeHighlight from "rehype-highlight";
+import html2pdf from "html2pdf.js";
+import "highlight.js/styles/github-dark.css";
 import { saveUserInteraction } from "../services/userBehaviourService";
-import { useMemory } from "../MemoryContext"; // ✅ Import Memory Context
-import { db } from "../firebase"; // Import Firestore database
+import { useMemory } from "../MemoryContext";
+import { db } from "../firebase";
 import { Timestamp } from "firebase/firestore";
 
 import {
@@ -14,27 +20,254 @@ import {
   setDoc,
   getDoc,
   serverTimestamp,
-  where, // ✅ Added where import
-} from "firebase/firestore"; // Consolidated imports
-import { useAuth } from "../AuthContext"; // ✅ Import Auth
-import { ChevronRight, ChevronUp, Lock, Play, Crown } from "lucide-react";
+  where,
+} from "firebase/firestore";
+import { useAuth } from "../AuthContext";
+import { ChevronRight, ChevronUp, Lock, Play, Crown, FileText, Copy, Undo, Redo, Download, Type } from "lucide-react";
 import ScenarioSimulationCard from "./SimulationResult";
 
-// Component to simulate multiple scenarios and store the results in memory
+// Enhanced InputPreview component with right-side preview and all features integrated
+const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenario here..." }) => {
+  const [history, setHistory] = useState([value || ""]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const [showCopySuccess, setShowCopySuccess] = useState(false);
+  const previewRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  // Initialize history when value changes from parent
+  useEffect(() => {
+    if (value !== history[historyIndex]) {
+      setHistory([value || ""]);
+      setHistoryIndex(0);
+    }
+  }, []);
+
+  // Update input and version history
+  const handleInputChange = (e) => {
+    const newValue = e.target.value;
+    
+    // Update parent component
+    onChange(newValue);
+    
+    // Update history for undo/redo
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newValue);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  // Export preview as PDF
+  const handleExportPDF = () => {
+    if (previewRef.current) {
+      const opt = {
+        margin: 1,
+        filename: 'scenario-preview.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(previewRef.current).save();
+    }
+  };
+
+  // Copy input markdown to clipboard
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setShowCopySuccess(true);
+      setTimeout(() => setShowCopySuccess(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      // Fallback for older browsers
+      if (textareaRef.current) {
+        textareaRef.current.select();
+        document.execCommand('copy');
+        setShowCopySuccess(true);
+        setTimeout(() => setShowCopySuccess(false), 2000);
+      }
+    }
+  };
+
+  // Undo functionality
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const previousValue = history[historyIndex - 1];
+      onChange(previousValue);
+      setHistoryIndex(historyIndex - 1);
+    }
+  };
+
+  // Redo functionality
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const nextValue = history[historyIndex + 1];
+      onChange(nextValue);
+      setHistoryIndex(historyIndex + 1);
+    }
+  };
+
+  // Calculate word and character counts
+  const wordCount = value ? value.trim().split(/\s+/).filter(Boolean).length : 0;
+  const charCount = value ? value.length : 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Toolbar with all features */}
+      <div className="flex flex-wrap gap-3 items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={handleUndo}
+            disabled={historyIndex === 0}
+            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-50 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title="Undo (Ctrl+Z)"
+          >
+            <Undo className="w-4 h-4" />
+            Undo
+          </button>
+          
+          <button
+            onClick={handleRedo}
+            disabled={historyIndex === history.length - 1}
+            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-50 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title="Redo (Ctrl+Y)"
+          >
+            <Redo className="w-4 h-4" />
+            Redo
+          </button>
+          
+          <button
+            onClick={handleCopy}
+            className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded transition-colors ${
+              showCopySuccess 
+                ? 'bg-green-500 text-white' 
+                : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
+            title="Copy to clipboard"
+          >
+            <Copy className="w-4 h-4" />
+            {showCopySuccess ? 'Copied!' : 'Copy'}
+          </button>
+          
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+            title="Export preview as PDF"
+          >
+            <Download className="w-4 h-4" />
+            Export PDF
+          </button>
+        </div>
+        
+        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+          <span className="flex items-center gap-1">
+            <Type className="w-4 h-4" />
+            {wordCount} words
+          </span>
+          <span>{charCount} characters</span>
+        </div>
+      </div>
+
+      {/* Side-by-side Editor and Preview - Fixed Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 min-h-[400px]">
+        {/* Input Section - Left Side */}
+        <div className="flex flex-col space-y-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+            <FileText className="w-4 h-4 inline mr-2" />
+            Scenario Input (Markdown Supported)
+          </label>
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={handleInputChange}
+            className="flex-1 w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all min-h-[350px]"
+            placeholder={placeholder}
+            spellCheck="false"
+          />
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            💡 Tip: Use markdown formatting like **bold**, *italic*, # headers, - lists, etc.
+          </div>
+        </div>
+
+        {/* Live Preview Section - Right Side */}
+        <div className="flex flex-col space-y-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+            <span className="flex items-center gap-2">
+              Live Preview
+              <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full">
+                Real-time
+              </span>
+            </span>
+          </label>
+          <div
+            ref={previewRef}
+            className="flex-1 p-4 overflow-y-auto border-2 border-blue-200 dark:border-blue-700 rounded-lg bg-blue-50 dark:bg-gray-900 prose prose-sm dark:prose-invert max-w-none min-h-[350px]"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#CBD5E0 transparent'
+            }}
+          >
+            {value ? (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeSanitize, rehypeHighlight]}
+                components={{
+                  // Custom styling for better preview
+                  h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4" {...props} />,
+                  h2: ({node, ...props}) => <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400 mb-3" {...props} />,
+                  h3: ({node, ...props}) => <h3 className="text-lg font-medium text-blue-600 dark:text-blue-400 mb-2" {...props} />,
+                  p: ({node, ...props}) => <p className="mb-3 leading-relaxed" {...props} />,
+                  ul: ({node, ...props}) => <ul className="mb-3 pl-4" {...props} />,
+                  ol: ({node, ...props}) => <ol className="mb-3 pl-4" {...props} />,
+                  li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                  blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-blue-400 pl-4 italic my-4" {...props} />,
+                  code: ({node, inline, ...props}) => 
+                    inline ? 
+                      <code className="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm" {...props} /> :
+                      <code className="block bg-gray-100 dark:bg-gray-800 p-3 rounded-lg overflow-x-auto" {...props} />
+                }}
+              >
+                {value}
+              </ReactMarkdown>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 italic text-center">
+                <div className="mb-4">
+                  <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Start typing to see your live preview...</p>
+                </div>
+                <div className="text-xs text-left bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
+                  <div className="font-semibold mb-2">Try some markdown:</div>
+                  <div className="font-mono space-y-1">
+                    <div># Heading</div>
+                    <div>**Bold text**</div>
+                    <div>*Italic text*</div>
+                    <div>- List item</div>
+                    <div>&gt; Quote</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main ScenarioInput component
 export default function ScenarioInput({ onSimulate }) {
   const [scenarios, setScenarios] = useState([""]);
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState([]);
-  const { memory, saveToFirestore } = useMemory(); // ✅ AI Memory Hook
+  const { memory, saveToFirestore } = useMemory();
   const [error, setError] = useState(null);
-  const [chatHistory, setChatHistory] = useState([]); // ✅ Store previous interactions
-  const [userInteractions, setUserInteractions] = useState([]); // ✅ Store user interactions
+  const [chatHistory, setChatHistory] = useState([]);
+  const [userInteractions, setUserInteractions] = useState([]);
   const [trialExpired, setTrialExpired] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const { user } = useAuth(); // ✅ Get current user
+  const { user } = useAuth();
   const [discountDeadline, setDiscountDeadline] = useState(null);
   const [loading, setLoading] = React.useState(true);
-  const [simulationLoading, setSimulationLoading] = useState(false); // ✅ Separate loading state for simulation
+  const [simulationLoading, setSimulationLoading] = useState(false);
   
   // Get user tier for button logic
   const userTier = (
@@ -57,7 +290,7 @@ export default function ScenarioInput({ onSimulate }) {
       loadFirestoreMemory();
       checkTrialStatus();
       loadChatHistory();
-      loadUserInteractions(); // ✅ Load user interactions
+      loadUserInteractions();
     }
   }, [user]);
 
@@ -71,8 +304,6 @@ export default function ScenarioInput({ onSimulate }) {
       const querySnapshot = await getDocs(q);
       const loadedMemory = querySnapshot.docs.map((doc) => doc.data());
       console.log("✅ Firestore Memory Loaded:", loadedMemory);
-      // Optionally: update memory context
-      // saveToFirestore(loadedMemory);
     } catch (error) {
       console.error("❌ Error loading Firestore memory:", error);
     }
@@ -94,7 +325,6 @@ export default function ScenarioInput({ onSimulate }) {
     }
   };
 
-  // ✅ New function to load user interactions from main collection
   const loadUserInteractions = async () => {
     if (!user) return;
     try {
@@ -102,7 +332,7 @@ export default function ScenarioInput({ onSimulate }) {
       const q = query(
         userInteractionsRef, 
         where('userId', '==', user.uid),
-        orderBy('timestamp', 'desc') // Most recent first
+        orderBy('timestamp', 'desc')
       );
       
       const snapshot = await getDocs(q);
@@ -118,89 +348,82 @@ export default function ScenarioInput({ onSimulate }) {
     }
   };
 
-const checkTrialStatus = async () => {
-  if (!user) return;
+  const checkTrialStatus = async () => {
+    if (!user) return;
 
-  try {
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) return;
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) return;
 
-    const userData = userSnap.data();
-    const tier = (userData.subscriptionTier || user?.tier?.toLowerCase?.() || "free").toLowerCase();
-    const now = new Date();
+      const userData = userSnap.data();
+      const tier = (userData.subscriptionTier || user?.tier?.toLowerCase?.() || "free").toLowerCase();
+      const now = new Date();
 
-    // If user is Pro or Enterprise, no trial or upgrade modal logic applies
-    if (tier !== "free") {
-      setTrialExpired(false);
-      setShowUpgradeModal(false);
-      console.log("✅ User is on paid tier:", tier);
-      return;
-    }
-
-    // Free tier logic
-    const trialStart = userData.trialStartedAt?.toDate?.() || user.trialStartedAt?.toDate?.();
-
-    if (!trialStart) {
-      // First time trial use
-      await setDoc(
-        userRef,
-        {
-          trialStartedAt: serverTimestamp(),
-          hasUsedSimulationTrial: true,
-        },
-        { merge: true }
-      );
-      setTrialExpired(false);
-      setShowUpgradeModal(false);
-      console.log("🎉 Trial started");
-    } else {
-      const trialEnd = new Date(trialStart);
-      trialEnd.setDate(trialEnd.getDate() + 7);
-
-      if (now > trialEnd) {
-        // Trial expired
-        setTrialExpired(true);
-        setShowUpgradeModal(true);
-
-        // Handle discount availability
-        const discountDeadline = userData.discountAvailableUntil?.toDate?.() || user.discountAvailableUntil?.toDate?.();
-        if (!discountDeadline || now > discountDeadline) {
-          const newDiscountEnd = new Date();
-          newDiscountEnd.setDate(now.getDate() + 7);
-
-          const discountEndTimestamp = Timestamp.fromDate(newDiscountEnd);
-          await setDoc(
-            userRef,
-            {
-              discountAvailableUntil: discountEndTimestamp,
-            },
-            { merge: true }
-          );
-          setDiscountDeadline(newDiscountEnd);
-        } else {
-          setDiscountDeadline(discountDeadline);
-        }
-
-        console.log("⏰ Trial expired");
-      } else {
-        // Trial still active
+      if (tier !== "free") {
         setTrialExpired(false);
         setShowUpgradeModal(false);
-        // Calculate remaining time
-        const msLeft = trialEnd - now;
-        const daysLeft = Math.floor(msLeft / (1000 * 60 * 60 * 24));
-        const hoursLeft = Math.floor((msLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutesLeft = Math.floor((msLeft % (1000 * 60 * 60)) / (1000 * 60));
-        console.log(`✅ Trial still active: ${daysLeft}d ${hoursLeft}h ${minutesLeft}m left`);
+        console.log("✅ User is on paid tier:", tier);
+        return;
       }
-    }
 
-    console.log("✅ Trial status checked for user:", user.uid);
-  } catch (err) {
-    console.error("❌ Error checking trial:", err);
-  }
-};
+      const trialStart = userData.trialStartedAt?.toDate?.() || user.trialStartedAt?.toDate?.();
+
+      if (!trialStart) {
+        await setDoc(
+          userRef,
+          {
+            trialStartedAt: serverTimestamp(),
+            hasUsedSimulationTrial: true,
+          },
+          { merge: true }
+        );
+        setTrialExpired(false);
+        setShowUpgradeModal(false);
+        console.log("🎉 Trial started");
+      } else {
+        const trialEnd = new Date(trialStart);
+        trialEnd.setDate(trialEnd.getDate() + 7);
+
+        if (now > trialEnd) {
+          setTrialExpired(true);
+          setShowUpgradeModal(true);
+
+          const discountDeadline = userData.discountAvailableUntil?.toDate?.() || user.discountAvailableUntil?.toDate?.();
+          if (!discountDeadline || now > discountDeadline) {
+            const newDiscountEnd = new Date();
+            newDiscountEnd.setDate(now.getDate() + 7);
+
+            const discountEndTimestamp = Timestamp.fromDate(newDiscountEnd);
+            await setDoc(
+              userRef,
+              {
+                discountAvailableUntil: discountEndTimestamp,
+              },
+              { merge: true }
+            );
+            setDiscountDeadline(newDiscountEnd);
+          } else {
+            setDiscountDeadline(discountDeadline);
+          }
+
+          console.log("⏰ Trial expired");
+        } else {
+          setTrialExpired(false);
+          setShowUpgradeModal(false);
+          const msLeft = trialEnd - now;
+          const daysLeft = Math.floor(msLeft / (1000 * 60 * 60 * 24));
+          const hoursLeft = Math.floor((msLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutesLeft = Math.floor((msLeft % (1000 * 60 * 60)) / (1000 * 60));
+          console.log(`✅ Trial still active: ${daysLeft}d ${hoursLeft}h ${minutesLeft}m left`);
+        }
+      }
+
+      console.log("✅ Trial status checked for user:", user.uid);
+    } catch (err) {
+      console.error("❌ Error checking trial:", err);
+    }
+  };
 
   const handleScenarioSubmit = async (query, response) => {
     try {
@@ -217,129 +440,100 @@ const checkTrialStatus = async () => {
     }
   };
 
+  const handleSimulate = async () => {
+    if (!user) return;
 
-const handleSimulate = async () => {
-  if (!user) return;
-
-  // Only block simulation if user is free tier AND trial has expired
-  if (isFreeTier && trialExpired) {
-    setShowUpgradeModal(true);
-    return;
-  }
-
-  const userRef = doc(db, "users", user.uid);
-  const userSnap = await getDoc(userRef);
-
-  if (!userSnap.exists()) {
-    await setDoc(userRef, {
-      subscriptionTier: userTier,
-      trialStartedAt: serverTimestamp(),
-      hasUsedSimulationTrial: true,
-    });
-  } else {
-    const userData = userSnap.data();
-    if (!userData.trialStartedAt || userData.hasUsedSimulationTrial !== true) {
-      await setDoc(
-        userRef,
-        {
-          trialStartedAt: serverTimestamp(),
-          hasUsedSimulationTrial: true,
-        },
-        { merge: true }
-      );
+    if (isFreeTier && trialExpired) {
+      setShowUpgradeModal(true);
+      return;
     }
-  }
 
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
 
-  
-
-  
-
-  if (!userSnap.exists()) {
-    await setDoc(userRef, {
-      subscriptionTier: userTier,
-      trialStartedAt: serverTimestamp(),
-      hasUsedSimulationTrial: true,
-    });
-  } else {
-    const userData = userSnap.data();
-    if (!userData.trialStartedAt || userData.hasUsedSimulationTrial !== true) {
-      await setDoc(
-        userRef,
-        {
-          trialStartedAt: serverTimestamp(),
-          hasUsedSimulationTrial: true,
-        },
-        { merge: true }
-      );
-    }
-  }
-
-  const filteredScenarios = scenarios.filter((s) => s.trim() !== "");
-  if (!filteredScenarios.length) return;
-
-  console.log("📊 Simulating scenarios:", filteredScenarios);
-  await saveUserInteraction(user.uid, "simulate_scenario", { scenarios: filteredScenarios });
-
-  await loadUserInteractions();
-
-  // ✅ Set simulation loading to true and clear previous results
-  setSimulationLoading(true);
-  setError(null);
-  setResults([]);
-
-  try {
-    const simulationStart = Date.now();
-
-    const simulationPromises = filteredScenarios.map(async (scenario) => {
-    const payload = {
-  input_type: "text",
-  text: scenario,
-  user_id: user?.uid
-};
-
-      console.log("📤 Sending to /api/simulate:", payload);
-
-      try {
-        const response = await fetch("http://localhost:5000/api/simulate", {
-          method: "POST",
-          body: JSON.stringify(payload),
-          headers: {
-            "Content-Type": "application/json",
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        subscriptionTier: userTier,
+        trialStartedAt: serverTimestamp(),
+        hasUsedSimulationTrial: true,
+      });
+    } else {
+      const userData = userSnap.data();
+      if (!userData.trialStartedAt || userData.hasUsedSimulationTrial !== true) {
+        await setDoc(
+          userRef,
+          {
+            trialStartedAt: serverTimestamp(),
+            hasUsedSimulationTrial: true,
           },
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || "Simulation request failed");
-        }
-
-        const result = await response.json();
-        await handleScenarioSubmit(scenario, result);
-        return { query: scenario, response: result };
-      } catch (err) {
-        console.error("❌ Simulation fetch error:", err);
-        return { query: scenario, response: { error: err.message } };
+          { merge: true }
+        );
       }
-    });
+    }
 
-    const allResults = await Promise.all(simulationPromises);
+    const filteredScenarios = scenarios.filter((s) => s.trim() !== "");
+    if (!filteredScenarios.length) return;
 
-    const elapsed = Date.now() - simulationStart;
-    const delay = Math.max(0, 4000 - elapsed);
+    console.log("📊 Simulating scenarios:", filteredScenarios);
+    await saveUserInteraction(user.uid, "simulate_scenario", { scenarios: filteredScenarios });
+    await loadUserInteractions();
 
-    setTimeout(() => {
-      setResults(allResults);
-      setSimulationLoading(false); // ✅ Turn off simulation loading
-    }, delay);
-  } catch (err) {
-    setError("An error occurred during simulation.");
-    console.error("Simulation error:", err);
-    setSimulationLoading(false); // ✅ Turn off simulation loading on error
-  }
+    setSimulationLoading(true);
+    setError(null);
+    setResults([]);
 
-  if (onSimulate) onSimulate(filteredScenarios);
-};
+    try {
+      const simulationStart = Date.now();
+
+      const simulationPromises = filteredScenarios.map(async (scenario) => {
+        const payload = {
+          input_type: "text",
+          text: scenario,
+          user_id: user?.uid
+        };
+
+        console.log("📤 Sending to /api/simulate:", payload);
+
+        try {
+          const response = await fetch("http://localhost:5000/api/simulate", {
+            method: "POST",
+            body: JSON.stringify(payload),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Simulation request failed");
+          }
+
+          const result = await response.json();
+          await handleScenarioSubmit(scenario, result);
+          return { query: scenario, response: result };
+        } catch (err) {
+          console.error("❌ Simulation fetch error:", err);
+          return { query: scenario, response: { error: err.message } };
+        }
+      });
+
+      const allResults = await Promise.all(simulationPromises);
+
+      const elapsed = Date.now() - simulationStart;
+      const delay = Math.max(0, 4000 - elapsed);
+
+      setTimeout(() => {
+        setResults(allResults);
+        setSimulationLoading(false);
+      }, delay);
+    } catch (err) {
+      setError("An error occurred during simulation.");
+      console.error("Simulation error:", err);
+      setSimulationLoading(false);
+    }
+
+    if (onSimulate) onSimulate(filteredScenarios);
+  };
 
   // Handle input changes for scenarios
   const handleInputChange = (index, value) => {
@@ -356,8 +550,7 @@ const handleSimulate = async () => {
     }
   };
 
-  // If subscriptions is undefined, show loading state
- if (loading) {
+  if (loading) {
     return (
       <div className="animate-pulse space-y-4">
         <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
@@ -369,44 +562,59 @@ const handleSimulate = async () => {
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white mt-8">
+    <div className="flex flex-col md:flex-row gap-4 w-full ">
+      <div className="bg-white dark:bg-gray-800 shadow-lg flex-1 hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white mt-8">
         <div
           className="flex justify-between items-center cursor-pointer p-3 bg-white rounded-md dark:bg-gray-800"
           onClick={() => setIsOpen(!isOpen)}
         >
-          <h2 className="text-xl font-semibold  text-green-500 dark:text-green-500">Scenario Input</h2>
-          <span className="text-blue-500 dark:text-blue-300 font-medium">
-            {isOpen ? <ChevronUp /> : <ChevronRight />}
-          </span>
+          <h2 className="text-xl font-semibold text-green-500 dark:text-green-500">Scenario Input</h2>
+          <div className="flex items-center gap-3">
+            <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-2 py-1 rounded-full">
+              Markdown Enabled
+            </span>
+            <span className="text-blue-500 dark:text-blue-300 font-medium">
+              {isOpen ? <ChevronUp /> : <ChevronRight />}
+            </span>
+          </div>
         </div>
 
         {isOpen && (
-          <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 transition-all duration-300 max-h-[300px] opacity-100 mt-4">
+          <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 transition-all duration-300 max-h-[800px] opacity-100 mt-4">
             {scenarios.map((scenario, index) => (
-              <div key={index} className="mb-4 p-4 rounded-lg shadow-sm border border-gray-300">
-                <input
-                  type="text"
-                  className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <div key={index} className="mb-8 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                    <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                      {index + 1}
+                    </div>
+                    Scenario {index + 1}
+                  </h4>
+                  {scenarios.length > 1 && (
+                    <button
+                      onClick={() => handleRemoveScenario(index)}
+                      className="text-red-500 hover:text-red-700 px-3 py-1 text-sm font-medium border border-red-300 rounded-lg hover:border-red-500 transition-colors"
+                      aria-label={`Remove scenario ${index + 1}`}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                <EnhancedInputPreview
                   value={scenario}
-                  placeholder="Describe your scenario here..."
-                  onChange={(e) => handleInputChange(index, e.target.value)}
+                  onChange={(value) => handleInputChange(index, value)}
+                  placeholder={`Describe scenario ${index + 1} here... You can use markdown formatting like **bold**, *italic*, # headings, - lists, etc.`}
                 />
-                {scenarios.length > 1 && (
-                  <button
-                    onClick={() => handleRemoveScenario(index)}
-                    className="text-red-600 hover:text-red-800 mt-2"
-                    aria-label={`Remove scenario ${index + 1}`}
-                  >
-                    Remove
-                  </button>
-                )}
               </div>
             ))}
+            
             <button
               onClick={handleAddScenario}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2"
             >
-              + Add Scenario
+              <span className="text-lg">+</span>
+              Add Another Scenario
             </button>
           </div>
         )}
@@ -518,7 +726,9 @@ const handleSimulate = async () => {
         </div>
       )}
 
-      {/* ✅ Fixed Results and loading skeleton logic */}
+      {/* Results and loading skeleton logic */}
+        {/* Right: Scenario Output or Simulation Results */}
+  <div className="flex-1">
       {simulationLoading ? (
         <div className="mt-12">
           <div className="bg-white dark:bg-gray-800 shadow-lg border rounded-lg p-6 text-gray-900 dark:text-white">
@@ -545,6 +755,8 @@ const handleSimulate = async () => {
           <ScenarioSimulationCard results={results} />
         </div>
       ) : null}
+    </div>
+  </div>
     </>
   );
 }

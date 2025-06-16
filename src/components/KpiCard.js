@@ -8,6 +8,8 @@ import {
   where
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { useAuth } from "../AuthContext"; // or wherever your user context lives
+
 import {
   FiBarChart,
   FiUser,
@@ -31,6 +33,8 @@ const KpiCard = () => {
   const [activeUsers, setActiveUsers] = useState(null);
   const [avgAccuracy, setAvgAccuracy] = useState(null);
   const [uptime, setUptime] = useState("99.99%");
+  const { user } = useAuth(); // Changed from currentUser to user
+  const [userId, setUserId] = useState(user ? user.uid : null);
 
   // Handles horizontal scrolling for KPI cards
   const scrollCards = (direction) => {
@@ -44,14 +48,13 @@ const KpiCard = () => {
 
   // Simulating loading state for 2 seconds
   useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 2000); // simulate loading
+    const timeout = setTimeout(() => setLoading(false), 3000); // simulate loading
     return () => clearTimeout(timeout);
   }, []);
 
   // Fetch and set data from Firebase
   useEffect(() => {
     const usersRef = collection(db, "users");
-    const simulationsRef = collection(db, "simulations");
 
     // Total Users
     const unsubscribeUsers = onSnapshot(usersRef, (snapshot) => {
@@ -74,18 +77,57 @@ const KpiCard = () => {
       }
     });
 
-    // Total Simulations and Avg. Accuracy
-    const unsubscribeSimulations = onSnapshot(simulationsRef, (snapshot) => {
-      setTotalSimulations(snapshot.size);
+    // Total Simulations and Avg. Accuracy - FIXED LOGIC WITH DEBUG
+    let unsubscribeSimulations;
+    if (user) { // Changed from currentUser to user
+      console.log("Current user ID:", user.uid); // Debug log
+      
+      // Query user-specific simulations from userInteractions collection
+      const simulationQuery = query(
+        collection(db, "userInteractions"),
+        where("userId", "==", user.uid), // Changed from currentUser.uid to user.uid
+        where("action", "==", "simulate_scenario")
+      );
 
-      const accuracies = snapshot.docs
-        .map((doc) => doc.data().accuracy)
-        .filter((a) => typeof a === "number");
-      const average = accuracies.length
-        ? (accuracies.reduce((a, b) => a + b, 0) / accuracies.length).toFixed(2) + "%"
-        : "N/A";
-      setAvgAccuracy(average);
-    });
+      unsubscribeSimulations = onSnapshot(simulationQuery, (snapshot) => {
+        console.log("Simulation query results:", snapshot.size); // Debug log
+        console.log("Documents found:", snapshot.docs.map(doc => doc.data())); // Debug log
+        
+        setTotalSimulations(snapshot.size);
+
+        const accuracies = snapshot.docs
+          .map((doc) => doc.data().accuracy)
+          .filter((a) => typeof a === "number");
+
+        const average = accuracies.length
+          ? (accuracies.reduce((a, b) => a + b, 0) / accuracies.length).toFixed(2) + "%"
+          : "N/A";
+
+        setAvgAccuracy(average);
+      }, (error) => {
+        console.error("Error fetching simulations:", error); // Debug log
+      });
+      
+      // Also try a broader query to see what's in the collection
+      const debugQuery = query(collection(db, "userInteractions"));
+      const unsubscribeDebug = onSnapshot(debugQuery, (snapshot) => {
+        console.log("All userInteractions documents:", snapshot.docs.map(doc => ({
+          id: doc.id,
+          data: doc.data()
+        })));
+      });
+      
+      // Clean up debug subscription after 5 seconds
+      setTimeout(() => {
+        if (unsubscribeDebug) unsubscribeDebug();
+      }, 5000);
+      
+    } else {
+      console.log("No user found"); // Changed from "No current user found" to "No user found"
+      // If no user, set defaults
+      setTotalSimulations(0);
+      setAvgAccuracy("N/A");
+    }
 
     // Active Users in the last 24 hours
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -135,10 +177,10 @@ const KpiCard = () => {
     return () => {
       unsubscribeUsers();
       unsubscribeLastLogin();
-      unsubscribeSimulations();
+      if (unsubscribeSimulations) unsubscribeSimulations();
       unsubscribeActiveUsers();
     };
-  }, []);
+  }, [user]); // Changed dependency from currentUser to user
 
   // KPI Cards Layout
   const cards = [

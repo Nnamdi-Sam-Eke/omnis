@@ -5,8 +5,10 @@ import { collection, getDocs } from 'firebase/firestore';
 import SkeletonLoader from '../components/SkeletonLoader';
 import useAccessControl from '../hooks/useAccessControl';
 import UpgradeModal from '../components/UpgradeModal';
+import { Clock, FlaskConical, Target, Lightbulb } from 'lucide-react';
+import { motion } from 'framer-motion';
+import CountUp from 'react-countup';
 
-// Lazy-loaded components
 const AnalyticsCard = lazy(() => import('../components/AnalyticsCard'));
 const DashboardCharts = lazy(() => import('../components/DashboardCharts'));
 const ScenarioAccuracyChart = lazy(() => import('../components/ScenarioAccuracyChart'));
@@ -21,32 +23,28 @@ const AnalyticsPage = () => {
   const [narrativeInsights, setNarrativeInsights] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { user } = useAuth(); // or however you get user
+  const { user } = useAuth();
   const userTier = user?.tier || 'Free';
-  console.log("🧪 User tier:", userTier);
 
-
-  // Access control hook
   const { checkAccess, showUpgradeModal, openModal, closeModal } = useAccessControl(userTier);
   const handleUpgradeClick = () => {
-  setLoading(true); // show loading indicator
-  openModal();      // then open the modal
-  // Optionally, if you have async logic here, handle that and setLoading(false) when done
-};
- const handleCloseModal = () => {
-  closeModal();
-  setLoading(false);
-};
+    setLoading(true);
+    openModal();
+  };
+  const handleCloseModal = () => {
+    closeModal();
+    setLoading(false);
+  };
 
-const canAccessAnalytics = true; // <-- Force bypass temporarily
+  const canAccessAnalytics = true;
 
   useEffect(() => {
     if (!checkAccess('fullAnalytics')) {
       setLoading(false);
-      return; // Don't fetch data if no access
+      return;
     }
 
-    let isMounted = true; // Cleanup-ready flag
+    let isMounted = true;
 
     const fetchAnalyticsData = async () => {
       setLoading(true);
@@ -60,16 +58,13 @@ const canAccessAnalytics = true; // <-- Force bypass temporarily
           getDocs(collection(db, 'narratives')),
         ]);
 
-        if (!isMounted) return; // Prevent state updates if unmounted
+        if (!isMounted) return;
 
-        // Total time
         const timeData = timeSnapshot.docs.map(doc => doc.data().totalTimeSpent || 0);
         setTotalTime(timeData.reduce((acc, curr) => acc + curr, 0));
 
-        // Total simulations
         setTotalSimulations(simulationsSnapshot.docs.length);
 
-        // Scenarios: accuracy + categories
         const accuracyData = scenariosSnapshot.docs.map(doc => doc.data().accuracy || 0);
         setScenarioAccuracy(
           accuracyData.length > 0
@@ -84,7 +79,6 @@ const canAccessAnalytics = true; // <-- Force bypass temporarily
         }, {});
         setCategoryDistribution(Object.entries(categoryCounts));
 
-        // Narrative insights
         setNarrativeInsights(narrativeSnapshot.docs.map(doc => doc.data().insight));
       } catch (err) {
         console.error('❌ Error fetching analytics data:', err);
@@ -97,9 +91,9 @@ const canAccessAnalytics = true; // <-- Force bypass temporarily
     fetchAnalyticsData();
 
     return () => {
-      isMounted = false; // Cleanup
+      isMounted = false;
     };
-  }, [userTier]); // Re-run if userTier changes
+  }, [userTier]);
 
   if (!checkAccess('fullAnalytics')) {
     return (
@@ -107,25 +101,23 @@ const canAccessAnalytics = true; // <-- Force bypass temporarily
         <h2 className="text-xl font-semibold text-red-500 mb-4">
           Access Denied: Upgrade Required</h2>
         <p className="text-xl font-semibold text-red-500 mb-4">Upgrade your subscription to Pro or Enterprise to unlock full analytics features.</p>
-<button
-  onClick={handleUpgradeClick}
-      className="px-4 py-2 bg-blue-600 text-white mt-10 rounded hover:bg-blue-700"
-      disabled={loading}
-    >
-      {loading ? 'Loading...' : 'Upgrade Now'}
-    </button>
-  
-
-  {showUpgradeModal && (
-      <UpgradeModal onClose={handleCloseModal} />
-    )}
+        <button
+          onClick={handleUpgradeClick}
+          className="px-4 py-2 bg-blue-600 text-white mt-10 rounded hover:bg-blue-700"
+          disabled={loading}
+        >
+          {loading ? 'Loading...' : 'Upgrade Now'}
+        </button>
+        {showUpgradeModal && (
+          <UpgradeModal onClose={handleCloseModal} />
+        )}
       </div>
     );
   }
 
   return (
     <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab" className="p-6 space-y-4 min-h-screen">
-      <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-300  mt-10 mb-4">User Analytics + Insights</h2>
+      <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-300 mt-10 mb-6">User Analytics & Insights</h2>
 
       {loading ? (
         <SkeletonLoader height="h-[300px]" />
@@ -133,36 +125,56 @@ const canAccessAnalytics = true; // <-- Force bypass temporarily
         <div className="text-red-500 text-center py-4">{error}</div>
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-            <div title="Total time spent on the platform">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-5 h-5 text-yellow-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">Total Time Spent</span>
+              </div>
               <Suspense fallback={<SkeletonLoader height="h-[150px]" />}>
-                <AnalyticsCard value={totalTime} label="hours" />
+                <AnalyticsCard value={<CountUp end={totalTime} duration={2} />} label="hours" />
               </Suspense>
-            </div>
-            <div title="Total number of simulations run">
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+              <div className="flex items-center gap-2 mb-2">
+                <FlaskConical className="w-5 h-5 text-indigo-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">Total Simulations</span>
+              </div>
               <Suspense fallback={<SkeletonLoader height="h-[150px]" />}>
                 <DashboardCharts total={totalSimulations} />
               </Suspense>
-            </div>
+            </motion.div>
           </div>
 
-          <div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="w-5 h-5 text-green-600" />
+              <span className="text-sm text-gray-600 dark:text-gray-400">Scenario Accuracy</span>
+            </div>
             <Suspense fallback={<SkeletonLoader height="h-[300px]" />}>
               <ScenarioAccuracyChart accuracy={scenarioAccuracy} />
             </Suspense>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-            <div title="Distribution of scenarios across categories">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+              <div className="flex items-center gap-2 mb-2">
+                <FlaskConical className="w-5 h-5 text-pink-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">Category Distribution</span>
+              </div>
               <Suspense fallback={<SkeletonLoader height="h-[250px]" />}>
                 <CategoryDistributionChart data={categoryDistribution} />
               </Suspense>
-            </div>
-            <div title="Narrative insights based on your simulations">
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb className="w-5 h-5 text-yellow-400" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">Narrative Insights</span>
+              </div>
               <Suspense fallback={<SkeletonLoader height="h-[250px]" />}>
                 <NarrativePanel insights={narrativeInsights} />
               </Suspense>
-            </div>
+            </motion.div>
           </div>
         </div>
       )}
@@ -171,5 +183,3 @@ const canAccessAnalytics = true; // <-- Force bypass temporarily
 };
 
 export default AnalyticsPage;
-// This component fetches and displays user analytics data, including total time spent, simulations run, scenario accuracy, category distribution, and narrative insights.
-// It uses lazy loading for performance, and includes access control to restrict features based on user subscription tier.

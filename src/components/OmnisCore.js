@@ -4,7 +4,6 @@ import ScenarioInsightsCard from './ScenarioInsightsCard'; // Insights
 import ScenarioPreview from './ScenarioPreview';
 
 const NewScenarioPage = () => {
-  
   return (
     <div className="p-6 space-y-10">
 
@@ -18,24 +17,25 @@ const NewScenarioPage = () => {
         </p>
       </header>
 
-      {/* Input & Preview Section */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {/* Left: Scenario Input Form */}
+      {/* Input + Simulation Text Section */}
+      <section className="flex flex-col md:flex-row gap-6 w-full">
+        {/* Left: Scenario Input */}
         <div className="w-full">
           <ScenarioInput />
         </div>
 
-          <div className="max-h-50 p-2">
-          {/* Simulation Insights Section */}
-            <ScenarioInsightsCard />
-          </div>
       </section>
 
-      {/* Placeholder for live scenario preview */}
-      <section className="grid grid-cols-1 sm:grid-cols-1 gap-6">
-        
-      <ScenarioPreview />
+      {/* Scenario Insights & Preview */}
+      <section className="grid grid-cols-1 gap-6">
+        <div>
+          <ScenarioInsightsCard />
+        </div>
+        <div>
+          <ScenarioPreview />
+        </div>
       </section>
+
     </div>
   );
 };

@@ -17,6 +17,8 @@ import AchievementsTab from '../components/AchievementsTab';
 import SkeletonLoader from '../components/SkeletonLoader'; 
 import QuickActions from '../components/QuickActionButtons';
 import DiscountBanner from '../components/DiscountBanner';
+import WeatherLocation from '../components/WeatherLocation';
+import TrialSlip from './TrialSlip';
 
 // Lazy-loaded components
 const ActivityFeed = lazy(() => import('../components/ActivityFeed'));
@@ -162,6 +164,7 @@ const OmnisDashboard = () => {
 
   return (
      <>
+     {/* <TrialSlip user={user} /> */}
       {showBanner && discountEndDate && (
         <DiscountBanner
           discountEndDate={discountEndDate}
@@ -170,11 +173,12 @@ const OmnisDashboard = () => {
       )}
     
       <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setCommandPaletteOpen} setActiveTab={setActiveTab} />
-
       <div className="p-4 flex-1 overflow-y-auto pb-16 space-y-4 min-h-screen overflow-y-scroll mt-10 transition-all duration-300">
-        <h1 className="text-3xl font-semibold text-green-500 mb-6">
+        <h1 className="text-3xl font-semibold text-green-500 mb-6 mt-8">
           {getGreeting()}, {userFirstName || 'there'} 👋
         </h1>
+        <WeatherLocation />
+      
 
         <div
           role="tablist"

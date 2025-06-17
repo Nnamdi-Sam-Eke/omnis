@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronUp } from "lucide-react";
+import ShimmerLoader from './ShimmerLoader'; // Assuming you have a ShimmerLoader component
 import {
   Bar,
   Line,
@@ -148,14 +149,15 @@ const ScenarioInsightsCard = ({ processedData = [] }) => {
  
    // If subscriptions is undefined, show loading state
   if (loading) {
-     return (
-       <div className="animate-pulse space-y-4">
-         <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-         <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-         <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
-       </div>
-     );
-   }
+  return (
+    <div className="space-y-4">
+      <ShimmerLoader height="h-10" />
+      <ShimmerLoader height="h-10" />
+      <ShimmerLoader height="h-12" />
+    </div>
+  );
+}
+
   // Render the component
   return (
     <div className="bg-white overflow-y-auto max-h-[300px] dark:bg-gray-800 shadow-lg hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white">

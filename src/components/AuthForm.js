@@ -5,8 +5,9 @@ import { doc, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { getAuth } from "firebase/auth";
 import { Eye, EyeOff } from "lucide-react";
-import imageCompression from 'browser-image-compression';
-import favicon from '../images/favicon1.png';
+import imageCompression from "browser-image-compression";
+import PulseBackground from "./PulseBackground"; // 👈 new
+
 
 const AuthForm = () => {
   const { signup, login, resetPassword } = useAuth();
@@ -91,34 +92,27 @@ const AuthForm = () => {
   const getStrengthColor = (strength) => {
     switch (strength) {
       case "Weak":
-        return "text-red-500";
+        return "text-red-400";
       case "Medium":
-        return "text-yellow-500";
+        return "text-yellow-400";
       case "Strong":
-        return "text-green-500";
+        return "text-green-400";
       default:
-        return "text-gray-500";
+        return "text-gray-400";
     }
   };
 
   return (
-    <div className=" scale-75 max-h-screen bg-white flex flex-col md:flex-row items-center justify-center px-4 py-12">
-      <div className="flex flex-col md:flex-row max-w-6xl w-full max-h-[600px] shadow-2xl rounded-xl overflow-hidden">
+    <div className="relative h-screen bg-black text-white overflow-hidden">
+      <PulseBackground />
+      <div className="relative z-10 flex flex-col md:flex-row items-center justify-center px-4 py-12 h-full">
 
-        {/* Logo Section */}
-        <div className="flex md:w-1/3 w-full md:max-h-[600px] bg-gradient-to-br from-blue-50 to-green-50 items-center justify-center p-4">
-          <div className="text-center">
-            <img src={favicon} alt="Omnis Logo" className="h-[300px] mx-auto md:h-[300px]" />
-            <p className="text-xl font-semibold mt-4 text-gray-700">Welcome to Omnis</p>
-          </div>
-        </div>
 
-        {/* Form Section */}
-        <div className="w-full md:w-2/3 p-8 space-y-8 rounded-xl shadow-lg bg-white mx-auto overflow-y-auto max-h-[600px]">
+        <div className="w-full md:w-2/3 p-8 space-y-8 rounded-xl shadow-lg bg-white/5 backdrop-blur-sm mx-auto overflow-y-auto max-h-[600px] text-white">
           {showResetPassword ? (
             <div>
               <h2 className="text-2xl font-light mb-4 text-center">Reset Your Password</h2>
-              {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+              {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <input
                   type="email"
@@ -126,7 +120,7 @@ const AuthForm = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full p-3 border border-white/20 rounded-lg bg-white/10 text-white placeholder-white/50"
                 />
                 <button
                   type="submit"
@@ -141,7 +135,7 @@ const AuthForm = () => {
                     setIsSignUp(false);
                     setError("");
                   }}
-                  className="w-full text-blue-600 hover:underline mt-2"
+                  className="w-full text-blue-400 hover:underline mt-2"
                 >
                   Back to Login
                 </button>
@@ -152,7 +146,7 @@ const AuthForm = () => {
               <div className="flex justify-center space-x-4 mb-4">
                 <button
                   className={`px-4 py-2 rounded-full text-sm font-medium transform transition-transform active:scale-95 ${
-                    isSignUp ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+                    isSignUp ? "bg-blue-600 text-white" : "bg-white/20 text-white"
                   }`}
                   onClick={() => setIsSignUp(true)}
                 >
@@ -160,7 +154,7 @@ const AuthForm = () => {
                 </button>
                 <button
                   className={`px-4 py-2 rounded-full text-sm font-medium transform transition-transform active:scale-95 ${
-                    !isSignUp ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+                    !isSignUp ? "bg-blue-600 text-white" : "bg-white/20 text-white"
                   }`}
                   onClick={() => setIsSignUp(false)}
                 >
@@ -170,15 +164,15 @@ const AuthForm = () => {
               <h2 className="text-center text-2xl font-light">
                 {isSignUp ? "Create Your Omnis Account" : "Welcome Back!"}
               </h2>
-              {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+              {error && <p className="text-red-400 text-sm text-center">{error}</p>}
               <form onSubmit={handleSubmit} className="space-y-6 mt-6">
                 {isSignUp && (
                   <>
-                    <input type="text" placeholder="First Name" value={firstname} onChange={(e) => setFirstname(e.target.value)} required className="input focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg " />
-                    <input type="text" placeholder="Last Name" value={lastname} onChange={(e) => setLastname(e.target.value)} required className="input focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg" />
-                    <input type="tel" placeholder="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} required className="input focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg" />
-                    <input type="text" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} required className="input focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg" />
-                    <input type="text" placeholder="Country" value={country} onChange={(e) => setCountry(e.target.value)} required className="input focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg" />
+                    <input type="text" placeholder="First Name" value={firstname} onChange={(e) => setFirstname(e.target.value)} required className="input bg-white/10 text-white placeholder-white/50 border-white/20" />
+                    <input type="text" placeholder="Last Name" value={lastname} onChange={(e) => setLastname(e.target.value)} required className="input bg-white/10 text-white placeholder-white/50 border-white/20" />
+                    <input type="tel" placeholder="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} required className="input bg-white/10 text-white placeholder-white/50 border-white/20" />
+                    <input type="text" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} required className="input bg-white/10 text-white placeholder-white/50 border-white/20" />
+                    <input type="text" placeholder="Country" value={country} onChange={(e) => setCountry(e.target.value)} required className="input bg-white/10 text-white placeholder-white/50 border-white/20" />
                     <input
                       type="file"
                       accept="image/*"
@@ -195,12 +189,12 @@ const AuthForm = () => {
                           }
                         }
                       }}
-                      className="input focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
+                      className="input bg-white/10 text-white placeholder-white/50 border-white/20"
                     />
                   </>
                 )}
 
-                <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="input focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg " />
+                <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="input bg-white/10 text-white placeholder-white/50 border-white/20" />
 
                 <div className="relative">
                   <input
@@ -209,16 +203,16 @@ const AuthForm = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="input pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
+                    className="input pr-10 bg-white/10 text-white placeholder-white/50 border-white/20"
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500">
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute top-1/2 right-3 transform -translate-y-1/2 text-white/50">
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
 
                 {isSignUp && (
                   <>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm">
                       Password strength: <span className={getStrengthColor(getPasswordStrength())}>{getPasswordStrength()}</span>
                     </p>
                     <div className="relative">
@@ -228,29 +222,28 @@ const AuthForm = () => {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
-                        className="input pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
+                        className="input pr-10 bg-white/10 text-white placeholder-white/50 border-white/20"
                       />
-                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500">
+                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute top-1/2 right-3 transform -translate-y-1/2 text-white/50">
                         {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                     </div>
                   </>
                 )}
 
-                <button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-green-500 text-white py-3 rounded-full transform transition-transform active:scale-95"
-                  disabled={isSubmitting}
-                >
-                  {isSignUp
-                    ? "Sign Up"
-                    : isSubmitting
-                    ? "Logging in..."
-                    : "Log In"}
-                </button>
+               <button
+  type="submit"
+  className="w-full bg-gradient-to-r from-blue-600 to-green-500 text-white py-3 rounded-full transform transition-transform active:scale-95"
+  disabled={isSubmitting}
+>
+  {isSignUp
+    ? (isSubmitting ? "Creating your account..." : "Sign Up")
+    : (isSubmitting ? "Logging in..." : "Log In")}
+</button>
+
 
                 {!isSignUp && (
-                  <button type="button" onClick={() => setShowResetPassword(true)} className="w-full text-sm text-blue-600 mt-2 hover:underline">
+                  <button type="button" onClick={() => setShowResetPassword(true)} className="w-full text-sm text-blue-400 mt-2 hover:underline">
                     Forgot Password?
                   </button>
                 )}
@@ -264,4 +257,3 @@ const AuthForm = () => {
 };
 
 export default AuthForm;
-// This code is a React component for an authentication form that allows users to sign up or log in.

@@ -152,119 +152,123 @@ export function AuthProvider({ children }) {
   };
 
   // Enhanced Auth State Setup with optimizations
-  useEffect(() => {
-    console.log("🔧 Setting up onAuthStateChanged listener");
-    
-    // Set up auth timeout (15 seconds)
-    authTimeoutRef.current = setTimeout(() => {
-      if (loading) {
-        console.warn("⏰ Auth timeout reached");
-        setAuthTimeout(true);
-        setLoading(false);
-      }
-    }, 3000);
-    
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("🔄 Auth state changed:", firebaseUser ? `User: ${firebaseUser.email}` : "User logged out");
-      
-      try {
-        if (firebaseUser) {
-          console.log("👤 Processing user login for:", firebaseUser.email);
-          
-          // Single getDoc call for user data
-          let userData = {};
-          try {
-            const userRef = doc(db, "users", firebaseUser.uid);
-            const docSnap = await getDoc(userRef);
-            userData = docSnap.exists() ? docSnap.data() : {};
-            console.log("📄 User document data retrieved successfully");
-          } catch (firestoreError) {
-            const isQuotaError = handleFirestoreError(firestoreError, "getDoc in auth state");
-            if (isQuotaError) {
-              console.warn("⚠️ Using fallback user data due to quota exceeded");
-              userData = {
-                tier: "Free",
-                firstname: firebaseUser.displayName?.split(' ')[0] || "",
-                lastname: firebaseUser.displayName?.split(' ')[1] || "",
-                sessionVersion: 1
-              };
-            } else {
-              throw firestoreError;
+  const forcedLogoutRef = useRef(false); // Add this at the top of the component
+
+useEffect(() => {
+  console.log("🔧 Setting up onAuthStateChanged listener");
+
+  authTimeoutRef.current = setTimeout(() => {
+    if (loading) {
+      console.warn("⏰ Auth timeout reached");
+      setAuthTimeout(true);
+      setLoading(false);
+    }
+  }, 3000);
+
+  const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    console.log("🔄 Auth state changed:", firebaseUser ? `User: ${firebaseUser.email}` : "User logged out");
+
+    try {
+      if (firebaseUser) {
+        console.log("👤 Processing user login for:", firebaseUser.email);
+
+        // Fetch user doc
+        let userData = {};
+        try {
+          const userRef = doc(db, "users", firebaseUser.uid);
+          const docSnap = await getDoc(userRef);
+          userData = docSnap.exists() ? docSnap.data() : {};
+          console.log("📄 User document data retrieved successfully");
+        } catch (firestoreError) {
+          const isQuotaError = handleFirestoreError(firestoreError, "getDoc in auth state");
+          if (isQuotaError) {
+            console.warn("⚠️ Using fallback user data due to quota exceeded");
+            userData = {
+              tier: "Free",
+              firstname: firebaseUser.displayName?.split(' ')[0] || "",
+              lastname: firebaseUser.displayName?.split(' ')[1] || "",
+              sessionVersion: 1
+            };
+          } else {
+            throw firestoreError;
+          }
+        }
+
+        const finalUserData = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          tier: userData.tier || "Free",
+          firstName: userData.firstname || "",
+          lastName: userData.lastname || "",
+          profilePicture: userData.profilePicture || null,
+          ...userData,
+        };
+
+        // ⚠️ Check session version before setting localStorage
+        const sessionOk = await checkSessionVersion(firebaseUser.uid);
+        if (!sessionOk) return;
+
+        const sessionVersion = userData.sessionVersion || 1;
+        localStorage.setItem("sessionVersion", sessionVersion.toString());
+        sessionVersionCacheRef.current = sessionVersion;
+
+        setUser(finalUserData);
+
+        // ✅ Track session
+        await trackSession(firebaseUser);
+
+        // ✅ Real-time listener (optional)
+        if (!firestoreError && !userDocListenerRef.current) {
+          console.log("📡 Setting up user document listener");
+          const userRef = doc(db, "users", firebaseUser.uid);
+          userDocListenerRef.current = onSnapshot(userRef, (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              console.log("🔄 User document updated");
+
+              setUser((prev) => ({
+                ...prev,
+                ...data,
+                tier: data.tier || "Free",
+              }));
             }
-          }
-
-          const finalUserData = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            tier: userData.tier || "Free",
-            firstName: userData.firstname || "",
-            lastName: userData.lastname || "",
-            profilePicture: userData.profilePicture || null,
-            ...userData,
-          };
-
-          setUser(finalUserData);
-          localStorage.setItem("sessionVersion", (userData.sessionVersion || 1).toString());
-          sessionVersionCacheRef.current = userData.sessionVersion || 1;
-          
-          // Check session version on login (not continuously)
-          await checkSessionVersion(firebaseUser.uid);
-          
-          // Track session (throttled)
-          await trackSession(firebaseUser);
-          
-          // Set up user document listener only if needed for real-time updates
-          // Remove this if you don't need real-time profile updates
-          if (!firestoreError && !userDocListenerRef.current) {
-            console.log("📡 Setting up user document listener");
-            const userRef = doc(db, "users", firebaseUser.uid);
-            userDocListenerRef.current = onSnapshot(userRef, (docSnap) => {
-              if (docSnap.exists()) {
-                const data = docSnap.data();
-                console.log("🔄 User document updated");
-                
-                setUser((prev) => ({
-                  ...prev,
-                  ...data,
-                  tier: data.tier || "Free",
-                }));
-              }
-            }, (error) => {
-              const isQuotaError = handleFirestoreError(error, "user document listener");
-              if (!isQuotaError) {
-                console.error("❌ Critical error in user document listener:", error);
-              }
-            });
-          }
-          
-        } else {
-          console.log("👋 User signed out - cleaning up");
-          clearSessionData();
-          resetUIState();
+          }, (error) => {
+            const isQuotaError = handleFirestoreError(error, "user document listener");
+            if (!isQuotaError) {
+              console.error("❌ Critical error in user document listener:", error);
+            }
+          });
         }
-      } catch (error) {
-        console.error("❌ Error in auth state change handler:", error);
-        setUser(null);
-      } finally {
-        // Clear timeout since auth state resolved
-        if (authTimeoutRef.current) {
-          clearTimeout(authTimeoutRef.current);
-          authTimeoutRef.current = null;
-        }
-        setLoading(false);
-        console.log("✅ Auth state processing complete");
+
+      } else {
+        console.log("👋 User signed out - cleaning up");
+        forcedLogoutRef.current = false; // Reset
+        clearSessionData();
+        resetUIState();
       }
-    });
-
-    return () => {
-      console.log("🔌 Cleaning up onAuthStateChanged listener");
+    } catch (error) {
+      console.error("❌ Error in auth state change handler:", error);
+      setUser(null);
+    } finally {
       if (authTimeoutRef.current) {
         clearTimeout(authTimeoutRef.current);
+        authTimeoutRef.current = null;
       }
-      unsubscribe();
-    };
-  }, []);
+      setLoading(false);
+      console.log("✅ Auth state processing complete");
+    }
+  });
+
+  return () => {
+    console.log("🔌 Cleaning up onAuthStateChanged listener");
+    if (authTimeoutRef.current) {
+      clearTimeout(authTimeoutRef.current);
+    }
+    unsubscribe();
+  };
+}, []);
+
 
   // Cleanup listeners on unmount
   useEffect(() => {

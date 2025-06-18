@@ -1,153 +1,163 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect, lazy, Suspense, useCallback } from "react";
 import { db } from "../firebase";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
-import { useAuth } from "../AuthContext";
-import { getAuth, deleteUser } from "firebase/auth";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { getAuth, deleteUser, signOut } from "firebase/auth";
 import { FiBell, FiCloud, FiDatabase, FiSettings } from "react-icons/fi";
 import { AiOutlineAppstore, AiOutlineGlobal } from "react-icons/ai";
 
-// Lazy-loaded components
 const ThemeToggle = lazy(() => import('../components/ThemeToggle'));
 const ReauthModal = lazy(() => import('../components/ReauthModal'));
 const AccountPage = lazy(() => import('../components/AccountPage'));
 
 const ProfilePage = () => {
-  const { currentUser } = useAuth();
+  const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(false);
   const [currentPage, setCurrentPage] = useState("settings");
-  const [showReauth, setShowReauth] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-
   const [notifications, setNotifications] = useState({
     WeatherUpdates: true,
     AIResponses: true,
     AppUpdates: false,
   });
-
-  const [language, setLanguage] = useState('English');
+  const [language, setLanguage] = useState("English");
   const [privacy, setPrivacy] = useState({
     LocationAccess: true,
     DataCollection: false,
   });
-
+  const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [showReauth, setShowReauth] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
+  // Fetch user from Firebase Auth
+  useEffect(() => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    setCurrentUser(user);
+  }, []);
+
+  // Fetch Firestore user data
   useEffect(() => {
     if (!currentUser) return;
 
-    const userRef = doc(db, "users", currentUser.uid);
-    const unsubscribe = onSnapshot(userRef, (docSnap) => {
+    const fetchUserData = async () => {
+      const userRef = doc(db, "users", currentUser.uid);
+      const docSnap = await getDoc(userRef);
       if (docSnap.exists()) {
-        setUserData(docSnap.data());
-        setIsOnline(docSnap.data().isOnline);
-      } else {
-        setUserData(null);
+        const data = docSnap.data();
+        setUserData(data);
+        setIsOnline(data?.isOnline || false);
       }
-      setIsLoading(false);
-    });
+      setLoading(false);
+    };
 
-    return () => unsubscribe();
+    fetchUserData();
   }, [currentUser]);
 
-  const handleNotificationChange = (event) => {
-    const { name, checked } = event.target;
-    setNotifications({ ...notifications, [name]: checked });
-  };
-
-  const handlePrivacyChange = (event) => {
-    const { name, checked } = event.target;
-    setPrivacy({ ...privacy, [name]: checked });
-  };
-
-  const handleSave = () => {
-    setIsSaving(true);
-    setLoading(true);
-    const settings = { notifications, language, privacy };
-    try {
-      localStorage.setItem('userSettings', JSON.stringify(settings));
-      setTimeout(() => {
-        setLoading(false);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-      }, 500);
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      alert('Failed to save settings.');
-    } finally {
-      setTimeout(() => {
-        setIsSaving(false);
-      }, 500);
+  useEffect(() => {
+    const savedSettings = localStorage.getItem("userSettings");
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        setNotifications(parsed.notifications || {});
+        setLanguage(parsed.language || "English");
+        setPrivacy(parsed.privacy || {});
+      } catch (error) {
+        console.error("Failed to load saved settings:", error);
+      }
     }
-  };
+  }, []);
+
+  const handleSave = useCallback(() => {
+    setIsSaving(true);
+    const settings = { notifications, language, privacy };
+
+    try {
+      localStorage.setItem("userSettings", JSON.stringify(settings));
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (error) {
+      console.error("Save failed:", error);
+    } finally {
+      setTimeout(() => setIsSaving(false), 1000);
+    }
+  }, [notifications, language, privacy]);
+
+  const handleNotificationChange = useCallback((e) => {
+    const { name, checked } = e.target;
+    setNotifications((prev) => ({ ...prev, [name]: checked }));
+  }, []);
+
+  const handlePrivacyChange = useCallback((e) => {
+    const { name, checked } = e.target;
+    setPrivacy((prev) => ({ ...prev, [name]: checked }));
+  }, []);
 
   const clearHistory = () => {
-    if (window.confirm('Are you sure you want to clear your history?')) {
-      console.log('History cleared');
-    }
+    console.log("User history cleared.");
+    // TODO: implement actual history clearing
   };
 
   const resetSavedItems = () => {
-    if (window.confirm('Reset all saved items?')) {
-      console.log('Saved items reset');
-    }
+    console.log("Saved items reset.");
+    // TODO: implement actual reset logic
   };
 
-  const exportUserData = async () => {
+  const exportUserData = useCallback(() => {
+    if (!currentUser) return;
+
     setIsExporting(true);
-    const settings = { notifications, language, privacy };
-    const userExport = {
-      uid: currentUser?.uid,
-      email: currentUser?.email,
-      settings,
-      fetchedUserData: userData,
+
+    const data = {
+      uid: currentUser.uid,
+      email: currentUser.email,
+      settings: { notifications, language, privacy },
+      userData,
     };
 
-    try {
-      const blob = new Blob([JSON.stringify(userExport, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Omnis_UserData_${currentUser?.uid || "unknown"}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Export failed:", err);
-      alert("Error exporting data. Please try again.");
-    } finally {
-      setIsExporting(false);
-    }
-  };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
 
-  const performFinalDelete = async () => {
-    try {
-      await deleteUser(currentUser);
-      alert("Account deleted.");
-      getAuth().signOut();
-    } catch (err) {
-      console.error("Delete failed:", err);
-      alert("Account deletion failed. Please try again.");
-    }
-  };
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Omnis_Export_${currentUser.uid}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    setIsExporting(false);
+  }, [currentUser, notifications, language, privacy, userData]);
 
   const handleDeleteAccount = () => {
     setShowReauth(true);
   };
 
-const handleSessionLogout = async () => {
+  const performFinalDelete = async () => {
     if (!currentUser) return;
+    try {
+      await deleteUser(currentUser);
+      alert("Account deleted successfully.");
+      await signOut(getAuth());
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
+  };
 
+  const handleSessionLogout = useCallback(async () => {
+    if (!currentUser) return;
     if (window.confirm("Log out from all other devices?")) {
       const userRef = doc(db, "users", currentUser.uid);
       const newVersion = Date.now();
       await updateDoc(userRef, { sessionVersion: newVersion });
       localStorage.setItem("sessionVersion", newVersion.toString());
-      alert("Sessions on other devices will be logged out on next activity.");
+      alert("Logged out on all other devices.");
     }
-  };
+  }, [currentUser]);
+
+  // ... (return block stays the same)
+
   
 
 

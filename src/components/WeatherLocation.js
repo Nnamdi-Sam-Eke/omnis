@@ -76,7 +76,7 @@ const WeatherLocation = () => {
   }, []);
 
   return (
-    <div className="absolute top-20 right-16 bg-white dark:bg-gray-800 shadow-xl px-5 py-3 rounded-xl flex items-center gap-4 z-10">
+    <div className="absolute top-20 right-16 mt-4 mb-4 bg-white dark:bg-gray-800 shadow-xl px-5 py-3 rounded-xl flex items-center gap-4 z-10">
       <MapPin className="w-4 h-4 text-blue-500" />
       <div className="text-sm text-gray-700 dark:text-gray-300">
          <strong>{location}, {country}</strong>

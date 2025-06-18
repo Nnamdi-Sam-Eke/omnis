@@ -6,6 +6,9 @@ import { signOut } from "firebase/auth";
 import { auth, db } from "./firebase";
 import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
 
+
+
+
 // Pages
 import SplashScreen from './components/SplashScreen';
 import Home from './pages/Home';
@@ -26,19 +29,22 @@ import Header from './components/Header';
 import FeedbackButton from './components/FeedbackButton';
 import CreatorsCorner from './Creator\'sCorner';
 import Footer from './components/Footer';
+import GoodbyePage from './pages/GoodbyePage'; // adjust path accordingly
 
-import './App.css';
+
 import { OmnisProvider } from './context/OmnisContext';
 import { MemoryProvider } from './MemoryContext';
+import { AccountProvider } from './AccountContext';
+import { DiscountProvider, useDiscount } from './context/DiscountContext';
 import AuthForm from './components/AuthForm';
 import ProfilePage from './components/SimpleProfilePage';
 import AccountPage from './pages/ProfilePage';
-import { AccountProvider } from './AccountContext';
 import StripeProvider from './StripeProvider';
 import UpgradeModal from './components/UpgradeModal';
-
-import { DiscountProvider, useDiscount } from './context/DiscountContext';
 import DiscountBanner from './components/DiscountBanner';
+import './App.css';
+
+
 
 // ✅ PrivateRoute
 const PrivateRoute = ({ children }) => {
@@ -223,7 +229,8 @@ useEffect(() => {
     return <SplashScreen />;
   }
 
-  
+  <Toaster position="top-right" reverseOrder={false} />
+
 
 
 
@@ -289,6 +296,7 @@ useEffect(() => {
                   <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
                   <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
                   <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+                  <Route path="/goodbye" element={<GoodbyePage />} />
                 </Routes>
 
                 {showUpgradeModal && (location.pathname === '/dashboard' || location.pathname === '/') && (
@@ -314,10 +322,12 @@ useEffect(() => {
 // ✅ Top-Level App with BrowserRouter and DiscountProvider added
 export default function App() {
   return (
+
     <AuthProvider>
       <DiscountProvider>
         <AppContent />
       </DiscountProvider>
     </AuthProvider>
+
   );
 }

@@ -174,10 +174,26 @@ const OmnisDashboard = () => {
     
       <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setCommandPaletteOpen} setActiveTab={setActiveTab} />
       <div className="p-4 flex-1 overflow-y-auto pb-16 space-y-4 min-h-screen overflow-y-scroll mt-10 transition-all duration-300">
-        <h1 className="text-3xl font-semibold text-green-500 mb-6 mt-8">
-          {getGreeting()}, {userFirstName || 'there'} 👋
-        </h1>
-        <WeatherLocation />
+        <div className="mb-6 mt-8">
+          {/* Mobile & Tablet: Weather above greeting */}
+          <div className="block lg:hidden space-y-3">
+            <div className="flex justify-center sm:justify-start">
+              <WeatherLocation />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-green-500 text-center sm:text-left">
+              {getGreeting()}, {userFirstName || 'there'} 👋
+            </h1>
+          </div>
+          {/* Desktop: Absolute positioning */}
+          <div className="hidden lg:block relative">
+            <h1 className="text-3xl font-semibold mt-2 text-green-500 mb-6">
+              {getGreeting()}, {userFirstName || 'there'} 👋
+            </h1>
+            <div className="absolute top-0 right-0">
+              <WeatherLocation />
+            </div>
+          </div>
+        </div>
       
 
         <div
@@ -292,37 +308,29 @@ const OmnisDashboard = () => {
           >
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md relative">
               <button
-                className="absolute top-2 right-2 text-gray-500 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring
-
-
-
-
-
-
-ChatGPT said:
--blue-500 rounded"
-onClick={() => setShowShortcuts(false)}
-aria-label="Close keyboard shortcuts"
->
-✕
-</button>
-<h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Keyboard Shortcuts</h2>
-<ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
-<li><kbd className="px-2 py-1 bg-gray-200 rounded">/</kbd>: Focus search</li>
-<li><kbd className="px-2 py-1 bg-gray-200 rounded">Alt + 1</kbd>: Quick Stats Tab</li>
-<li><kbd className="px-2 py-1 bg-gray-200 rounded">Alt + 2</kbd>: Analytics Tab</li>
-<li><kbd className="px-2 py-1 bg-gray-200 rounded">Alt + 3</kbd>: Achievements Tab</li>
-<li><kbd className="px-2 py-1 bg-gray-200 rounded">Esc</kbd>: Blur input / Close modals</li>
-<li><kbd className="px-2 py-1 bg-gray-200 rounded">?</kbd>: Toggle this help dialog</li>
-<li><kbd className="px-2 py-1 bg-gray-200 rounded">Enter</kbd>: Close this dialog</li>
-<li><kbd className="px-2 py-1 bg-gray-200 rounded">Ctrl + K / Cmd + K</kbd>: Open Command Palette</li>
-</ul>
-</div>
-</div>
-)}
-</div>
-</>
-);
+                className="absolute top-2 right-2 text-gray-500 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                onClick={() => setShowShortcuts(false)}
+                aria-label="Close keyboard shortcuts"
+              >
+                ✕
+              </button>
+              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Keyboard Shortcuts</h2>
+              <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
+                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">/</kbd>: Focus search</li>
+                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">Alt + 1</kbd>: Quick Stats Tab</li>
+                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">Alt + 2</kbd>: Analytics Tab</li>
+                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">Alt + 3</kbd>: Achievements Tab</li>
+                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">Esc</kbd>: Blur input / Close modals</li>
+                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">?</kbd>: Toggle this help dialog</li>
+                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">Enter</kbd>: Close this dialog</li>
+                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">Ctrl + K / Cmd + K</kbd>: Open Command Palette</li>
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
 };
 
 export default OmnisDashboard;

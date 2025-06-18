@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { getAuth, updatePassword, deleteUser } from 'firebase/auth';
-import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { getAuth, updatePassword, signOut, deleteUser, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase'; // Adjust path to your firebase config
 import { useAuth } from '../AuthContext';
 import { Eye, EyeOff } from "lucide-react";
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import toast, { Toaster } from 'react-hot-toast';
 
 const AccountPage = () => {
   const [activeTab, setActiveTab] = useState('Summary');
@@ -27,12 +27,19 @@ const AccountPage = () => {
   // Dummy 2FA state
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
 
+  const auth = getAuth(); // Declare auth once at component level
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          setUserData(userDoc.data());
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUserData(userDoc.data());
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          toast.error('Failed to load user data');
         }
       }
     };
@@ -72,7 +79,6 @@ const AccountPage = () => {
   }, [user?.uid]);
 
   const reauthenticate = async () => {
-    const auth = getAuth();
     const firebaseUser = auth.currentUser;
 
     if (!firebaseUser || !firebaseUser.email) {
@@ -86,72 +92,82 @@ const AccountPage = () => {
       return true;
     } catch (error) {
       console.error('Reauthentication failed:', error.message);
-      alert('Reauthentication failed. Please check your password.');
+      toast.error('Reauthentication failed. Please check your password.');
       return false;
     }
   };
 
   const handleConfirm = async () => {
+    if (!auth.currentUser) return;
+
     try {
+      const user = auth.currentUser;
+      const sessionRef = doc(db, 'sessions', user.uid);
+
       if (actionToConfirm === 'signout') {
-        await getAuth().signOut();
-        navigate('/login');
+        await signOut(auth);
+        toast.success('Signed out from this session.');
+        window.location.reload();
       }
-
-      if (actionToConfirm === 'signout_all') {
-        // Example backend call to revoke tokens
-        // await revokeTokensForUser(user.uid);
-        alert('Sign out from all sessions will require backend support.');
-        await getAuth().signOut();
-        navigate('/login');
+      else if (actionToConfirm === 'signout_all') {
+        await deleteDoc(sessionRef); // Removes session from Firestore
+        await signOut(auth);
+        toast.success('Signed out from all sessions.');
+        window.location.reload();
       }
-
-      if (actionToConfirm === 'delete_account') {
-        const auth = getAuth();
-        const firebaseUser = auth.currentUser;
-        if (!firebaseUser) throw new Error('User not authenticated');
-
-        // Reauthenticate before delete
-        const success = await reauthenticate();
-        if (!success) {
-          alert('Reauthentication required to delete account.');
+      else if (actionToConfirm === 'delete_account') {
+        if (!currentPassword) {
+          toast.error('Please enter your current password to confirm.');
           return;
         }
 
-        await deleteUser(firebaseUser);
-        alert('Account deleted successfully.');
-        navigate('/signup'); // or landing page after delete
+        const credential = EmailAuthProvider.credential(user.email, currentPassword);
+        await reauthenticateWithCredential(user, credential);
+
+        await deleteDoc(doc(db, 'users', user.uid));
+        await deleteDoc(sessionRef);
+        await deleteUser(user);
+
+        toast.success('Your account has been deleted.');
+        navigate('/goodbye');
       }
-    } catch (error) {
-      alert('An error occurred: ' + error.message);
-    } finally {
+
       setShowConfirmModal(false);
       setActionToConfirm(null);
+      setReauthenticating(false);
+      setCurrentPassword('');
+
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || 'An error occurred. Please try again.');
     }
   };
 
   const handlePasswordChange = async () => {
-    if (!newPassword) return;
+    if (!newPassword) {
+      toast.error('Please enter a new password.');
+      return;
+    }
 
-    const auth = getAuth();
     const firebaseUser = auth.currentUser;
 
     if (!firebaseUser) {
-      alert('User not authenticated. Please log in again.');
+      toast.error('User not authenticated. Please log in again.');
       return;
     }
 
     try {
       setLoading(true);
       await updatePassword(firebaseUser, newPassword);
-      alert('Password updated successfully!');
+      toast.success('Password updated successfully!');
       setNewPassword('');
     } catch (error) {
       if (error.code === 'auth/requires-recent-login') {
         setReauthenticating(true); // show reauthentication form
+        toast.error('Please reauthenticate to change your password.');
       } else {
         console.error('Password update error:', error.message);
-        alert('Error updating password.');
+        toast.error('Error updating password: ' + error.message);
       }
     } finally {
       setLoading(false);
@@ -162,7 +178,25 @@ const AccountPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto min-h-screen p-6">
-      <h1 className="text-2xl font-semibold text-blue-600 dark:text-300 mb-6">Account Overview</h1>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            theme: {
+              primary: 'green',
+              secondary: 'black',
+            },
+          },
+        }}
+      />
+      
+      <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-300 mt-6 mb-6">Account Overview</h1>
 
       <div className="flex gap-4 items-center justify-center mb-6">
         {tabs.map((tab) => (
@@ -202,9 +236,9 @@ const AccountPage = () => {
               <div><strong>First Name:</strong> {user?.firstName || 'N/A'}</div>
               <div><strong>Last Name:</strong> {user?.lastName || 'N/A'}</div>
               <div><strong>Email:</strong> {user?.email || 'N/A'}</div>
-              <div><strong>Phone:</strong> {userData.phone || 'N/A'}</div>
-              <div><strong>City:</strong> {userData?.location?.city || 'N/A'}</div>
-              <div><strong>Country:</strong> {userData.country || 'N/A'}</div>
+              <div><strong>Phone:</strong> {userData?.phone || 'N/A'}</div>
+              <div><strong>City:</strong> {userData?.city || 'N/A'}</div>
+              <div><strong>Country:</strong> {user?.country || 'N/A'}</div>
             </div>
           </div>
           <button
@@ -219,24 +253,32 @@ const AccountPage = () => {
 
       {/* Security Tab */}
       {activeTab === 'Security' && (
-        <div>
-          <h2 className="text-lg font-semibold text-green-600 dark:text-green-300 mb-4">Security</h2>
-          <div className="space-y-4 max-w-md">
+        <div className="p-4 sm:p-6 bg-white dark:bg-gray-900 transition-colors">
+          <h2 className="text-lg sm:text-xl font-semibold text-green-600 dark:text-green-300 mb-4">
+            Security
+          </h2>
+          <div className="space-y-6 max-w-md">
+            {/* New Password Input */}
             <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="new-password">New Password</label>
+              <label
+                htmlFor="new-password"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                New Password
+              </label>
               <div className="relative">
                 <input
                   id="new-password"
                   type={showNewPassword ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full border rounded p-2 pr-10"
                   placeholder="********"
                   autoComplete="new-password"
+                  className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button
                   type="button"
-                  className="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-2.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                   onClick={() => setShowNewPassword((prev) => !prev)}
                   aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
                 >
@@ -244,20 +286,28 @@ const AccountPage = () => {
                 </button>
               </div>
             </div>
-            <label className="flex items-center space-x-2">
+
+            {/* Two-Factor Toggle */}
+            <label className="flex items-center space-x-3 text-gray-700 dark:text-gray-300">
               <input
                 type="checkbox"
-                className="form-checkbox"
+                className="form-checkbox h-5 w-5 text-blue-600 dark:text-blue-400 focus:ring-blue-500 rounded"
                 checked={twoFAEnabled}
                 onChange={() => setTwoFAEnabled((prev) => !prev)}
               />
               <span>Enable Two-Factor Authentication</span>
             </label>
+
+            {/* Submit Button */}
             <button
               onClick={handlePasswordChange}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              disabled={loading}
               type="button"
+              disabled={loading}
+              className={`w-full sm:w-auto px-5 py-2 rounded-lg text-white font-medium transition-colors ${
+                loading
+                  ? 'bg-blue-300 cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600'
+              }`}
             >
               {loading ? 'Updating...' : 'Save Changes'}
             </button>
@@ -307,6 +357,7 @@ const AccountPage = () => {
           <button
             onClick={() => {
               setActionToConfirm('delete_account');
+              setReauthenticating(true); // Enable reauthentication immediately
               setShowConfirmModal(true);
             }}
             className="px-6 py-3 bg-red-700 text-white rounded hover:bg-red-800"
@@ -351,7 +402,7 @@ const AccountPage = () => {
                     type={showCurrentPassword ? 'text' : 'password'}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full border rounded p-2 pr-10"
+                    className="w-full border rounded p-2 pr-10 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
                     autoComplete="current-password"
                     placeholder="Current password"
                   />
@@ -382,7 +433,7 @@ const AccountPage = () => {
                   setReauthenticating(false);
                   setCurrentPassword('');
                 }}
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
                 type="button"
               >
                 Cancel

@@ -1,6 +1,16 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, BarChart3, TrendingUp, PieChart } from 'lucide-react';
 import SkeletonLoader from './SkeletonLoader';
+import { db } from '../firebase';
+import { useAuth } from '../AuthContext';
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
+  limit,
+} from 'firebase/firestore';
 
 import {
   Chart as ChartJS,
@@ -25,51 +35,142 @@ ChartJS.register(
   Legend
 );
 
-// Lazy load the chart components
 const BarChart = lazy(() => import("react-chartjs-2").then(mod => ({ default: mod.Bar })));
 const LineChart = lazy(() => import("react-chartjs-2").then(mod => ({ default: mod.Line })));
 const DoughnutChart = lazy(() => import("react-chartjs-2").then(mod => ({ default: mod.Doughnut })));
 
 export default function DashboardCharts() {
+  const { user } = useAuth();
   const [activeChart, setActiveChart] = useState("bar");
-  const [range, setRange] = useState(7);
+  const [range, setRange] = useState(50); // Changed default to show more scenarios
   const storedIsOpen = localStorage.getItem('isOpen');
   const [isOpen, setIsOpen] = useState(storedIsOpen === 'false' ? false : true);
   const [loading, setLoading] = useState(false);
+  const [labels, setLabels] = useState([]);
+  const [baseData, setBaseData] = useState([]);
+  const [totalScenarios, setTotalScenarios] = useState(0);
+  const [viewMode, setViewMode] = useState('individual'); // 'individual' or 'aggregated'
 
   useEffect(() => {
     localStorage.setItem('isOpen', isOpen);
     if (isOpen) {
       setLoading(true);
-      const t = setTimeout(() => setLoading(false), 3000);
+      const t = setTimeout(() => setLoading(false), 2000); // Reduced loading time
       return () => clearTimeout(t);
     }
   }, [isOpen]);
 
-  const labelsAll = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (29 - i));
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  });
+  useEffect(() => {
+    if (!user) return;
 
-  const baseDataAll = [
-    2, 5, 3, 7, 8, 6, 10, 4, 9, 2.5, 3.5, 6.2, 7.1, 5.3, 8.4,
-    6.8, 7.7, 5.5, 4.4, 3.3, 6.6, 8.8, 9.9, 4.1, 5.2, 6.3, 7.4,
-    8.5, 4.6, 2.7
-  ];
+    const simulationQuery = query(
+      collection(db, 'userInteractions'),
+      where('userId', '==', user.uid),
+      where('action', '==', 'simulate_scenario'),
+      orderBy('timestamp', 'desc'),
+      ...(range !== 'all' && viewMode === 'individual' ? [limit(range)] : [])
+    );
 
-  const sliceStart = range === "all" ? 0 : labelsAll.length - range;
-  const labels = labelsAll.slice(sliceStart);
-  const baseData = baseDataAll.slice(sliceStart);
+    const unsubscribe = onSnapshot(simulationQuery, (snapshot) => {
+      const simulations = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(sim => sim.timestamp?.toDate);
+
+      setTotalScenarios(simulations.length);
+
+      if (viewMode === 'individual') {
+        // Individual scenario view
+        const limitedSimulations = range === 'all' ? simulations : simulations.slice(0, range);
+        const reversedSimulations = limitedSimulations.reverse(); // Show chronological order
+
+        const scenarioLabels = reversedSimulations.map((sim, index) => {
+          const date = sim.timestamp.toDate();
+          const timeStr = date.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+          const dateStr = date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric'
+          });
+          return `S${index + 1} (${dateStr} ${timeStr})`;
+        });
+
+        const scenarioData = reversedSimulations.map((sim, index) => {
+          // You can replace this with actual metrics from your scenarios
+          return Math.floor(Math.random() * 100) + 1; // Random values for demo
+        });
+
+        setLabels(scenarioLabels);
+        setBaseData(scenarioData);
+      } else {
+        // Aggregated by date view
+        const now = new Date();
+        const cutoff = new Date(now);
+        if (range !== 'all') {
+          cutoff.setDate(cutoff.getDate() - range);
+        }
+
+        const filteredSimulations = range === 'all'
+          ? simulations
+          : simulations.filter(sim => sim.timestamp.toDate() >= cutoff);
+
+        const aggregationMap = {};
+
+        filteredSimulations.forEach(sim => {
+          const dateStr = sim.timestamp.toDate().toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: '2-digit'
+          });
+          aggregationMap[dateStr] = (aggregationMap[dateStr] || 0) + 1;
+        });
+
+        const sortedKeys = Object.keys(aggregationMap).sort((a, b) => {
+          const dateA = new Date(a + ', 2024'); // Assuming current year for sorting
+          const dateB = new Date(b + ', 2024');
+          return dateA - dateB;
+        });
+
+        setLabels(sortedKeys);
+        setBaseData(sortedKeys.map(key => aggregationMap[key]));
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user, range, viewMode]);
 
   const chartData = {
     labels,
     datasets: [
       {
-        label: "Total Simulations",
+        label: viewMode === 'individual' ? "Scenario Metrics" : "Simulations Count",
         data: baseData,
-        backgroundColor: "orange",
-        borderRadius: 10,
+        backgroundColor: "rgba(255, 165, 0, 0.8)",
+        borderColor: "rgba(255, 140, 0, 1)",
+        borderWidth: 2,
+        borderRadius: 8,
+        borderSkipped: false,
+      },
+    ],
+  };
+
+  const lineChartData = {
+    labels,
+    datasets: [
+      {
+        label: viewMode === 'individual' ? "Scenario Performance" : "Daily Simulations",
+        data: baseData,
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        borderColor: "rgba(59, 130, 246, 1)",
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: "rgba(59, 130, 246, 1)",
+        pointBorderColor: "#ffffff",
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8,
       },
     ],
   };
@@ -78,105 +179,224 @@ export default function DashboardCharts() {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      tooltip: { mode: "index", intersect: false },
-      legend: { position: "top" },
+      tooltip: { 
+        mode: "index", 
+        intersect: false,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderWidth: 1,
+      },
+      legend: { 
+        position: "top",
+        labels: {
+          font: {
+            size: 12,
+            weight: 'bold'
+          }
+        }
+      },
     },
     scales: {
-      x: { stacked: true },
-      y: { stacked: true, beginAtZero: true },
+      x: { 
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+        ticks: {
+          maxTicksLimit: 10,
+          font: {
+            size: 10
+          }
+        }
+      },
+      y: { 
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        }
+      },
     },
   };
 
   const colorPalette = [
-    "#FFA500", "#FFB347", "#FFD700", "#FFC107", "#FF8C00", "#FFA07A", "#FF6347",
-    "#FF7F50", "#FF4500", "#FF6F61", "#FDB813", "#F28C28", "#F5A623", "#00CED1",
-    "#20B2AA", "#3CB371", "#32CD32", "#ADFF2F", "#7FFF00", "#9ACD32", "#6B8E23",
-    "#556B2F", "#8FBC8F", "#2E8B57", "#4682B4", "#1E90FF", "#4169E1", "#6A5ACD",
-    "#8A2BE2", "#9370DB"
+    "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD", "#98D8C8", 
+    "#F7DC6F", "#BB8FCE", "#85C1E9", "#F8C471", "#82E0AA", "#F1948A", "#85929E",
+    "#FFA07A", "#20B2AA", "#87CEFA", "#DEB887", "#D3D3D3", "#F0E68C", "#EE82EE",
+    "#90EE90", "#FFB6C1", "#87CEEB", "#DDA0DD", "#98FB98", "#F0E68C", "#DB7093",
+    "#FF7F50", "#6495ED", "#DC143C", "#00FFFF", "#00008B", "#008B8B", "#B8860B",
+    "#A9A9A9", "#006400", "#BDB76B", "#8B008B", "#556B2F", "#FF8C00", "#9932CC"
   ];
 
   const pieData = {
-    labels: labels,
-    datasets: [{
-      label: "Simulations",
-      data: baseData,
-      backgroundColor: colorPalette.slice(0, baseData.length),
-    }],
+    labels: labels.map((label, index) => `Scenario ${index + 1}`),
+    datasets: [
+      {
+        label: "Scenarios",
+        data: baseData,
+        backgroundColor: colorPalette.slice(0, baseData.length),
+        borderColor: '#ffffff',
+        borderWidth: 2,
+        hoverBorderWidth: 3,
+      },
+    ],
   };
 
   const pieOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { position: "right" },
-      tooltip: { mode: "index", intersect: false },
+      legend: { 
+        position: "right",
+        labels: {
+          boxWidth: 12,
+          font: {
+            size: 10
+          },
+          generateLabels: function(chart) {
+            const data = chart.data;
+            if (data.labels.length && data.datasets.length) {
+              return data.labels.map((label, index) => ({
+                text: `S${index + 1}`,
+                fillStyle: data.datasets[0].backgroundColor[index],
+                strokeStyle: data.datasets[0].borderColor,
+                lineWidth: data.datasets[0].borderWidth,
+                hidden: false,
+                index: index
+              }));
+            }
+            return [];
+          }
+        }
+      },
+      tooltip: { 
+        callbacks: {
+          label: function(context) {
+            return `${context.label}: ${context.parsed}`;
+          }
+        }
+      },
     },
   };
 
+  const chartIcons = {
+    bar: BarChart3,
+    line: TrendingUp,
+    pie: PieChart
+  };
+
   return (
-    <div className="w-full  hover:shadow-blue-500/50 transition px-6 py-6 border p-6 mt-8 bg-white dark:bg-gray-800 rounded-3xl shadow-lg transition-all duration-300 ease-in-out">
+    <div className="w-full hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 px-6 py-6 border border-gray-200 dark:border-gray-700 mt-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl">
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between cursor-pointer mb-4"
+        className="flex items-center justify-between cursor-pointer mb-4 group"
       >
-        <h3 className="text-xl font-semibold  text-green-500 dark:text-green-500">
-          Total Simulations Run
-        </h3>
-        {isOpen ? (
-          <ChevronDown  className='text-blue-300 dark:text-white' />
-        ) : (
-          <ChevronRight  className='text-blue-300 dark:text-white'/>
-        )}
+        <div className="flex items-center space-x-3">
+          <h3 className="text-xl font-bold bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
+            Scenario Analytics Dashboard
+          </h3>
+          <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-xs font-semibold">
+            {totalScenarios} Total
+          </span>
+        </div>
+        <div className="group-hover:scale-110 transition-transform duration-200">
+          {isOpen ? (
+            <ChevronDown className='text-blue-500 dark:text-blue-400' size={24} />
+          ) : (
+            <ChevronRight className='text-blue-500 dark:text-blue-400' size={24} />
+          )}
+        </div>
       </div>
 
       <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          isOpen ? 'flex-1 min-h-[300px] opacity-100' : 'max-h-0 opacity-0'
+        className={`transition-all duration-500 ease-in-out overflow-hidden ${
+          isOpen ? 'flex-1 min-h-[400px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="flex flex-wrap gap-4 mb-4">
-          {["bar", "line", "pie"].map((type) => (
-            <button
-              key={type}
-              onClick={() => setActiveChart(type)}
-              className={`px-4 py-2 rounded-full font-semibold transition ${
-                activeChart === type
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-300 text-gray-800 hover:bg-gray-400"
-              }`}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)} Chart
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-3 mb-6">
+          {["bar", "line", "pie"].map((type) => {
+            const Icon = chartIcons[type];
+            return (
+              <button
+                key={type}
+                onClick={() => setActiveChart(type)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 ${
+                  activeChart === type
+                    ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                <Icon size={16} />
+                <span>{type.charAt(0).toUpperCase() + type.slice(1)} Chart</span>
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex justify-end space-x-2 mb-4">
-          {[7, 14, 30, 'all'].map(d => (
+        <div className="flex justify-end space-x-2 mb-6">
+          {[10, 25, 50, 100, 'all'].map(d => (
             <button
               key={d}
               onClick={() => setRange(d)}
-              className={`py-1 px-3 text-sm rounded-md font-medium ${
+              className={`py-2 px-4 text-sm rounded-lg font-medium transition-all duration-200 hover:scale-105 ${
                 range === d
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              {d === 'all' ? 'All' : `Last ${d} Days`}
+              {d === 'all' ? 'All Scenarios' : `Last ${d}`}
             </button>
           ))}
         </div>
 
-        <div className="relative flex-1 min-h-[300px] mb-4">
+        <div className="relative flex-1 min-h-[400px] mb-4 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-inner">
           {loading ? (
-            <SkeletonLoader height="h-[300px]" />
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-gray-600 dark:text-gray-400 font-medium">Loading scenario data...</p>
+              </div>
+            </div>
+          ) : baseData.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="text-6xl mb-4">📊</div>
+                <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">No scenarios found</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm">Run some scenarios to see your analytics</p>
+              </div>
+            </div>
           ) : (
-            <Suspense fallback={<SkeletonLoader height="h-[300px]" />}>
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-pulse text-blue-500">Loading chart...</div>
+              </div>
+            }>
               {activeChart === "bar" && <BarChart data={chartData} options={commonOptions} />}
-              {activeChart === "line" && <LineChart data={chartData} options={commonOptions} />}
+              {activeChart === "line" && <LineChart data={lineChartData} options={commonOptions} />}
               {activeChart === "pie" && <DoughnutChart data={pieData} options={pieOptions} />}
             </Suspense>
           )}
         </div>
+
+        {baseData.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-xl">
+              <h4 className="text-sm font-medium opacity-90">Total Scenarios</h4>
+              <p className="text-2xl font-bold">{totalScenarios}</p>
+            </div>
+            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-xl">
+              <h4 className="text-sm font-medium opacity-90">Average Score</h4>
+              <p className="text-2xl font-bold">
+                {(baseData.reduce((a, b) => a + b, 0) / baseData.length).toFixed(1)}
+              </p>
+            </div>
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-xl">
+              <h4 className="text-sm font-medium opacity-90">Best Score</h4>
+              <p className="text-2xl font-bold">{Math.max(...baseData)}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

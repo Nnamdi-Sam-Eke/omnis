@@ -10,6 +10,7 @@ import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
 
 
 // Pages
+import SessionTracker from './components/SessionTracker';
 import SplashScreen from './components/SplashScreen';
 import Home from './pages/Home';
 import PartnerChat from './pages/PartnerChat';
@@ -275,6 +276,10 @@ useEffect(() => {
           <OmnisProvider>
             <MemoryProvider>
               <StripeProvider>
+                {/* Session Tracker */}
+                <SessionTracker />
+
+                {/* Main Routes */}
                 <Routes>
                   {/* Public Route */}
                   <Route path="/login" element={<PublicRoute><AuthForm /></PublicRoute>} />

@@ -163,7 +163,7 @@ useEffect(() => {
       setAuthTimeout(true);
       setLoading(false);
     }
-  }, 3000);
+  }, 10000);
 
   const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
     console.log("🔄 Auth state changed:", firebaseUser ? `User: ${firebaseUser.email}` : "User logged out");

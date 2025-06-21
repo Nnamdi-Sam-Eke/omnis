@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, forwardRef } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
 
@@ -25,24 +25,26 @@ ChartJS.register(
 
 const allLabels = [
   "Mar 25", "Mar 26", "Mar 27", "Mar 28", "Mar 29",
-  "Mar 30", "Mar 31", "Apr 1",  "Apr 2",  "Apr 3",
-  "Apr 4",  "Apr 5",  "Apr 6",  "Apr 7",  "Apr 8"
+  "Mar 30", "Mar 31", "Apr 1", "Apr 2", "Apr 3",
+  "Apr 4", "Apr 5", "Apr 6", "Apr 7", "Apr 8"
 ];
 const allAccuracy = [72, 75, 74, 76, 78, 80, 77, 79, 82, 85, 86, 88, 89, 91, 93];
 
-export default function ScenarioAccuracyChart() {
-  const [range, setRange] = useState(7);
-  const [isOpen, setIsOpen] = useState(true);
+const ScenarioAccuracyChart = forwardRef((props,ref) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [range, setRange] = useState(7);
 
-  // whenever card expands or range changes, show skeleton then chart
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
-      const t = setTimeout(() => setIsLoading(false), 1500);
+      const t = setTimeout(() => {
+        setIsLoading(false);
+      
+      }, 500); // Keep it responsive — reduce fake delay
       return () => clearTimeout(t);
     }
-  }, [isOpen, range]);
+  }, [isOpen]);
 
   const labels = range === "all" ? allLabels : allLabels.slice(-range);
   const dataPoints = range === "all" ? allAccuracy : allAccuracy.slice(-range);
@@ -54,9 +56,9 @@ export default function ScenarioAccuracyChart() {
         label: "Scenario Accuracy (%)",
         data: dataPoints,
         fill: true,
-        backgroundColor: "rgba(16, 185, 129, 0.15)",
-        borderColor: "#10b981",
-        pointBackgroundColor: "#059669",
+        backgroundColor: "rgba(139, 92, 246, 0.15)",
+        borderColor: "#8b5cf6",
+        pointBackgroundColor: "#7c3aed",
         pointBorderColor: "#ffffff",
         pointBorderWidth: 2,
         pointRadius: 6,
@@ -71,136 +73,132 @@ export default function ScenarioAccuracyChart() {
     responsive: true,
     maintainAspectRatio: false,
     layout: {
-      padding: {
-        top: 20,
-        right: 30,
-        bottom: 20,
-        left: 10
-      }
+      padding: { top: 20, right: 30, bottom: 20, left: 10 },
     },
     plugins: {
       legend: {
         position: "top",
-        labels: { 
-          color: "#374151", 
+        labels: {
+          color: "#4b5563",
           font: { size: 14, weight: 'bold' },
           padding: 25,
           usePointStyle: true,
-          pointStyle: 'circle'
+          pointStyle: 'circle',
         },
       },
-      tooltip: { 
-        mode: "index", 
+      tooltip: {
+        mode: "index",
         intersect: false,
-        backgroundColor: "rgba(17, 24, 39, 0.95)",
-        titleColor: "#f9fafb",
-        bodyColor: "#f3f4f6",
-        borderColor: "#10b981",
+        backgroundColor: "rgba(30, 27, 75, 0.95)",
+        titleColor: "#f8fafc",
+        bodyColor: "#e2e8f0",
+        borderColor: "#8b5cf6",
         borderWidth: 1,
-        cornerRadius: 8,
+        cornerRadius: 12,
         displayColors: true,
-        padding: 12,
+        padding: 14,
         titleFont: { size: 13, weight: 'bold' },
         bodyFont: { size: 12 },
         callbacks: {
-          label: function(context) {
-            return `${context.dataset.label}: ${context.parsed.y}%`;
-          }
-        }
+          label: (context) => `${context.dataset.label}: ${context.parsed.y}%`,
+        },
       },
     },
     scales: {
       x: {
-        ticks: { 
-          color: "#6b7280", 
+        ticks: {
+          color: "#64748b",
           autoSkip: false,
           font: { size: 12, weight: '500' },
-          padding: 8
+          padding: 8,
         },
-        title: { 
-          display: true, 
-          text: "Date", 
-          color: "#059669", 
+        title: {
+          display: true,
+          text: "Date",
+          color: "#7c3aed",
           font: { weight: "bold", size: 14 },
-          padding: { top: 15 }
+          padding: { top: 15 },
         },
         grid: {
-          color: "rgba(156, 163, 175, 0.2)",
-          drawBorder: false
-        }
+          color: "rgba(148, 163, 184, 0.2)",
+          drawBorder: false,
+        },
       },
       y: {
         beginAtZero: true,
         max: 100,
-        ticks: { 
-          color: "#6b7280",
+        ticks: {
+          color: "#64748b",
           font: { size: 12, weight: '500' },
           padding: 8,
           stepSize: 10,
-          callback: function(value) {
-            return value + '%';
-          }
+          callback: (value) => `${value}%`,
         },
-        title: { 
-          display: true, 
-          text: "Accuracy (%)", 
-          color: "#059669", 
+        title: {
+          display: true,
+          text: "Accuracy (%)",
+          color: "#7c3aed",
           font: { weight: "bold", size: 14 },
-          padding: { bottom: 15 }
+          padding: { bottom: 15 },
         },
         grid: {
-          color: "rgba(156, 163, 175, 0.2)",
-          drawBorder: false
-        }
+          color: "rgba(148, 163, 184, 0.2)",
+          drawBorder: false,
+        },
       },
     },
     interaction: {
       intersect: false,
-      mode: 'index'
+      mode: 'index',
     },
     elements: {
       point: {
-        hoverBackgroundColor: "#047857",
+        hoverBackgroundColor: "#6d28d9",
         hoverBorderColor: "#ffffff",
-        hoverBorderWidth: 3
-      }
-    }
+        hoverBorderWidth: 3,
+      },
+    },
   };
 
   const pointWidth = 60;
   const minWidth = labels.length * pointWidth;
 
   return (
-    <div className="w-full mt-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 hover:shadow-emerald-500/20 transition-all duration-300 ease-in-out px-6 py-6 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-xl hover:shadow-2xl">
+    <div
+      ref={ref}
+      className="w-full mt-8 bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-800 dark:to-purple-900/20 hover:shadow-purple-500/25 transition-all duration-500 ease-out px-8 py-8 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl shadow-2xl hover:shadow-purple-500/30 backdrop-blur-sm"
+    >
       <div
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between cursor-pointer mb-4 group"
+        onClick={() => setIsOpen(prev => !prev)}
+        className="flex items-center justify-between cursor-pointer mb-6 group"
       >
-        <h2 className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors duration-200">
-          📈 Scenario Prediction Accuracy Over Time
-        </h2>
-        {isOpen ? (
-          <ChevronDown className="text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 transition-colors duration-200" />
-        ) : (
-          <ChevronRight className="text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 transition-colors duration-200" />
-        )}
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg">
+            <span className="text-white text-lg font-bold">📊</span>
+          </div>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 dark:from-purple-400 dark:via-violet-400 dark:to-indigo-400 bg-clip-text text-transparent group-hover:from-purple-700 group-hover:via-violet-700 group-hover:to-indigo-700 dark:group-hover:from-purple-300 dark:group-hover:via-violet-300 dark:group-hover:to-indigo-300 transition-all duration-300">
+            Prediction Accuracy Trends
+          </h2>
+        </div>
+        <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-800/50 dark:to-indigo-800/50 rounded-xl group-hover:from-purple-200 group-hover:to-indigo-200 dark:group-hover:from-purple-700/60 dark:group-hover:to-indigo-700/60 transition-all duration-300">
+          {isOpen ? (
+            <ChevronDown className="text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-200" size={20} />
+          ) : (
+            <ChevronRight className="text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-200" size={20} />
+          )}
+        </div>
       </div>
 
-      <div
-        className={`transition-all duration-300 ease-in-out overflow-x-auto ${
-          isOpen ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
-        {/* Range buttons */}
-        <div className="flex flex-wrap gap-2 mb-4">
+      <div className={`transition-all duration-500 ease-in-out overflow-x-auto ${isOpen ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="flex flex-wrap gap-3 mb-6">
           {[7, 14, 30, "all"].map((d) => (
             <button
               key={d}
               onClick={() => setRange(d)}
-              className={`py-2 px-4 text-sm rounded-lg font-medium transition-all duration-200 transform hover:scale-105 ${
+              className={`py-3 px-6 text-sm rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 ${
                 range === d
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30"
-                  : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 hover:shadow-md"
+                  ? "bg-gradient-to-r from-purple-500 via-violet-500 to-indigo-500 text-white shadow-lg shadow-purple-500/40 hover:shadow-purple-500/50"
+                  : "bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-200 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-600 dark:hover:to-slate-700 hover:shadow-lg shadow-slate-200/50 dark:shadow-slate-800/50"
               }`}
             >
               {d === "all" ? "All Data" : `${d} Days`}
@@ -208,33 +206,14 @@ export default function ScenarioAccuracyChart() {
           ))}
         </div>
 
-        {/* Chart area or skeleton */}
-        <div className="relative w-full max-w-5xl mx-auto h-[50vh] sm:h-[45vh] md:h-[40vh] lg:h-[35vh] xl:h-[30vh] overflow-x-auto transition-all duration-300 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
+        <div className="relative w-full max-w-5xl mx-auto h-[50vh] sm:h-[45vh] md:h-[40vh] lg:h-[35vh] xl:h-[30vh] overflow-x-auto transition-all duration-300 bg-gradient-to-br from-white via-slate-50/50 to-purple-50/30 dark:from-slate-800 dark:via-slate-800/80 dark:to-purple-900/20 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-inner">
           {isLoading ? (
-            <div className="w-full h-full relative overflow-hidden rounded-xl">
-              <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-pulse" />
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent dark:via-gray-500/20 animate-shimmer" 
-                   style={{
-                     backgroundImage: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
-                     backgroundSize: '200% 100%',
-                     animation: 'shimmer 1.5s ease-in-out infinite'
-                   }} />
-              <div className="absolute top-4 left-4 w-32 h-4 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
-              <div className="absolute bottom-4 left-4 right-4 h-2 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
-              <div className="absolute bottom-8 left-4 w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse" />
-              <div className="absolute bottom-16 left-16 w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse" />
-              <div className="absolute bottom-12 left-24 w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse" />
+            <div className="w-full h-full relative overflow-hidden rounded-2xl">
+              {/* shimmer loader here if you have one */}
             </div>
           ) : (
-            <div
-              className="relative"
-              style={{ minWidth: `${minWidth}px`, height: "250%" }}
-            >
-              <Suspense fallback={
-                <div className="w-full h-full relative overflow-hidden rounded-xl">
-                  <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-pulse" />
-                </div>
-              }>
+            <div className="relative" style={{ minWidth: `${minWidth}px`, height: "250%" }}>
+              <Suspense fallback={<div>Loading chart...</div>}>
                 <Line data={data} options={options} />
               </Suspense>
             </div>
@@ -243,4 +222,6 @@ export default function ScenarioAccuracyChart() {
       </div>
     </div>
   );
-}
+});
+
+export default ScenarioAccuracyChart;

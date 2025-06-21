@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, forwardRef } from 'react';
 import {
   Chart as ChartJS,
   BarElement,
@@ -69,29 +69,47 @@ const SkeletonLoader = () => (
   </div>
 );
 
-const UptimeChart = () => {
+const UptimeChart = forwardRef(({ onRendered }, ref) => {
   const [sessions, setSessions] = useState([]);
   const [filteredSessions, setFilteredSessions] = useState([]);
   const [totalNetworkTime, setTotalNetworkTime] = useState({ hours: 0, minutes: 0 });
   const [todayTime, setTodayTime] = useState({ hours: 0, minutes: 0 });
-  const [startDate, setStartDate] = useState(''); // YYYY-MM-DD string
-  const [endDate, setEndDate] = useState('');     // YYYY-MM-DD string
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState('session'); // 'session' or 'day'
-  const [chartType, setChartType] = useState('bar'); // 'bar' or 'line'
+  const [view, setView] = useState('session');
+  const [chartType, setChartType] = useState('bar');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const db = getFirestore();
   const auth = getAuth();
-
   const intervalIdRef = useRef(null);
   const sessionIdRef = useRef(null);
 
-  const toDateSafe = (timestamp) =>
-    timestamp?.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000);
+useEffect(() => {
+    if (isOpen) {
+      setIsLoading(true);
+      const t = setTimeout(() => {
+        setIsLoading(false);
+        onRendered?.(); // ✅ Notify parent once chart is loaded
+      }, 500);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen, onRendered]);
+  // Notify parent when chart is rendered
 
+  useEffect(() => {
+    if (!loading && isOpen && filteredSessions.length > 0 && onRendered) {
+      onRendered();
+    }
+  }, [loading, isOpen, filteredSessions, chartType, view]);
+
+
+ 
+  // Format duration from seconds to "Xh Ym" format
   const formatDuration = (hoursFloat) => {
     const hours = Math.floor(hoursFloat);
     const minutes = Math.round((hoursFloat - hours) * 60);
@@ -461,21 +479,29 @@ const UptimeChart = () => {
   };
 
   return (
-    <div className="w-full hover:shadow-2xl hover:shadow-emerald-500/20 dark:hover:shadow-emerald-500/10 transition-all duration-500 px-6 py-6 border border-gray-200 dark:border-gray-700 mt-8 bg-gradient-to-br from-white via-gray-50 to-white dark:from-gray-800 dark:via-gray-850 dark:to-gray-800 rounded-3xl shadow-xl">
-      <div
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between cursor-pointer mb-4 group"
-      >
-        <h3 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
-          📊 Uptime Analytics
-        </h3>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-          {isOpen ? (
-            <ChevronDown className='text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors duration-200' size={24} />
-          ) : (
-            <ChevronRight className='text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors duration-200' size={24} />
-          )}
+    <div ref={ref}className="w-full hover:shadow-2xl shadow-2xl hover:shadow-emerald-400/30 dark:hover:shadow-emerald-500/25 transition-all duration-500 px-6 py-6 border border-gray-200 dark:border-gray-700 mt-8 bg-gradient-to-br from-white via-gray-50 to-white dark:from-gray-800 dark:via-gray-850 dark:to-gray-800 rounded-3xl ">
+      {/* Subtle Green Brush Effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/20 via-transparent to-emerald-100/10 dark:from-emerald-900/10 dark:via-transparent dark:to-emerald-800/5 pointer-events-none rounded-3xl"></div>
+      <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-bl from-emerald-100/30 via-emerald-50/10 to-transparent dark:from-emerald-800/15 dark:via-emerald-900/5 dark:to-transparent rounded-3xl pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-gradient-to-tr from-emerald-50/25 via-emerald-100/15 to-transparent dark:from-emerald-900/10 dark:via-emerald-800/8 dark:to-transparent rounded-3xl pointer-events-none"></div>
+      
+            {/* Content - positioned relative to sit above the brush effect */}
+      <div className="relative z-10">
+        <div
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center justify-between cursor-pointer mb-4 group"
+        >
+          <h3 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+            📊 Uptime Analytics
+          </h3>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+            {isOpen ? (
+              <ChevronDown className='text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors duration-200' size={24} />
+            ) : (
+              <ChevronRight className='text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors duration-200' size={24} />
+            )}
+          </div>
         </div>
       </div>
 
@@ -618,7 +644,8 @@ const UptimeChart = () => {
       </div>
     </div>
   );
-};
+}
+);
 
 // Add shimmer animation to CSS (you can add this to your global CSS)
 const shimmerCSS = `

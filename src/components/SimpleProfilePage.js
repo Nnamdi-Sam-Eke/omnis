@@ -5,8 +5,9 @@ import { useAuth } from "../AuthContext";
 import { storage } from '../firebase';
 import { getAuth } from 'firebase/auth';
 import { db, auth } from '../firebase';  // adjust path if needed
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp} from 'firebase/firestore';
 import imageCompression from 'browser-image-compression';
+
 
 
 const ProfileSkeleton = () => (
@@ -53,6 +54,7 @@ const ProfilePage = () => {
   const [showPopUp, setShowPopUp] = useState(null);
   const { currentUser } = useAuth();
   const auth = getAuth();
+
 
   // Handle image file selection
   // Handle image file selection
@@ -233,7 +235,9 @@ useEffect(() => {
         bio: bio,
         email: email,
         phone: phone,
-        location: { city: city, country: country },
+        city: city, 
+        country: country,
+        profileUpdated: serverTimestamp(), // ✅ Add this line
       });
       setShowPopUp("profileUpdated");
       setIsEditable(false);

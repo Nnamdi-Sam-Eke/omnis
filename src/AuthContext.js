@@ -20,7 +20,9 @@ import {
   getDoc, 
   updateDoc, 
   onSnapshot, 
-  serverTimestamp 
+  serverTimestamp,
+  collection,
+  addDoc
 } from "firebase/firestore";
 
 const AuthContext = createContext();
@@ -55,48 +57,33 @@ export function AuthProvider({ children }) {
     return false;
   };
 
-  // Throttled session tracking - only track once per 5 minutes
+  // Updated session tracking with subcollection approach
   const trackSession = async (user) => {
     const now = Date.now();
     const THROTTLE_DURATION = 5 * 60 * 1000; // 5 minutes
-    
     if (now - lastSessionTrackRef.current < THROTTLE_DURATION) {
       console.log("🚫 Session tracking throttled - too recent");
       return;
     }
-
     try {
-      const sessionRef = doc(db, 'sessions', user.uid);
       const userRef = doc(db, 'users', user.uid);
-      
-      // Use updateDoc instead of setDoc for existing documents
-      const sessionUpdate = {
-        userAgent: navigator.userAgent,
-        lastLogin: serverTimestamp(),
-        timestamp: new Date().toISOString(),
-      };
-      
-      const userUpdate = {
-        lastLogin: serverTimestamp(),
-      };
-
-      // Batch these operations conceptually (using Promise.all)
+      const sessionsCollectionRef = collection(db, 'users', user.uid, 'sessions');
       await Promise.all([
-        updateDoc(sessionRef, sessionUpdate).catch(() => 
-          setDoc(sessionRef, sessionUpdate, { merge: true })
+        updateDoc(userRef, {
+          lastLogin: serverTimestamp(),
+        }).catch(() => 
+          setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true })
         ),
-        updateDoc(userRef, userUpdate).catch(() => 
-          setDoc(userRef, userUpdate, { merge: true })
-        )
+        addDoc(sessionsCollectionRef, {
+          userAgent: navigator.userAgent,
+          createdAt: serverTimestamp(),
+        })
       ]);
-      
       lastSessionTrackRef.current = now;
-      console.log("✅ Session tracked successfully");
+      console.log("✅ Session recorded in user's subcollection");
     } catch (error) {
       const isQuotaError = handleFirestoreError(error, "trackSession");
-      if (!isQuotaError) {
-        throw error;
-      }
+      if (!isQuotaError) throw error;
     }
   };
 

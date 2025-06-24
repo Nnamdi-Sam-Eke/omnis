@@ -189,7 +189,7 @@ const OmnisDashboard = () => {
             <h1 className="text-3xl font-semibold mt-2 text-green-500 mb-6">
               {getGreeting()}, {userFirstName || 'there'} 👋
             </h1>
-            <div className="absolute top-0 right-0">
+            <div className="absolute mb-10 top-0 right-0">
               <WeatherLocation />
             </div>
           </div>

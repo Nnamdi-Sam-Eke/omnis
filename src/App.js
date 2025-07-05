@@ -128,7 +128,7 @@ useEffect(() => {
     // 2. Expired Pro or Enterprise
     // 3. It's been >=30 days since last shown (for other tiers)
     if (isFree) {
-      // For free users, show if never shown before in >=12 hours
+      // For free users, show if never shown before in >=2 hours
       if (!lastModalTimestamp) {
         console.log('✅ Showing upgrade modal for Free user');
       console.log('✅ Showing upgrade modal for Free or Expired user');
@@ -140,7 +140,7 @@ useEffect(() => {
     const lastShownDate = lastModalTimestamp.toDate ? lastModalTimestamp.toDate() : new Date(lastModalTimestamp);
       const diffInHours = (now - lastShownDate) / (1000 * 60 * 60);
 
-      if (diffInHours >= 0) {
+      if (diffInHours >= 2) {
         setShowUpgradeModal(true);
         await updateDoc(userRef, { lastUpgradeModalShown: Timestamp.now() });
       } else {

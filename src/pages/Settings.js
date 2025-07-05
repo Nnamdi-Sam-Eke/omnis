@@ -1,6 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense, useCallback } from "react";
 import { db } from "../firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc,  deleteDoc, updateDoc } from "firebase/firestore";
 import { getAuth, deleteUser, signOut } from "firebase/auth";
 import { FiBell, FiCloud, FiDatabase, FiSettings } from "react-icons/fi";
 import { AiOutlineAppstore, AiOutlineGlobal } from "react-icons/ai";
@@ -134,16 +134,33 @@ const ProfilePage = () => {
     setShowReauth(true);
   };
 
-  const performFinalDelete = async () => {
-    if (!currentUser) return;
-    try {
-      await deleteUser(currentUser);
-      alert("Account deleted successfully.");
-      await signOut(getAuth());
-    } catch (error) {
-      console.error("Delete failed:", error);
-    }
-  };
+  // Perform final delete after re-authentication
+  // This function deletes the user from Firestore and Firebase Auth, then redirects to a goodbye page
+const performFinalDelete = async () => {
+  if (!currentUser) return;
+
+  try {
+    const uid = currentUser.uid;
+
+    // Delete Firestore user doc
+    await deleteDoc(doc(db, 'users', uid));
+
+    // Delete Firestore session doc
+    await deleteDoc(doc(db, 'sessions', uid));
+
+    // Delete Firebase Auth user
+    await deleteUser(currentUser);
+
+    // Sign out and redirect
+    await signOut(getAuth());
+
+  } catch (error) {
+    console.error("Account deletion failed:", error);
+    alert("Something went wrong while deleting your account. Please try again.");
+  }
+};
+  // Handle session logout
+  // This function logs out the user from all other devices by updating the session version 
 
   const handleSessionLogout = useCallback(async () => {
     if (!currentUser) return;

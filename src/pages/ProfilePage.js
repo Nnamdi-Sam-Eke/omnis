@@ -129,7 +129,9 @@ const AccountPage = () => {
         await deleteUser(user);
 
         toast.success('Your account has been deleted.');
-        navigate('/goodbye');
+        await signOut(auth);
+  } else {
+        toast.error('Unknown action. Please try again.');
       }
 
       setShowConfirmModal(false);
@@ -233,12 +235,12 @@ const AccountPage = () => {
                 </button>
               </div>
 
-              <div><strong>First Name:</strong> {user?.firstName || 'N/A'}</div>
-              <div><strong>Last Name:</strong> {user?.lastName || 'N/A'}</div>
-              <div><strong>Email:</strong> {user?.email || 'N/A'}</div>
-              <div><strong>Phone:</strong> {userData?.phone || 'N/A'}</div>
-              <div><strong>City:</strong> {userData?.city || 'N/A'}</div>
-              <div><strong>Country:</strong> {user?.country || 'N/A'}</div>
+              <div><strong>First Name:</strong> {user?.firstname || userData?.firstname || 'N/A'}</div>
+<div><strong>Last Name:</strong> {user?.lastname || userData?.lastname || 'N/A'}</div>
+<div><strong>Email:</strong> {user?.email || userData?.email || 'N/A'}</div>
+<div><strong>Phone:</strong> {user?.phone || userData?.phone || 'N/A'}</div>
+<div><strong>City:</strong> {user?.location || userData?.location || 'N/A'}</div>
+<div><strong>Country:</strong> {user?.country || userData?.country || 'N/A'}</div>
             </div>
           </div>
           <button

@@ -237,7 +237,7 @@ const AuthForm = () => {
   disabled={isSubmitting}
 >
   {isSignUp
-    ? (isSubmitting ? "Creating your account..." : "Sign Up")
+    ? (isSubmitting ? "Creating your Omnis account..." : "Sign Up")
     : (isSubmitting ? "Logging in..." : "Log In")}
 </button>
 

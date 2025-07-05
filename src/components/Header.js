@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import { FiUser, FiUsers, FiLogOut } from 'react-icons/fi';
 import ThemeToggle from './ThemeToggle';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import favicon from '../images/SVG.svg';
+import { db } from '../firebase';
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+} from 'firebase/firestore';
 import LogoutSplash from './logoutSplash';
+import NotificationDropdown from './NotificationsDropdown';
 
 const Header = ({
   toggleSidebar,
@@ -17,6 +25,26 @@ const Header = ({
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
   const { logout } = useAuth(); // Optional: use if you plan to actually sign out from context
   const [localLogoutMessage, setLocalLogoutMessage] = useState('');
+
+
+  const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const q = query(
+      collection(db, "notifications"),
+      where("userId", "==", user.uid),
+      where("read", "==", false)
+    );
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      setUnreadCount(snapshot.size);
+    });
+
+    return () => unsub();
+  }, [user?.uid]);
 
   const handleLogout = async () => {
     setIsProfileMenuOpen(false);
@@ -66,6 +94,12 @@ const Header = ({
           <ThemeToggle />
           <Link to="/notifications" className="cursor-pointer hover:text-blue-200">
             🔔
+            <NotificationDropdown />
+           {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+              {unreadCount}
+            </span>
+          )}
           </Link>
 
           <div className="relative">

@@ -20,6 +20,7 @@ function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
   const { accounts, activeAccount, setActiveAccount } = useAccounts();
   const [toastMessage, setToastMessage] = useState('');
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const handleAddAccountClick = () => {
     setToastMessage("Feature Coming Soon!");
@@ -181,6 +182,11 @@ function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
               onClick={() => setIsSidebarOpen(false)}
             >
               🔔
+             {unreadCount > 0 && (
+      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+        {unreadCount}
+      </span>
+    )}
             </Link>
           </Tooltip>
           <Tooltip text="Account" position="top">

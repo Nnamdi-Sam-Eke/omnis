@@ -3,10 +3,10 @@ import { Paperclip, Mic, ImageIcon, SendHorizonal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import favicon from '../images/favicon.png';
 import { FiTrash2, FiEdit, FiCopy, FiMessageSquare } from "react-icons/fi";
-// import { sendToGemini } from "../services/geminiService"; // Import Gemini service
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from '../AuthContext';
+import { sendToOpenAIStream } from "../services/openAIService"; // ✅ CORRECTED IMPORT
 import ReactMarkdown from 'react-markdown';
 
 export default function PartnerChat() {
@@ -21,25 +21,17 @@ export default function PartnerChat() {
   const [profilePicture, setProfilePicture] = useState(null);
   const { user } = useAuth();
   const messagesEndRef = useRef(null);
-  
 
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      messagesEndRef.current.scrollTo({
+        top: messagesEndRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [messages]);
 
-useEffect(() => {
-  if (messagesEndRef.current) {
-    // First, scroll the element into view
-    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    
-    // Then, adjust the scroll position (just in case, e.g., for certain edge cases)
-    messagesEndRef.current.scrollTo({
-      top: messagesEndRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }
-}, [messages]);
-
-  // Fetch user profile picture from Firestore
-  // useEffect(() => {
-    
   useEffect(() => {
     fetchUserProfilePicture();
   }, [user]);
@@ -61,10 +53,10 @@ useEffect(() => {
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
-  
+
     const isNearBottom =
       container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
-  
+
     if (isNearBottom) {
       container.scrollTo({
         top: container.scrollHeight,
@@ -72,43 +64,72 @@ useEffect(() => {
       });
     }
   }, [messages]);
-  
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const msg = {
+    const userMessage = {
       id: nextId.current++,
       sender: "creator",
       text: input,
       status: "pending",
       read: false,
     };
-    setMessages((prev) => [...prev, msg]);
+
+    const userInput = input;
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setTypingStatus("omnis");
 
     setTimeout(() => {
       setMessages((prev) =>
-        prev.map(m => m.id === msg.id ? { ...m, status: "sent" } : m)
+        prev.map(m => m.id === userMessage.id ? { ...m, status: "sent" } : m)
       );
-      const botReply = {
-        id: nextId.current++,
-        sender: "omnis",
-        text: "Thanks for your message! I'm processing it...",
-        status: "sent",
-        read: true,
-      };
-      setMessages((prev) => [...prev, botReply]);
-      setTypingStatus("user");
-      setTimeout(() => {
-        setTypingStatus("");
-      }, 8000);
-    }, 3000);
+    }, 500);
+
+    const botReply = {
+      id: nextId.current++,
+      sender: "omnis",
+      text: "",
+      status: "sent",
+      read: true,
+    };
+
+    setMessages((prev) => [...prev, botReply]);
+
+    try {
+      const conversationHistory = messages.filter(msg =>
+        msg.sender !== "creator" || msg.id !== userMessage.id
+      );
+
+      await sendToOpenAIStream(userInput, conversationHistory, (chunk, fullText) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === botReply.id
+              ? { ...m, text: fullText }
+              : m
+          )
+        );
+      });
+
+      setTypingStatus("");
+    } catch (error) {
+      console.error("Error sending message to OpenAI:", error);
+
+      setMessages((prev) =>
+        prev.map(m =>
+          m.id === botReply.id
+            ? { ...m, text: "Sorry, I'm having trouble processing your message right now. Please try again." }
+            : m
+        )
+      );
+      setTypingStatus("");
+    }
   };
 
   const handleFileUpload = (file) => {
     if (!file) return;
-  
+
     const fileType = file.type.split("/")[0];
     const newMsg = {
       id: nextId.current++,
@@ -119,11 +140,9 @@ useEffect(() => {
       status: "sent",
       read: false,
     };
-  
+
     setMessages((prev) => [...prev, newMsg]);
   };
-
-    
 
   const handleAction = (action, msg) => {
     if (action === "trash") {
@@ -144,216 +163,336 @@ useEffect(() => {
     setSelectedMessageId(null);
   };
 
-
-
-  return (
-    <div className="flex flex-col h-full dark:bg-[#0b0f19] bg-gray-50">
-      {/* Assistant Header */}
-      <div className="bg-white dark:bg-[#1e2a3b] shadow-md rounded-lg p-2">
-        <div className="text-xl font-semibold py-2 text-gray-800 dark:text-white">Assistant</div>
-        <p className="text-sm text-green-600 dark:text-green-300">Converse with Omnis</p>
+  return   (
+    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
+      {/* Header */}
+      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-700/50 px-6 py-4 flex-shrink-0">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <img src={favicon} alt="Omnis" className="w-6 h-6 rounded-full" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-slate-800 dark:text-white">Omnis Assistant</h1>
+              <p className="text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                Online and ready to help
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-      {/* Scrollable Messages Area */}
-      <div className="flex-1 overflow-y-auto space-y-4 min-h-screen px-4 m-2 lg:m-6" ref={messagesEndRef}>
-        <AnimatePresence initial={false}>
-          {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`relative flex mb-4 ${msg.sender === "creator" ? "justify-end" : "justify-start"}`}
-              onClick={() => setSelectedMessageId(prev => (prev === msg.id ? null : msg.id))}
-            >
-              {msg.sender === "creator" && (
-                <img
-                  src={profilePicture || favicon}
-                  alt="User"
-                  className="w-10 h-10 rounded-full absolute -right-4 -top-2 z-0 opacity-100"
-                />
-              )}
-              {msg.sender === "omnis" && (
-                <img
-                  src={favicon}
-                  alt="Omnis avatar"
-                  className="w-10 h-10 rounded-full absolute -left-4 -top-2 z-0 opacity-100"
-                />
-              )}
 
-              {/* Message Bubble */}
-              <div
-                className={`relative z-10 max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-2xl shadow-2xl transform hover:scale-105 hover:shadow-2xl transition-all duration-300 ease-in-out  break-words whitespace-pre-wrap
-                                    ${msg.sender === "creator"
-                    ? "bg-gradient-to-br from-blue-500 to-green-500 text-white rounded-br-none mr-6"
-                    : "dark:bg-indigo-800 dark:text-indigo-100 bg-gray-200 text-gray-800 rounded-bl-none ml-6"
+      {/* Messages Container */}
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full overflow-y-auto px-4 py-6" ref={messagesEndRef}>
+          <div className="max-w-4xl mx-auto space-y-6">
+            <AnimatePresence initial={false}>
+              {messages.map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className={`flex items-start gap-4 group ${
+                    msg.sender === "creator" ? "flex-row-reverse" : ""
                   }`}
-              >
-
-                {msg.text && !msg.fileType && (
-                  <div className="prose dark:prose-invert prose-sm max-w-full">
-                    <ReactMarkdown
-                      components={{
-                        h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-2" {...props} />,
-                        h2: ({ node, ...props }) => <h2 className="text-xl font-semibold mb-2" {...props} />,
-                        h3: ({ node, ...props }) => <h3 className="text-lg font-medium mb-1" {...props} />,
-                        p: ({ node, ...props }) => <p className="mb-2" {...props} />,
-                        code: ({ node, inline, className, children, ...props }) => {
-                          if (inline) {
-                            return <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded" {...props}>{children}</code>;
-                          }
-                          return (
-                            <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-x-auto">
-                              <code {...props}>{children}</code>
-                            </pre>
-                          );
-                        },
-                        a: ({ node, ...props }) => (
-                          <a className="text-blue-500 underline" target="_blank" rel="noopener noreferrer" {...props} />
-                        ),
-                        ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-2" {...props} />,
-                        ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-2" {...props} />,
-                        li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                        blockquote: ({ node, ...props }) => (
-                          <blockquote className="border-l-4 border-gray-400 pl-4 italic text-gray-600 dark:text-gray-300" {...props} />
-                        ),
-                      }}
-                    >
-                      {msg.text}
-                    </ReactMarkdown>
+                  onClick={() => setSelectedMessageId(prev => (prev === msg.id ? null : msg.id))}
+                >
+                  {/* Avatar */}
+                  <div className="flex-shrink-0">
+                    {msg.sender === "creator" ? (
+                      <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-blue-200 dark:ring-blue-800">
+                        <img
+                          src={profilePicture || favicon}
+                          alt="User"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <img src={favicon} alt="Omnis" className="w-5 h-5 rounded-full" />
+                      </div>
+                    )}
                   </div>
-                )}
 
-                {msg.fileType === "image" && (
-                  <img src={msg.text} alt={msg.fileName} className="w-48 h-48 object-cover rounded-lg" />
-                )}
-                {msg.fileType === "audio" && (
-                  <audio controls className="w-full">
-                    <source src={msg.text} type="audio/mpeg" />
-                  </audio>
-                )}
-                {msg.fileType === "application" && (
-                  <a href={msg.text} target="_blank" rel="noopener noreferrer" className="text-blue-200 underline">
-                    {msg.fileName}
-                  </a>
-                )}
+                  {/* Message Content */}
+                  <div className={`flex-1 max-w-2xl ${msg.sender === "creator" ? "text-right" : ""}`}>
+                    <div
+                      className={`inline-block px-4 py-3 rounded-2xl shadow-sm transition-all duration-200 hover:shadow-md ${
+                        msg.sender === "creator"
+                          ? "bg-blue-500 text-white rounded-tr-sm"
+                          : "bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-sm border border-slate-200 dark:border-slate-600"
+                      }`}
+                    >
+                      {msg.text && !msg.fileType && (
+                        <div className={`prose prose-sm max-w-none ${
+                          msg.sender === "creator" 
+                            ? "prose-invert" 
+                            : "dark:prose-invert"
+                        }`}>
+                          <ReactMarkdown
+                            components={{
+                              h1: ({ node, ...props }) => <h1 className="text-lg font-bold mb-2" {...props} />,
+                              h2: ({ node, ...props }) => <h2 className="text-base font-semibold mb-2" {...props} />,
+                              h3: ({ node, ...props }) => <h3 className="text-sm font-medium mb-1" {...props} />,
+                              p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                              code: ({ node, inline, className, children, ...props }) => {
+                                if (inline) {
+                                  return (
+                                    <code 
+                                      className={`px-1.5 py-0.5 rounded text-xs font-mono ${
+                                        msg.sender === "creator" 
+                                          ? "bg-blue-400/30 text-blue-100" 
+                                          : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                                      }`} 
+                                      {...props}
+                                    >
+                                      {children}
+                                    </code>
+                                  );
+                                }
+                                return (
+                                  <pre className={`p-3 rounded-lg overflow-x-auto text-xs ${
+                                    msg.sender === "creator" 
+                                      ? "bg-blue-400/20 text-blue-100" 
+                                      : "bg-slate-100 dark:bg-slate-800"
+                                  }`}>
+                                    <code {...props}>{children}</code>
+                                  </pre>
+                                );
+                              },
+                              a: ({ node, ...props }) => (
+                                <a 
+                                  className={`underline hover:no-underline ${
+                                    msg.sender === "creator" 
+                                      ? "text-blue-200 hover:text-blue-100" 
+                                      : "text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                                  }`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  {...props} 
+                                />
+                              ),
+                              ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-2" {...props} />,
+                              ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-2" {...props} />,
+                              li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                              blockquote: ({ node, ...props }) => (
+                                <blockquote 
+                                  className={`border-l-4 pl-4 italic ${
+                                    msg.sender === "creator" 
+                                      ? "border-blue-300 text-blue-100" 
+                                      : "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400"
+                                  }`} 
+                                  {...props} 
+                                />
+                              ),
+                            }}
+                          >
+                            {msg.text}
+                          </ReactMarkdown>
+                        </div>
+                      )}
 
-                {msg.sender === "creator" && msg.status === "pending" && (
-                  <span className="text-xs italic mt-1">…</span>
-                )}
-                {msg.sender === "creator" && msg.status === "sent" && (
-                  <span className="text-xs mt-1">✔</span>
-                )}
-              </div>
+                      {msg.fileType === "image" && (
+                        <img src={msg.text} alt={msg.fileName} className="max-w-xs h-auto rounded-lg" />
+                      )}
+                      {msg.fileType === "audio" && (
+                        <audio controls className="max-w-xs">
+                          <source src={msg.text} type="audio/mpeg" />
+                        </audio>
+                      )}
+                      {msg.fileType === "application" && (
+                        <a 
+                          href={msg.text} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className={`underline hover:no-underline ${
+                            msg.sender === "creator" 
+                              ? "text-blue-200 hover:text-blue-100" 
+                              : "text-blue-600 dark:text-blue-400"
+                          }`}
+                        >
+                          {msg.fileName}
+                        </a>
+                      )}
+                    </div>
 
-              {/* Message Actions */}
-              {selectedMessageId === msg.id && (
-                <div className="flex items-end mt-2 space-x-2 text-sm">
-                  <FiTrash2
-                    className="w-4 h-4 text-red-500 hover:text-red-700 cursor-pointer"
-                    title="Delete"
-                    onClick={() => handleAction('trash', msg)}
-                  />
-                  <FiEdit
-                    className="w-4 h-4 text-blue-500 hover:text-blue-700 cursor-pointer"
-                    title="Edit"
-                    onClick={() => handleAction('edit', msg)}
-                  />
-                  <FiCopy
-                    className="w-4 h-4 text-green-500 hover:text-green-700 cursor-pointer"
-                    title="Copy"
-                    onClick={() => handleAction('copy', msg)}
-                  />
-                  <FiMessageSquare
-                    className="w-4 h-4 text-indigo-500 hover:text-indigo-700 cursor-pointer"
-                    title="Reply"
-                    onClick={() => handleAction('reply', msg)}
-                  />
+                    {/* Message Status */}
+                    {msg.sender === "creator" && (
+                      <div className="flex items-center justify-end gap-1 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {msg.status === "pending" && (
+                          <span className="animate-pulse">Sending...</span>
+                        )}
+                        {msg.status === "sent" && (
+                          <span className="flex items-center gap-1">
+                            <span>✓</span>
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Message Actions */}
+                    {selectedMessageId === msg.id && (
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={`flex items-center gap-2 mt-2 ${
+                          msg.sender === "creator" ? "justify-end" : "justify-start"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-full px-3 py-1 shadow-lg border border-slate-200 dark:border-slate-600">
+                          <FiCopy
+                            className="w-4 h-4 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
+                            title="Copy"
+                            onClick={() => handleAction('copy', msg)}
+                          />
+                          <FiEdit
+                            className="w-4 h-4 text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 cursor-pointer transition-colors"
+                            title="Edit"
+                            onClick={() => handleAction('edit', msg)}
+                          />
+                          <FiMessageSquare
+                            className="w-4 h-4 text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer transition-colors"
+                            title="Reply"
+                            onClick={() => handleAction('reply', msg)}
+                          />
+                          <FiTrash2
+                            className="w-4 h-4 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer transition-colors"
+                            title="Delete"
+                            onClick={() => handleAction('trash', msg)}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {/* Typing Indicators */}
+            {typingStatus === "user" && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-end gap-4"
+              >
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                  <span>You are typing</span>
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
                 </div>
-              )}
-            </motion.div>
-          ))}
-        </AnimatePresence>
+              </motion.div>
+            )}
 
-        {/* Typing Indicator */}
-        {typingStatus === "user" && (
-          <div className="flex justify-end items-center space-x-2 text-sm text-gray-400 pr-2 animate-pulse dark:text-gray-300">
-            <span className="text-base">You are typing</span>
-            <span className="animate-bounce">.</span>
-            <span className="animate-bounce delay-150">.</span>
-            <span className="animate-bounce delay-300">.</span>
+            {typingStatus === "omnis" && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-4"
+              >
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <img src={favicon} alt="Omnis" className="w-5 h-5 rounded-full" />
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                  <span>Omnis is typing</span>
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
-        )}
-        {typingStatus === "omnis" && (
-          <div className="flex items-center space-x-2 text-sm text-gray-400 pl-2 animate-pulse dark:text-gray-300">
-            <span className="text-base">Omnis is typing</span>
-            <span className="animate-bounce">.</span>
-            <span className="animate-bounce delay-150">.</span>
-            <span className="animate-bounce delay-300">.</span>
-          </div>
-        )}
-        <div ref={scrollRef} />
+          <div ref={scrollRef} />
+        </div>
       </div>
 
       {/* Input Section */}
-      <div className="bg-gray-50 dark:bg-[#0b0f19] sticky px-4 py-2 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col border-blue-700 relative">
+      <div className="flex-shrink-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-t border-slate-200/50 dark:border-slate-700/50 px-4 py-4">
+        <div className="max-w-4xl mx-auto">
           <div className="relative">
-            <textarea
-              rows={1}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              onFocus={() => setTypingStatus("user")}
-              onBlur={() => setTypingStatus("")}
-              placeholder="Message Omnis..."
-              className="w-full resize-none rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-[#1f2937] dark:text-white dark:placeholder-gray-400 px-4 py-2 pr-10 focus:ring-2 focus:ring-blue-400 focus:outline-none max-h-40 overflow-y-auto"
-              style={{
-                maxHeight: '160px',
-                minHeight: '48px',
-                overflowY: 'auto',
-              }}
-              aria-label="Type your message"
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300">
-              <SendHorizonal
-                className="w-5 h-5 text-blue-600 hover:text-blue-800 cursor-pointer"
-                title="Send"
-                onClick={handleSend}
-                aria-label="Send message"
-              />
-            </div>
-          </div>
+            {/* Main Input Container */}
+            <div className="bg-white dark:bg-slate-700 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm focus-within:shadow-md focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 dark:focus-within:border-blue-400 transition-all duration-200">
+              <div className="flex items-end gap-3 p-3">
+                {/* File Upload Icons */}
+                <div className="flex items-center gap-2 pb-2">
+                  <button
+                    onClick={() => document.getElementById("fileInput")?.click()}
+                    className="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    title="Attach file"
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </button>
+                  <button
+                    className="p-2 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                    title="Send image"
+                  >
+                    <ImageIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    title="Record audio"
+                  >
+                    <Mic className="w-5 h-5" />
+                  </button>
+                </div>
 
-          {/* Upload Icons */}
-          <div className="flex items-center gap-4 mt-2 px-1">
-            <Paperclip
-              className="w-5 h-5 text-gray-500 dark:text-gray-300 hover:text-blue-500 cursor-pointer"
-              title="Attach file"
-              onClick={() => document.getElementById("fileInput")?.click()}
+                {/* Text Input */}
+                <div className="flex-1 relative">
+                  <textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    onFocus={() => setTypingStatus("user")}
+                    onBlur={() => setTypingStatus("")}
+                    placeholder="Message Omnis..."
+                    className="w-full resize-none bg-transparent text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none py-2 px-3 max-h-32 min-h-[2.5rem] leading-6"
+                    rows={1}
+                    style={{
+                      resize: 'none',
+                      overflow: 'hidden',
+                      minHeight: '2.5rem',
+                      maxHeight: '8rem',
+                    }}
+                    onInput={(e) => {
+                      e.target.style.height = 'auto';
+                      e.target.style.height = e.target.scrollHeight + 'px';
+                    }}
+                  />
+                </div>
+
+                {/* Send Button */}
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim()}
+                  className="flex-shrink-0 p-2 bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
+                  title="Send message"
+                >
+                  <SendHorizonal className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Hidden File Input */}
+            <input
+              id="fileInput"
+              type="file"
+              accept="image/*,audio/*,.pdf,.doc,.docx"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
             />
-            <ImageIcon
-              className="w-5 h-5 text-gray-500 dark:text-gray-300 hover:text-green-500 cursor-pointer"
-              title="Send image"
-            />
-            <Mic
-              className="w-5 h-5 text-gray-500 dark:text-gray-300 hover:text-red-500 cursor-pointer"
-              title="Record audio"
-            />
-            <div ref={messagesEndRef} />
           </div>
-          <input
-            id="fileInput"
-            type="file"
-            accept="image/*,audio/*,.pdf,.doc,.docx"
-            className="hidden"
-            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-          />
         </div>
       </div>
     </div>

@@ -6,7 +6,6 @@ import { FiTrash2, FiEdit, FiCopy, FiMessageSquare } from "react-icons/fi";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from '../AuthContext';
-import { sendToOpenAIStream } from "../services/openAIService"; // ✅ CORRECTED IMPORT
 import ReactMarkdown from 'react-markdown';
 
 export default function PartnerChat() {

@@ -66,66 +66,41 @@ export default function PartnerChat() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+  if (!input.trim()) return;
 
-    const userMessage = {
-      id: nextId.current++,
-      sender: "creator",
-      text: input,
-      status: "pending",
-      read: false,
-    };
-
-    const userInput = input;
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setTypingStatus("omnis");
-
-    setTimeout(() => {
-      setMessages((prev) =>
-        prev.map(m => m.id === userMessage.id ? { ...m, status: "sent" } : m)
-      );
-    }, 500);
-
-    const botReply = {
-      id: nextId.current++,
-      sender: "omnis",
-      text: "",
-      status: "sent",
-      read: true,
-    };
-
-    setMessages((prev) => [...prev, botReply]);
-
-    try {
-      const conversationHistory = messages.filter(msg =>
-        msg.sender !== "creator" || msg.id !== userMessage.id
-      );
-
-      await sendToOpenAIStream(userInput, conversationHistory, (chunk, fullText) => {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === botReply.id
-              ? { ...m, text: fullText }
-              : m
-          )
-        );
-      });
-
-      setTypingStatus("");
-    } catch (error) {
-      console.error("Error sending message to OpenAI:", error);
-
-      setMessages((prev) =>
-        prev.map(m =>
-          m.id === botReply.id
-            ? { ...m, text: "Sorry, I'm having trouble processing your message right now. Please try again." }
-            : m
-        )
-      );
-      setTypingStatus("");
-    }
+  const userMessage = {
+    id: nextId.current++,
+    sender: "creator",
+    text: input,
+    status: "pending",
+    read: false,
   };
+
+  setMessages((prev) => [...prev, userMessage]);
+  setInput("");
+  setTypingStatus("omnis");
+
+  setTimeout(() => {
+    setMessages((prev) =>
+      prev.map((m) => m.id === userMessage.id ? { ...m, status: "sent" } : m)
+    );
+  }, 500);
+
+  // Mock reply (optional)
+  const botReply = {
+    id: nextId.current++,
+    sender: "omnis",
+    text: "Thanks for your message. AI replies are currently disabled.",
+    status: "sent",
+    read: true,
+  };
+
+  setTimeout(() => {
+    setMessages((prev) => [...prev, botReply]);
+    setTypingStatus("");
+  }, 800);
+};
+
 
   const handleFileUpload = (file) => {
     if (!file) return;

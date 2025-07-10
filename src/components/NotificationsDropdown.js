@@ -15,13 +15,14 @@ import { useAuth } from "../AuthContext";
 import { generateUserNotifications } from "../components/GenerateUserNotification";
 import moment from "moment";
 import { Bell, Dot, X } from "lucide-react";
-import { Link } from "react-router-dom"; // or 'next/link' for Next.js
+import { Link } from "react-router-dom";
 
 export default function NotificationDropdown() {
   const { user } = useAuth();
   const [latest, setLatest] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+  const [isMinimized, setIsMinimized] = useState(false);
   const prevNotifRef = useRef([]);
   const dropdownRef = useRef(null);
   const position = useRef({ x: 0, y: 0 });
@@ -145,69 +146,74 @@ export default function NotificationDropdown() {
         <h4 className="text-sm font-bold text-gray-600 dark:text-gray-300">
           Recent Notifications
         </h4>
-        <button onClick={() => setIsOpen(false)}>
-          <X className="w-4 h-4 text-gray-500 hover:text-gray-700 dark:text-gray-300" />
-        </button>
-      </div>
-
-      <div className="max-h-96 overflow-y-auto">
-        {latest.length === 0 ? (
-          <div className="p-4 text-center">
-            <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-500 text-sm">No new notifications</p>
-          </div>
-        ) : (
-          <ul className="divide-y divide-gray-100 dark:divide-gray-700">
-            {latest.map((n) => (
-              <Link
-                to={n.url || "#"}
-                key={n.id}
-                onClick={() => {
-                  if (!n.read && n.source !== "synthetic") markAsRead(n.id);
-                  setIsOpen(false); // close dropdown
-                }}
-              >
-                <li
-                  className={`p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 ease-in-out transform ${
-                    !n.read && n.source !== "synthetic" ? "bg-blue-50 dark:bg-blue-900/20 scale-[1.02]" : ""
-                  }`}
-                >
-                  <div className="flex items-start">
-                    {getNotificationIcon(n.type)}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-gray-700 dark:text-gray-200 truncate">
-                        {n.title}
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mt-1">
-                        {n.message}
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {formatTimestamp(n.timestamp)}
-                      </div>
-                    </div>
-                    {!n.read && n.source !== "synthetic" && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
-                    )}
-                  </div>
-                </li>
-              </Link>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {latest.length > 0 && (
-        <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-          <Link
-            to="/notifications"
-            className="w-full block text-center text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-          >
-            View All Notifications
-          </Link>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setIsMinimized(prev => !prev)}>
+            <span className="text-gray-500 hover:text-gray-700 dark:text-gray-300 text-lg font-bold leading-none">
+              {isMinimized ? "+" : "–"}
+            </span>
+          </button>
+          <button onClick={() => setIsOpen(false)}>
+            <X className="w-4 h-4 text-gray-500 hover:text-gray-700 dark:text-gray-300" />
+          </button>
         </div>
+      </div>
+
+      {!isMinimized && (
+        <>
+          <div className="max-h-96 overflow-y-auto">
+            {latest.length === 0 ? (
+              <div className="p-4 text-center">
+                <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">No new notifications</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+                {latest.map((n) => (
+                  <li
+                    key={n.id}
+                    className={`p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 ease-in-out transform ${
+                      !n.read && n.source !== "synthetic" ? "bg-blue-50 dark:bg-blue-900/20 scale-[1.02]" : ""
+                    }`}
+                    onClick={() => {
+                      if (!n.read && n.source !== "synthetic") markAsRead(n.id);
+                      setIsOpen(false);
+                    }}
+                  >
+                    <Link to={n.url || "#"} className="flex items-start gap-2 w-full h-full no-underline">
+                      {getNotificationIcon(n.type)}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-gray-700 dark:text-gray-200 truncate">
+                          {n.title}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mt-1">
+                          {n.message}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {formatTimestamp(n.timestamp)}
+                        </div>
+                      </div>
+                      {!n.read && n.source !== "synthetic" && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {latest.length > 0 && (
+            <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+              <Link
+                to="/notifications"
+                className="w-full block text-center text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+              >
+                View All Notifications
+              </Link>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
-// Note: Ensure you have the necessary CSS styles for the dropdown and its elements
-// This component assumes you have a Firebase setup and the necessary context for authentication

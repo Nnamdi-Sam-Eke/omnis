@@ -25,6 +25,7 @@ import {
 import { useAuth } from "../AuthContext";
 import { ChevronRight, ChevronUp, Lock, Play, Crown, FileText, Copy, Undo, Redo, Download, Type } from "lucide-react";
 import ScenarioSimulationCard from "./SimulationResult";
+import ShimmerLoader from "./ShimmerLoader";
 
 // Enhanced InputPreview component with right-side preview and all features integrated
 const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenario here..." }) => {
@@ -552,11 +553,7 @@ export default function ScenarioInput({ onSimulate }) {
 
   if (loading) {
     return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-12 bg-blue-300 dark:bg-blue-700 rounded" />
-      </div>
+<ShimmerLoader height="h-32" width="w-full" rounded="rounded-lg" />
     );
   }
 
@@ -736,16 +733,18 @@ export default function ScenarioInput({ onSimulate }) {
               Analyzing Scenarios...
             </h3>
             <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
+              {[...Array(1)].map((_, i) => (
                 <div
-                  key={i}
-                  className="animate-pulse space-y-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-4"
-                >
-                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-2/3" />
-                  <div className="h-3 bg-gray-300 dark:bg-gray-500 rounded w-full" />
-                  <div className="h-3 bg-gray-300 dark:bg-gray-500 rounded w-5/6" />
-                  <div className="h-3 bg-gray-300 dark:bg-gray-500 rounded w-3/4" />
-                </div>
+  key={i}
+  className="space-y-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-4 overflow-hidden relative"
+>
+<ShimmerLoader height="h-4" width="w-2/3" rounded="rounded-md" />
+<ShimmerLoader height="h-3" width="w-full" rounded="rounded-md" />
+ <ShimmerLoader height="h-3" width="w-5/6" rounded="rounded-md" />
+<ShimmerLoader height="h-6" width="w-3/4" rounded="rounded-md" />
+<ShimmerLoader height="h-6" width="w-full" rounded="rounded-md" />
+</div>
+
               ))}
             </div>
           </div>

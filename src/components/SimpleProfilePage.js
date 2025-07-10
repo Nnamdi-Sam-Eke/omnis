@@ -202,7 +202,7 @@ useEffect(() => {
               setBio(userData.bio || "");
               setEmail(userData.email || "");
               setPhone(userData.phone || "");
-              setCity(userData.location || "");
+              setCity(userData.city || "");
               setCountry(userData.country || "");
 
               // 👉 Add this to handle profile picture

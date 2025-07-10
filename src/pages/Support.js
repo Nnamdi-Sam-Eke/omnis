@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { ChevronRight, ChevronUp } from 'react-feather';
 
 // Lazy loading the contact form component
@@ -7,6 +7,15 @@ const ContactForm = lazy(() => import('../components/ContactForm'));
 const SupportPage = () => {
   const [activeTab, setActiveTab] = useState('FAQs');
   const [openFaqIndex, setOpenFaqIndex] = useState({ categoryIdx: null, faqIdx: null });
+  const [loading, setLoading] = useState(true);
+    
+    
+    
+      // Timer to switch off loading after 4 seconds (on mount)
+      useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 4000);
+        return () => clearTimeout(timer);
+      }, []);
 
   // FAQs Data with categories
   const faqCategories = [
@@ -73,6 +82,14 @@ const SupportPage = () => {
     }
   };
 
+     if (loading) {
+      return (
+        <div className="animate-pulse mx-auto w-10/12  space-y-4">
+          <div className="h-80 bg-gray-300 dark:bg-gray-700 rounded" />
+
+        </div>
+      );
+    }
   return (
     <div className="p-6">
       {/* Tabs Navigation */}

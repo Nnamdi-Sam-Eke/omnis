@@ -32,7 +32,7 @@ import CreatorsCorner from './Creator\'sCorner';
 import Footer from './components/Footer';
 import GoodbyePage from './pages/GoodbyePage'; // adjust path accordingly
 
-
+import ErrorBoundary from './components/ErrorBoundary';
 import { OmnisProvider } from './context/OmnisContext';
 import { MemoryProvider } from './MemoryContext';
 import { AccountProvider } from './AccountContext';
@@ -327,12 +327,13 @@ useEffect(() => {
 // ✅ Top-Level App with BrowserRouter and DiscountProvider added
 export default function App() {
   return (
-
-    <AuthProvider>
-      <DiscountProvider>
-        <AppContent />
-      </DiscountProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+          <DiscountProvider>
+            <AppContent />
+          </DiscountProvider>
+        </AuthProvider>
+    </ErrorBoundary>
 
   );
 }

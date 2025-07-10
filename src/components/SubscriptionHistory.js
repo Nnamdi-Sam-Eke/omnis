@@ -1,4 +1,5 @@
 import React, {useEffect} from 'react';
+import ShimmerLoader from './ShimmerLoader';
 
 const SubscriptionHistory = ({ subscriptions }) => {
   // Provide default empty array if undefined
@@ -16,11 +17,7 @@ const SubscriptionHistory = ({ subscriptions }) => {
   // If subscriptions is undefined, show loading state
  if (loading) {
     return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
-      </div>
+<ShimmerLoader height="h-32" width="w-full" rounded="rounded-lg" />
     );
   }
 

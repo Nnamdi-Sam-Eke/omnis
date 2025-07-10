@@ -151,9 +151,7 @@ const ScenarioInsightsCard = ({ processedData = [] }) => {
   if (loading) {
   return (
     <div className="space-y-4">
-      <ShimmerLoader height="h-10" />
-      <ShimmerLoader height="h-10" />
-      <ShimmerLoader height="h-12" />
+      <ShimmerLoader height="h-32" width="w-full" rounded="rounded " />
     </div>
   );
 }

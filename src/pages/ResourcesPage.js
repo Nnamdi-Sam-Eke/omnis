@@ -46,9 +46,8 @@ const ResourcesPage = () => {
    if (loading) {
       return (
         <div className="animate-pulse mx-auto w-10/12  space-y-4">
-          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-          <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-          <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
+          <div className="h-80 bg-gray-300 dark:bg-gray-700 rounded" />
+
         </div>
       );
     }

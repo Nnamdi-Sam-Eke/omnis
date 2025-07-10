@@ -25,11 +25,32 @@ const ProfilePage = () => {
     DataCollection: false,
   });
   const [loading, setLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showReauth, setShowReauth] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
+  // Timer to ensure loader shows for minimum 4 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (dataLoaded) {
+        setLoading(false);
+      }
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [dataLoaded]);
+
+  // Check if we can hide loading when data is loaded
+  useEffect(() => {
+    if (dataLoaded) {
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [dataLoaded]);
+    
   // Fetch user from Firebase Auth
   useEffect(() => {
     const auth = getAuth();
@@ -42,14 +63,19 @@ const ProfilePage = () => {
     if (!currentUser) return;
 
     const fetchUserData = async () => {
-      const userRef = doc(db, "users", currentUser.uid);
-      const docSnap = await getDoc(userRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setUserData(data);
-        setIsOnline(data?.isOnline || false);
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        const docSnap = await getDoc(userRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setUserData(data);
+          setIsOnline(data?.isOnline || false);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setDataLoaded(true);
       }
-      setLoading(false);
     };
 
     fetchUserData();
@@ -135,33 +161,31 @@ const ProfilePage = () => {
   };
 
   // Perform final delete after re-authentication
-  // This function deletes the user from Firestore and Firebase Auth, then redirects to a goodbye page
-const performFinalDelete = async () => {
-  if (!currentUser) return;
+  const performFinalDelete = async () => {
+    if (!currentUser) return;
 
-  try {
-    const uid = currentUser.uid;
+    try {
+      const uid = currentUser.uid;
 
-    // Delete Firestore user doc
-    await deleteDoc(doc(db, 'users', uid));
+      // Delete Firestore user doc
+      await deleteDoc(doc(db, 'users', uid));
 
-    // Delete Firestore session doc
-    await deleteDoc(doc(db, 'sessions', uid));
+      // Delete Firestore session doc
+      await deleteDoc(doc(db, 'sessions', uid));
 
-    // Delete Firebase Auth user
-    await deleteUser(currentUser);
+      // Delete Firebase Auth user
+      await deleteUser(currentUser);
 
-    // Sign out and redirect
-    await signOut(getAuth());
+      // Sign out and redirect
+      await signOut(getAuth());
 
-  } catch (error) {
-    console.error("Account deletion failed:", error);
-    alert("Something went wrong while deleting your account. Please try again.");
-  }
-};
+    } catch (error) {
+      console.error("Account deletion failed:", error);
+      alert("Something went wrong while deleting your account. Please try again.");
+    }
+  };
+
   // Handle session logout
-  // This function logs out the user from all other devices by updating the session version 
-
   const handleSessionLogout = useCallback(async () => {
     if (!currentUser) return;
     if (window.confirm("Log out from all other devices?")) {
@@ -173,10 +197,16 @@ const performFinalDelete = async () => {
     }
   }, [currentUser]);
 
-  // ... (return block stays the same)
-
-  
-
+  // Show loading screen
+  if (loading) {  
+    return (
+      
+        <div className="animate-pulse mx-auto w-10/12 mt-6 max-w-4xl space-y-4">
+          <div className="h-80 bg-gray-300 dark:bg-gray-700 rounded w-full mb-8" />
+        </div>
+    
+    );
+  }
 
   return (
     <div className="p-4 space-y-6">
@@ -189,7 +219,6 @@ const performFinalDelete = async () => {
           Settings saved successfully!
         </div>
       )}
-
 
       <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900 p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 w-full max-w-6xl mx-auto">

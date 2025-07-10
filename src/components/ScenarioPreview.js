@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { CheckSquare, Trash2, FileEdit, PlayCircle, List, Grid, Filter, BarChart3, Loader2, ChevronDown, Expand, Minimize2, X, ChevronRight, ChevronUp } from 'lucide-react';
+import ShimmerLoader from './ShimmerLoader';
 
 const mockScenarios = [
   { id: '1', name: 'Q3 Market Forecast', category: 'Finance', inputs: { revenue: 10000, cost: 8000 }, lastSimulated: '2025-06-08', result: { profit: 2000 } },
@@ -348,11 +349,7 @@ const ScenarioPreview = () => {
 
   if (loading) {
     return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
-      </div>
+    <ShimmerLoader height="h-32" width="w-full" rounded="rounded-lg" /> 
     );
   }
 

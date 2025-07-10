@@ -234,9 +234,7 @@ const ActivityLogPage = () => {
   if (loading) {
     return (
       <div className="animate-pulse w-10/12 mx-auto space-y-4 flex flex-col items-center justify-center min-h-screen">
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded w-full" />
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded w-full" />
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded w-full" />
+        <div className="h-80 bg-gray-300 dark:bg-gray-700 rounded w-full" />
       </div>
     );
   }

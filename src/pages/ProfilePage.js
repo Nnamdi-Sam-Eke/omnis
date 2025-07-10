@@ -239,7 +239,7 @@ const AccountPage = () => {
 <div><strong>Last Name:</strong> {user?.lastname || userData?.lastname || 'N/A'}</div>
 <div><strong>Email:</strong> {user?.email || userData?.email || 'N/A'}</div>
 <div><strong>Phone:</strong> {user?.phone || userData?.phone || 'N/A'}</div>
-<div><strong>City:</strong> {user?.location || userData?.location || 'N/A'}</div>
+<div><strong>City:</strong> {user?.city || userData?.city || 'N/A'}</div>
 <div><strong>Country:</strong> {user?.country || userData?.country || 'N/A'}</div>
             </div>
           </div>

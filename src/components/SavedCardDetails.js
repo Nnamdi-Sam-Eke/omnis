@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ShimmerLoader from './ShimmerLoader';
 
 const SavedCardDetails = ({ card, onUpdate, onRemove }) => {
   const [loading, setLoading] = useState(true);
@@ -11,11 +12,7 @@ const SavedCardDetails = ({ card, onUpdate, onRemove }) => {
 
   if (loading) {
     return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
-      </div>
+<ShimmerLoader height="h-32" width="w-full" rounded="rounded-lg"/>
     );
   }
 

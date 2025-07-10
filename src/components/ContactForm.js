@@ -91,15 +91,13 @@ const ContactForm = () => {
   if (loading) {
     return (
       <div className="animate-pulse mx-auto w-10/12 space-y-4 transition duration-500 ease-in-out">
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-80 bg-gray-300 dark:bg-gray-700 rounded" />
       </div>
     );
   }
 
   return (
-    <div className="w-full px-6 py-10 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white space-y-10">
+    <div className="w-full px-6 py-10 pb-10 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white space-y-10">
       <div className="flex flex-col lg:flex-row gap-10 max-w-6xl mx-auto">
         <div className="flex-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-blue-500/50 transition">
           <h2 className="text-2xl font-semibold text-green-600 dark:text-green-500 mb-6">Contact Us</h2>

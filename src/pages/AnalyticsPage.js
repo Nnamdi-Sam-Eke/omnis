@@ -6,7 +6,7 @@ import SkeletonLoader from '../components/SkeletonLoader';
 import useAccessControl from '../hooks/useAccessControl';
 import UpgradeModal from '../components/UpgradeModal';
 import { Clock, FlaskConical, Target, Lightbulb, Download, FileText } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import CountUp from 'react-countup';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -26,6 +26,7 @@ const AnalyticsPage = () => {
   const [loading, setLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
   const { user } = useAuth();
   const userTier = user?.tier || 'Free';
 
@@ -55,6 +56,12 @@ const AnalyticsPage = () => {
   const handleCloseModal = () => {
     closeModal();
     setLoading(false);
+  };
+
+  // Move the handleExportReportClick function outside of useEffect
+  const handleExportReportClick = () => {
+    setToastMessage("Feature Coming Soon!");
+    setTimeout(() => setToastMessage(""), 4000);
   };
 
   useEffect(() => {
@@ -209,61 +216,37 @@ const AnalyticsPage = () => {
         
         {/* Enhanced Download Button */}
         <motion.button
-          onClick={downloadPDF}
+          onClick={handleExportReportClick}
+          initial={{ scale: 1 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className={`
             relative group flex items-center gap-3 px-6 py-3 
             text-white font-medium rounded-xl
             transition-all duration-300 ease-in-out
-            shadow-lg hover:shadow-xl
-            ${isDownloading 
-              ? 'bg-gradient-to-r from-orange-500 to-orange-600 cursor-wait' 
-              : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'
-            }
-            transform hover:-translate-y-0.5
+            shadow-lg
+            cursor-not-allowed
+            ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}
+            bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl transform hover:-translate-y-0.5
             border border-blue-500/20
             backdrop-blur-sm
           `}
         >
           {/* Background glow effect */}
           <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-400/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
-          
+
           {/* Button content */}
           <div className="relative flex items-center gap-3">
-            {isDownloading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <span className="text-sm font-semibold">Generating PDF...</span>
-              </>
-            ) : (
-              <>
-                <div className="relative">
-                  <Download className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
-                  <FileText className="w-3 h-3 absolute -bottom-1 -right-1 text-white/80" />
-                </div>
-                <span className="text-sm font-semibold">Export Report</span>
-                
-                {/* Status indicator */}
-                <div className={`
-                  w-2 h-2 rounded-full transition-all duration-300
-                  ${allChartsReady 
-                    ? 'bg-green-400 shadow-lg shadow-green-400/50' 
-                    : 'bg-yellow-400 animate-pulse shadow-lg shadow-yellow-400/50'
-                  }
-                `}></div>
-              </>
-            )}
+            <div className="relative">
+              <Download className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
+              <FileText className="w-3 h-3 absolute -bottom-1 -right-1 text-white/80" />
+            </div>
+            <span className="text-sm font-semibold">Export Report</span>
           </div>
-          
+
           {/* Tooltip */}
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-10">
-            {isDownloading 
-              ? 'Please wait...' 
-              : allChartsReady 
-                ? 'Download complete analytics report' 
-                : 'Download available data (some charts still loading)'
-            }
+            Feature Coming Soon
           </div>
         </motion.button>
       </div>
@@ -357,6 +340,27 @@ const AnalyticsPage = () => {
           </>
         )}
       </div>
+      
+      {/* Modified Toast - Now positioned at top-left */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            key="toast"
+            initial={{ opacity: 0, x: -100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -100 }}
+            transition={{ duration: 0.4 }}
+            className="fixed top-6 left-6 backdrop-blur-lg bg-green-600 text-white py-3 px-4 rounded-lg shadow-lg z-[1000] max-w-xs"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium">{toastMessage}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {showUpgradeModal && <UpgradeModal onClose={handleCloseModal} />}
     </div>
   );
 };

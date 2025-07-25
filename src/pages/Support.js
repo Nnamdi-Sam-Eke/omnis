@@ -84,105 +84,190 @@ const SupportPage = () => {
 
      if (loading) {
       return (
-        <div className="animate-pulse mx-auto w-10/12  space-y-4">
-          <div className="h-80 bg-gray-300 dark:bg-gray-700 rounded" />
-
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800 flex items-center justify-center">
+          <div className="animate-pulse mx-auto w-10/12 max-w-4xl space-y-6">
+            <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-2xl" />
+            <div className="h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-2xl" />
+            <div className="h-80 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-2xl" />
+          </div>
         </div>
       );
     }
+
   return (
-    <div className="p-6">
-      {/* Tabs Navigation */}
-      <div role="tablist" className="flex flex-wrap gap-4 justify-center mt-8 sm:justify-start mb-4 sm:mb-6">
-        {Object.keys(tabLabels).map(tab => (
-          <button
-            key={tab}
-            role="tab"
-            aria-selected={activeTab === tab}
-            aria-controls={`${tab}-panel`}
-            id={`${tab}-tab`}
-            onClick={() => setActiveTab(tab)}
-            title={`Go to ${tabLabels[tab]}`}
-            className={`px-4 py-2 sm:px-5 sm:py-2 rounded-full font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              activeTab === tab
-                ? 'bg-blue-500 text-white border border-blue-700'
-                : 'bg-gray-300 text-gray-800 hover:bg-green-300'
-            }`}
-          >
-            {tabLabels[tab]}
-          </button>
-        ))}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800">
+      {/* Header Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-teal-600/10 dark:from-blue-400/5 dark:via-purple-400/5 dark:to-teal-400/5" />
+        <div className="relative px-4 sm:px-6 lg:px-8 pt-16 pb-12">
+          <div className="max-w-4xl mx-auto text-center space-y-4">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-teal-600 bg-clip-text text-transparent">
+              Support Center
+            </h1>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Get help with Omnis and find answers to your questions
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Tabs Content */}
-      <div className="relative grid h-full grid-cols-1 msm:grid-cols-2 lg:grid-cols-1 gap-6 transition-all">
-        {/* FAQs Tab */}
-        {activeTab === 'FAQs' && (
-          <Suspense
-            fallback={
-              <div className="flex justify-center items-center h-40">
-                <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
-              </div>
-            }
-          >
-            <div id="FAQs-panel" role="tabpanel" aria-labelledby="FAQs-tab" className="space-y-4">
-              <h3 className="text-xl font-semibold text-blue-600 dark:text-blue-300">Frequently Asked Questions</h3>
-              {faqCategories.map((category, categoryIdx) => (
-                <div key={categoryIdx} className="space-y-4">
-                  <h4 className="text-lg font-semibold text-black dark:text-white">{category.category}</h4>
-                  {category.faqs.map((faq, faqIdx) => (
-                    <div
-                      key={faqIdx}
-                      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-blue-500/30 transition-all"
-                      title="Click to expand the answer"
-                    >
-                      <button
-                        role="button"
-                        tabIndex={0}
-                        aria-expanded={isOpen(categoryIdx, faqIdx)}
-                        aria-controls={`faq-${categoryIdx}-${faqIdx}`}
-                        onClick={() => handleFaqToggle(categoryIdx, faqIdx)}
-                        onKeyDown={e =>
-                          (e.key === 'Enter' || e.key === ' ') && handleFaqToggle(categoryIdx, faqIdx)
-                        }
-                        className="w-full text-left flex justify-between items-center text-base md:text-lg font-medium text-green-500"
-                      >
-                        {faq.question}
-                        <span className="ml-2 text-xl">
-                          {isOpen(categoryIdx, faqIdx) ? <ChevronUp className='text-blue-300 dark:text-white'/> : <ChevronRight className='text-blue-300 dark:text-white'/>}
-                        </span>
-                      </button>
-                      {isOpen(categoryIdx, faqIdx) && (
-                        <p
-                          id={`faq-${categoryIdx}-${faqIdx}`}
-                          className="mt-3 text-sm md:text-base text-gray-700 dark:text-gray-300"
-                        >
-                          {faq.answer}
-                        </p>
-                      )}
+      {/* Main Content */}
+      <div className="relative -mt-8 pb-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Tabs Navigation */}
+          <div role="tablist" className="flex flex-wrap gap-4 justify-center mb-8">
+            {Object.keys(tabLabels).map(tab => (
+              <button
+                key={tab}
+                role="tab"
+                aria-selected={activeTab === tab}
+                aria-controls={`${tab}-panel`}
+                id={`${tab}-tab`}
+                onClick={() => setActiveTab(tab)}
+                title={`Go to ${tabLabels[tab]}`}
+                className={`group relative px-8 py-3 rounded-full font-semibold text-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  activeTab === tab
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25 transform scale-105'
+                    : 'bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg hover:scale-105 backdrop-blur-sm border border-white/20 dark:border-gray-700/50'
+                }`}
+              >
+                <span className="relative z-10">{tabLabels[tab]}</span>
+                {activeTab === tab && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-sm opacity-30 animate-pulse" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Tabs Content */}
+          <div className="relative transition-all duration-300">
+            {/* FAQs Tab */}
+            {activeTab === 'FAQs' && (
+              <Suspense
+                fallback={
+                  <div className="flex justify-center items-center h-40">
+                    <div className="relative">
+                      <div className="w-12 h-12 border-4 border-blue-200 dark:border-blue-800 rounded-full animate-spin" />
+                      <div className="absolute top-0 left-0 w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  </div>
+                }
+              >
+                <div id="FAQs-panel" role="tabpanel" aria-labelledby="FAQs-tab" className="space-y-8">
+                  {faqCategories.map((category, categoryIdx) => (
+                    <div key={categoryIdx} className="group">
+                      {/* Category Header */}
+                      <div className="flex items-center space-x-3 mb-6">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          categoryIdx === 0 ? 'bg-gradient-to-br from-blue-500 to-blue-600' :
+                          categoryIdx === 1 ? 'bg-gradient-to-br from-green-500 to-teal-600' :
+                          'bg-gradient-to-br from-purple-500 to-pink-600'
+                        }`}>
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            {categoryIdx === 0 ? (
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            ) : categoryIdx === 1 ? (
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            ) : (
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            )}
+                          </svg>
+                        </div>
+                        <h4 className="text-2xl font-bold text-gray-900 dark:text-white">{category.category}</h4>
+                      </div>
+
+                      {/* FAQ Items */}
+                      <div className="space-y-4">
+                        {category.faqs.map((faq, faqIdx) => (
+                          <div
+                            key={faqIdx}
+                            className="group relative overflow-hidden rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                            title="Click to expand the answer"
+                          >
+                            <div className={`absolute inset-0 bg-gradient-to-br opacity-5 ${
+                              categoryIdx === 0 ? 'from-blue-500 to-blue-600' :
+                              categoryIdx === 1 ? 'from-green-500 to-teal-600' :
+                              'from-purple-500 to-pink-600'
+                            }`} />
+                            <div className="relative p-6">
+                              <button
+                                role="button"
+                                tabIndex={0}
+                                aria-expanded={isOpen(categoryIdx, faqIdx)}
+                                aria-controls={`faq-${categoryIdx}-${faqIdx}`}
+                                onClick={() => handleFaqToggle(categoryIdx, faqIdx)}
+                                onKeyDown={e =>
+                                  (e.key === 'Enter' || e.key === ' ') && handleFaqToggle(categoryIdx, faqIdx)
+                                }
+                                className="w-full text-left flex justify-between items-center text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                              >
+                                <span className="pr-4">{faq.question}</span>
+                                <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                                  isOpen(categoryIdx, faqIdx) 
+                                    ? 'bg-blue-500 text-white rotate-180' 
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900'
+                                }`}>
+                                  {isOpen(categoryIdx, faqIdx) ? 
+                                    <ChevronUp className="w-5 h-5" /> : 
+                                    <ChevronRight className="w-5 h-5" />
+                                  }
+                                </span>
+                              </button>
+                              {isOpen(categoryIdx, faqIdx) && (
+                                <div
+                                  id={`faq-${categoryIdx}-${faqIdx}`}
+                                  className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 animate-in slide-in-from-top-2 duration-300"
+                                >
+                                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                                    {faq.answer}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
-              ))}
-            </div>
-          </Suspense>
-        )}
+              </Suspense>
+            )}
 
-        {/* Contact Tab */}
-        {activeTab === 'Contact' && (
-          <Suspense
-            fallback={
-              <div className="flex justify-center items-center h-40">
-                <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
-              </div>
-            }
-          >
-            <div id="Contact-panel" role="tabpanel" aria-labelledby="Contact-tab" className="space-y-4">
-              <h3 className="text-xl font-semibold text-blue-600 dark:text-blue-300">Contact Us</h3>
-              <ContactForm />
-            </div>
-          </Suspense>
-        )}
+            {/* Contact Tab */}
+            {activeTab === 'Contact' && (
+              <Suspense
+                fallback={
+                  <div className="flex justify-center items-center h-40">
+                    <div className="relative">
+                      <div className="w-12 h-12 border-4 border-blue-200 dark:border-blue-800 rounded-full animate-spin" />
+                      <div className="absolute top-0 left-0 w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  </div>
+                }
+              >
+                <div id="Contact-panel" role="tabpanel" aria-labelledby="Contact-tab">
+                  <div className="relative overflow-hidden rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/50 shadow-xl">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-400/5 dark:to-purple-400/5" />
+                    <div className="relative p-8">
+                      <div className="flex items-center space-x-3 mb-8">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Get in Touch</h3>
+                          <p className="text-gray-600 dark:text-gray-400">We're here to help you with any questions</p>
+                        </div>
+                      </div>
+                      <ContactForm />
+                    </div>
+                  </div>
+                </div>
+              </Suspense>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

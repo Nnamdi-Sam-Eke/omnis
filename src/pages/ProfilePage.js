@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase'; // Adjust path to your firebase config
 import { useAuth } from '../AuthContext';
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, User, Shield, Monitor, AlertTriangle, Edit3, Clock, Smartphone } from "lucide-react";
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -176,227 +176,361 @@ const AccountPage = () => {
     }
   };
 
-  const tabs = ['Summary', 'Security', 'Sessions', 'Danger Zone'];
+  const tabs = [
+    { id: 'Summary', label: 'Summary', icon: User },
+    { id: 'Security', label: 'Security', icon: Shield },
+    { id: 'Sessions', label: 'Sessions', icon: Monitor },
+    { id: 'Danger Zone', label: 'Danger Zone', icon: AlertTriangle }
+  ];
 
   return (
-    <div className="max-w-4xl mx-auto min-h-screen p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <Toaster 
         position="top-right"
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#363636',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: '#fff',
+            borderRadius: '12px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
           },
           success: {
             duration: 3000,
-            theme: {
-              primary: 'green',
-              secondary: 'black',
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
             },
           },
         }}
       />
       
-      <h1 className="text-xl font-semibold text-blue-600 dark:text-blue-300 mt-6 mb-6">Account Overview</h1>
-
-      <div className="flex gap-4 items-center justify-center mb-6">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-full font-medium transition-colors ${
-              activeTab === tab
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-green-300'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Summary Tab */}
-      {activeTab === 'Summary' && userData && (
-        <div>
-          <h3 className="text-lg font-semibold text-green-600 dark:text-green-300 mb-2">Personal Information</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700 dark:text-gray-300">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <strong>User ID:</strong>
-                <span className="break-all">{showUserId ? user?.uid || 'N/A' : '••••••••••••••••••••••••'}</span>
-                <button
-                  onClick={() => setShowUserId((prev) => !prev)}
-                  className="text-blue-500 hover:text-blue-700"
-                  aria-label="Toggle User ID visibility"
-                  type="button"
-                >
-                  {showUserId ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-
-              <div><strong>First Name:</strong> {user?.firstname || userData?.firstname || 'N/A'}</div>
-<div><strong>Last Name:</strong> {user?.lastname || userData?.lastname || 'N/A'}</div>
-<div><strong>Email:</strong> {user?.email || userData?.email || 'N/A'}</div>
-<div><strong>Phone:</strong> {user?.phone || userData?.phone || 'N/A'}</div>
-<div><strong>City:</strong> {user?.city || userData?.city || 'N/A'}</div>
-<div><strong>Country:</strong> {user?.country || userData?.country || 'N/A'}</div>
-            </div>
-          </div>
-          <button
-            onClick={() => navigate('/profile')}
-            className="mt-8 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            type="button"
-          >
-            Edit in Profile
-          </button>
-        </div>
-      )}
-
-      {/* Security Tab */}
-      {activeTab === 'Security' && (
-        <div className="p-4 sm:p-6 bg-white dark:bg-gray-900 transition-colors">
-          <h2 className="text-lg sm:text-xl font-semibold text-green-600 dark:text-green-300 mb-4">
-            Security
-          </h2>
-          <div className="space-y-6 max-w-md">
-            {/* New Password Input */}
-            <div>
-              <label
-                htmlFor="new-password"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                New Password
-              </label>
-              <div className="relative">
-                <input
-                  id="new-password"
-                  type={showNewPassword ? 'text' : 'password'}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="********"
-                  autoComplete="new-password"
-                  className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-2.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                  onClick={() => setShowNewPassword((prev) => !prev)}
-                  aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
-                >
-                  {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Two-Factor Toggle */}
-            <label className="flex items-center space-x-3 text-gray-700 dark:text-gray-300">
-              <input
-                type="checkbox"
-                className="form-checkbox h-5 w-5 text-blue-600 dark:text-blue-400 focus:ring-blue-500 rounded"
-                checked={twoFAEnabled}
-                onChange={() => setTwoFAEnabled((prev) => !prev)}
-              />
-              <span>Enable Two-Factor Authentication</span>
-            </label>
-
-            {/* Submit Button */}
-            <button
-              onClick={handlePasswordChange}
-              type="button"
-              disabled={loading}
-              className={`w-full sm:w-auto px-5 py-2 rounded-lg text-white font-medium transition-colors ${
-                loading
-                  ? 'bg-blue-300 cursor-not-allowed'
-                  : 'bg-blue-500 hover:bg-blue-600'
-              }`}
-            >
-              {loading ? 'Updating...' : 'Save Changes'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Sessions Tab */}
-      {activeTab === 'Sessions' && (
-        <div>
-          <h2 className="text-lg font-semibold text-green-600 dark:text-green-300 mb-4">Active Sessions</h2>
-          <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-            Last Activity: {lastActivity}
-          </div>
-          <button
-            onClick={() => {
-              setActionToConfirm('signout');
-              setShowConfirmModal(true);
-            }}
-            className="mr-3 mt-8 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-            type="button"
-          >
-            Sign Out from This Session
-          </button>
-          <button
-            onClick={() => {
-              setActionToConfirm('signout_all');
-              setShowConfirmModal(true);
-            }}
-            className="px-4 mt-8 py-2 bg-red-800 text-white rounded hover:bg-red-900"
-            type="button"
-          >
-            Sign Out from All Sessions
-          </button>
-        </div>
-      )}
-
-      {/* Danger Zone Tab */}
-      {activeTab === 'Danger Zone' && (
-        <div className="space-y-6">
-          <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Danger Zone</h2>
-          <p className="text-sm text-red-700 dark:text-red-400 max-w-xl">
-            Warning: Deleting your account is irreversible. All your data will be permanently removed.
-            This action cannot be undone.
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+            Account Settings
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 text-lg">
+            Manage your account preferences and security settings
           </p>
-
-          <button
-            onClick={() => {
-              setActionToConfirm('delete_account');
-              setReauthenticating(true); // Enable reauthentication immediately
-              setShowConfirmModal(true);
-            }}
-            className="px-6 py-3 bg-red-700 text-white rounded hover:bg-red-800"
-            type="button"
-          >
-            Delete Account
-          </button>
         </div>
-      )}
+
+        {/* Navigation Tabs */}
+        <div className="flex flex-wrap gap-2 justify-center mb-8">
+          {tabs.map((tab) => {
+            const IconComponent = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`group flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all duration-300 ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105'
+                    : 'bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-white hover:shadow-md hover:scale-105 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-700'
+                }`}
+              >
+                <IconComponent size={18} className={`transition-transform duration-300 ${
+                  activeTab === tab.id ? 'rotate-12' : 'group-hover:rotate-12'
+                }`} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Content Area */}
+        <div className="bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20 overflow-hidden">
+          {/* Summary Tab */}
+          {activeTab === 'Summary' && userData && (
+            <div className="p-8">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="p-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full">
+                  <User className="text-white" size={24} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Personal Information</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  {/* User ID Card */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6 border border-blue-100 dark:border-gray-600">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2 block">User ID</label>
+                        <span className="font-mono text-sm text-gray-800 dark:text-gray-200 break-all">
+                          {showUserId ? user?.uid || 'N/A' : '••••••••••••••••••••••••'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setShowUserId((prev) => !prev)}
+                        className="ml-4 p-2 rounded-lg bg-white/60 hover:bg-white/80 dark:bg-gray-600/60 dark:hover:bg-gray-600/80 transition-all duration-200"
+                        aria-label="Toggle User ID visibility"
+                        type="button"
+                      >
+                        {showUserId ? <EyeOff size={20} className="text-gray-600" /> : <Eye size={20} className="text-gray-600" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Personal Details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[
+                      { label: 'First Name', value: user?.firstname || userData?.firstname || 'N/A' },
+                      { label: 'Last Name', value: user?.lastname || userData?.lastname || 'N/A' },
+                      { label: 'Email', value: user?.email || userData?.email || 'N/A' },
+                      { label: 'Phone', value: user?.phone || userData?.phone || 'N/A' },
+                      { label: 'City', value: user?.city || userData?.city || 'N/A' },
+                      { label: 'Country', value: user?.country || userData?.country || 'N/A' }
+                    ].map((field, index) => (
+                      <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 border border-gray-100 dark:border-gray-600">
+                        <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">{field.label}</label>
+                        <span className="text-gray-800 dark:text-gray-200 font-medium">{field.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Profile Picture Placeholder */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-40 h-40 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center mb-6 shadow-lg">
+                    {<img
+                    src={user.profilePicture}
+                    alt="User Avatar"
+                    className="w-30 h-36 rounded-full border-4 border-white/20 shadow-2xl 
+                             transform transition-all duration-300 hover:scale-110 hover:shadow-3xl
+                             ring-4 ring-white/10 hover:ring-white/20"
+                  />||<User size={60} className="text-white" />}
+                  </div>
+                  <h4 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    {userData?.firstname || 'User'} {userData?.lastname || ''}
+                  </h4>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">{userData?.email}</p>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="group flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  type="button"
+                >
+                  <Edit3 size={18} className="group-hover:rotate-12 transition-transform duration-300" />
+                  Edit Profile
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Security Tab */}
+          {activeTab === 'Security' && (
+            <div className="p-8">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="p-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full">
+                  <Shield className="text-white" size={24} />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Security Settings</h2>
+              </div>
+              
+              <div className="max-w-md space-y-6">
+                {/* New Password Input */}
+                <div className="space-y-2">
+                  <label
+                    htmlFor="new-password"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="new-password"
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      autoComplete="new-password"
+                      className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors duration-200"
+                      onClick={() => setShowNewPassword((prev) => !prev)}
+                      aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+                    >
+                      {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Two-Factor Authentication */}
+                <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6 border border-emerald-100 dark:border-gray-600">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <Smartphone size={20} className="text-emerald-600 dark:text-emerald-400" />
+                      <div>
+                        <span className="text-gray-800 dark:text-gray-200 font-medium">Two-Factor Authentication</span>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Add an extra layer of security</p>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={twoFAEnabled}
+                        onChange={() => setTwoFAEnabled((prev) => !prev)}
+                      />
+                      <div className={`w-12 h-6 rounded-full transition-all duration-300 ${
+                        twoFAEnabled ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
+                      }`}>
+                        <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-all duration-300 ${
+                          twoFAEnabled ? 'translate-x-6' : 'translate-x-0.5'
+                        } mt-0.5`}></div>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  onClick={handlePasswordChange}
+                  type="button"
+                  disabled={loading}
+                  className={`w-full px-6 py-3 rounded-xl text-white font-medium transition-all duration-300 transform hover:scale-105 shadow-lg ${
+                    loading
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
+                  }`}
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Updating...
+                    </span>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Sessions Tab */}
+          {activeTab === 'Sessions' && (
+            <div className="p-8">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full">
+                  <Monitor className="text-white" size={24} />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Active Sessions</h2>
+              </div>
+              
+              {/* Session Info Card */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 rounded-xl p-6 border border-blue-100 dark:border-gray-600 mb-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <Clock size={20} className="text-blue-600 dark:text-blue-400" />
+                  <span className="text-gray-800 dark:text-gray-200 font-medium">Last Activity</span>
+                </div>
+                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{lastActivity}</span>
+              </div>
+
+              <div className="flex flex-wrap gap-4">
+                <button
+                  onClick={() => {
+                    setActionToConfirm('signout');
+                    setShowConfirmModal(true);
+                  }}
+                  className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:from-red-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  type="button"
+                >
+                  Sign Out This Session
+                </button>
+                <button
+                  onClick={() => {
+                    setActionToConfirm('signout_all');
+                    setShowConfirmModal(true);
+                  }}
+                  className="px-6 py-3 bg-gradient-to-r from-red-700 to-red-800 text-white rounded-xl hover:from-red-800 hover:to-red-900 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  type="button"
+                >
+                  Sign Out All Sessions
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Danger Zone Tab */}
+          {activeTab === 'Danger Zone' && (
+            <div className="p-8">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="p-3 bg-gradient-to-r from-red-500 to-pink-500 rounded-full">
+                  <AlertTriangle className="text-white" size={24} />
+                </div>
+                <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">Danger Zone</h2>
+              </div>
+              
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 rounded-xl p-6 border border-red-200 dark:border-red-700 mb-8">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle size={24} className="text-red-600 dark:text-red-400 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-red-800 dark:text-red-300 mb-2">
+                      Account Deletion Warning
+                    </h3>
+                    <p className="text-red-700 dark:text-red-400 leading-relaxed">
+                      Deleting your account is irreversible. All your data will be permanently removed.
+                      This action cannot be undone. Please make sure you have backed up any important data.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setActionToConfirm('delete_account');
+                  setReauthenticating(true);
+                  setShowConfirmModal(true);
+                }}
+                className="px-8 py-4 bg-gradient-to-r from-red-700 to-red-800 text-white rounded-xl hover:from-red-800 hover:to-red-900 transition-all duration-300 transform hover:scale-105 shadow-lg font-semibold"
+                type="button"
+              >
+                Delete Account Permanently
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Confirm Modal */}
       {showConfirmModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           aria-modal="true"
           role="dialog"
         >
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg max-w-md w-full p-6 text-center">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">
-              {actionToConfirm === 'signout' && 'Confirm Sign Out'}
-              {actionToConfirm === 'signout_all' && 'Confirm Sign Out from All Sessions'}
-              {actionToConfirm === 'delete_account' && 'Confirm Account Deletion'}
-            </h3>
-            <p className="mb-6 text-gray-700 dark:text-gray-300">
-              {actionToConfirm === 'signout' &&
-                'Are you sure you want to sign out from this session?'}
-              {actionToConfirm === 'signout_all' &&
-                'Are you sure you want to sign out from all sessions? This will log you out everywhere.'}
-              {actionToConfirm === 'delete_account' &&
-                'This action is irreversible. Are you absolutely sure you want to delete your account?'}
-            </p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all duration-300">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center">
+                <AlertTriangle className="text-white" size={24} />
+              </div>
+              <h3 className="text-2xl font-bold mb-2 text-gray-800 dark:text-gray-100">
+                {actionToConfirm === 'signout' && 'Confirm Sign Out'}
+                {actionToConfirm === 'signout_all' && 'Sign Out All Sessions'}
+                {actionToConfirm === 'delete_account' && 'Delete Account'}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                {actionToConfirm === 'signout' &&
+                  'Are you sure you want to sign out from this session?'}
+                {actionToConfirm === 'signout_all' &&
+                  'This will log you out from all devices and sessions.'}
+                {actionToConfirm === 'delete_account' &&
+                  'This action is permanent and cannot be undone.'}
+              </p>
+            </div>
 
-            {/* If reauthentication needed for delete, show current password input */}
+            {/* Password input for account deletion */}
             {actionToConfirm === 'delete_account' && reauthenticating && (
-              <div className="mb-4">
-                <label htmlFor="current-password" className="block mb-1 font-medium text-gray-700 dark:text-gray-200">
-                  Enter Current Password
+              <div className="mb-6">
+                <label htmlFor="current-password" className="block mb-2 font-medium text-gray-700 dark:text-gray-200">
+                  Confirm with your current password
                 </label>
                 <div className="relative">
                   <input
@@ -404,13 +538,13 @@ const AccountPage = () => {
                     type={showCurrentPassword ? 'text' : 'password'}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full border rounded p-2 pr-10 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     autoComplete="current-password"
-                    placeholder="Current password"
+                    placeholder="Enter your current password"
                   />
                   <button
                     type="button"
-                    className="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     onClick={() => setShowCurrentPassword((prev) => !prev)}
                     aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
                   >
@@ -420,10 +554,10 @@ const AccountPage = () => {
               </div>
             )}
 
-            <div className="flex justify-center gap-4">
+            <div className="flex gap-4">
               <button
                 onClick={handleConfirm}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 font-medium"
                 type="button"
               >
                 Confirm
@@ -435,7 +569,7 @@ const AccountPage = () => {
                   setReauthenticating(false);
                   setCurrentPassword('');
                 }}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                className="flex-1 px-6 py-3 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-500 transition-all duration-300 font-medium"
                 type="button"
               >
                 Cancel

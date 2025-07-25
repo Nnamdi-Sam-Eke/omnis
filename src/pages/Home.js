@@ -504,7 +504,7 @@ function Home() {
 
   return (
     <div className="relative">
-      <style jsx>{`
+      <style >{`
         @keyframes gradient-x {
           0%, 100% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }

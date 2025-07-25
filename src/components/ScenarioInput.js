@@ -9,6 +9,9 @@ import { saveUserInteraction } from "../services/userBehaviourService";
 import { useMemory } from "../MemoryContext";
 import { db } from "../firebase";
 import { Timestamp } from "firebase/firestore";
+import { Trash2, Plus, Target } from "lucide-react";
+
+
 
 import {
   collection,
@@ -23,11 +26,19 @@ import {
   where,
 } from "firebase/firestore";
 import { useAuth } from "../AuthContext";
-import { ChevronRight, ChevronUp, Lock, Play, Crown, FileText, Copy, Undo, Redo, Download, Type } from "lucide-react";
+import { ChevronRight, ChevronUp, Lock, Play, Crown, FileText, Copy, Undo, Redo, Download, Type, Sparkles, Eye, Edit3, Zap } from "lucide-react";
 import ScenarioSimulationCard from "./SimulationResult";
 import ShimmerLoader from "./ShimmerLoader";
 
-// Enhanced InputPreview component with right-side preview and all features integrated
+
+
+
+const BACKEND_URL = process.env.NODE_ENV === "development"
+  ? "http://localhost:8000/run"
+  : "https://your-production-backend.com/run";
+
+
+// Enhanced InputPreview component with modern design
 const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenario here..." }) => {
   const [history, setHistory] = useState([value || ""]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -112,141 +123,184 @@ const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenar
   const charCount = value ? value.length : 0;
 
   return (
-    <div className="space-y-4">
-      {/* Toolbar with all features */}
-      <div className="flex flex-wrap gap-3 items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+    <div className="space-y-6">
+      {/* Modern Toolbar */}
+      <div className="flex flex-wrap gap-3 items-center justify-between bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900/30 p-4 rounded-xl border border-slate-200 dark:border-slate-700 backdrop-blur-sm">
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={handleUndo}
             disabled={historyIndex === 0}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-50 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="group flex items-center gap-2 px-4 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
             title="Undo (Ctrl+Z)"
           >
-            <Undo className="w-4 h-4" />
-            Undo
+            <Undo className="w-4 h-4 transition-transform group-hover:scale-110" />
+            <span>Undo</span>
           </button>
           
           <button
             onClick={handleRedo}
             disabled={historyIndex === history.length - 1}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded hover:bg-gray-50 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="group flex items-center gap-2 px-4 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
             title="Redo (Ctrl+Y)"
           >
-            <Redo className="w-4 h-4" />
-            Redo
+            <Redo className="w-4 h-4 transition-transform group-hover:scale-110" />
+            <span>Redo</span>
           </button>
           
           <button
             onClick={handleCopy}
-            className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded transition-colors ${
+            className={`group flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all duration-200 shadow-sm hover:shadow-md ${
               showCopySuccess 
-                ? 'bg-green-500 text-white' 
-                : 'bg-blue-500 text-white hover:bg-blue-600'
+                ? 'bg-emerald-500 text-white shadow-emerald-500/25' 
+                : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
             }`}
             title="Copy to clipboard"
           >
-            <Copy className="w-4 h-4" />
-            {showCopySuccess ? 'Copied!' : 'Copy'}
+            <Copy className="w-4 h-4 transition-transform group-hover:scale-110" />
+            <span>{showCopySuccess ? 'Copied!' : 'Copy'}</span>
           </button>
           
           <button
             onClick={handleExportPDF}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+            className="group flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-sm hover:shadow-md"
             title="Export preview as PDF"
           >
-            <Download className="w-4 h-4" />
-            Export PDF
+            <Download className="w-4 h-4 transition-transform group-hover:scale-110" />
+            <span>Export PDF</span>
           </button>
         </div>
         
-        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-          <span className="flex items-center gap-1">
-            <Type className="w-4 h-4" />
-            {wordCount} words
-          </span>
-          <span>{charCount} characters</span>
+        <div className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400">
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+            <Type className="w-4 h-4 text-blue-500" />
+            <span className="font-medium">{wordCount}</span>
+            <span className="text-slate-400">words</span>
+          </div>
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+            <span className="font-medium">{charCount}</span>
+            <span className="text-slate-400">chars</span>
+          </div>
         </div>
       </div>
 
-      {/* Side-by-side Editor and Preview - Fixed Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 min-h-[400px]">
-        {/* Input Section - Left Side */}
-        <div className="flex flex-col space-y-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-            <FileText className="w-4 h-4 inline mr-2" />
-            Scenario Input (Markdown Supported)
-          </label>
-          <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={handleInputChange}
-            className="flex-1 w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all min-h-[350px]"
-            placeholder={placeholder}
-            spellCheck="false"
-          />
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            💡 Tip: Use markdown formatting like **bold**, *italic*, # headers, - lists, etc.
+      {/* Modern Side-by-side Editor and Preview */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 min-h-[450px]">
+        {/* Enhanced Input Section */}
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg text-sm font-medium">
+              <Edit3 className="w-4 h-4" />
+              <span>Editor</span>
+            </div>
+            <div className="flex-1 h-px bg-gradient-to-r from-slate-300 to-transparent dark:from-slate-600"></div>
+          </div>
+          
+          <div className="relative group">
+            <textarea
+              ref={textareaRef}
+              value={value}
+              onChange={handleInputChange}
+              className="w-full p-6 border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 dark:text-white font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[400px] group-hover:border-slate-400 dark:group-hover:border-slate-500 shadow-lg"
+              placeholder={placeholder}
+              spellCheck="false"
+            />
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/5 to-indigo-500/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+          </div>
+          
+          <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
+            <Sparkles className="w-4 h-4 text-blue-500" />
+            <span>Pro tip: Use markdown formatting like **bold**, *italic*, # headers, - lists, etc.</span>
           </div>
         </div>
 
-        {/* Live Preview Section - Right Side */}
-        <div className="flex flex-col space-y-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-            <span className="flex items-center gap-2">
-              Live Preview
-              <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full">
-                Real-time
-              </span>
-            </span>
-          </label>
-          <div
-            ref={previewRef}
-            className="flex-1 p-4 overflow-y-auto border-2 border-blue-200 dark:border-blue-700 rounded-lg bg-blue-50 dark:bg-gray-900 prose prose-sm dark:prose-invert max-w-none min-h-[350px]"
-            style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#CBD5E0 transparent'
-            }}
-          >
-            {value ? (
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeSanitize, rehypeHighlight]}
-                components={{
-                  // Custom styling for better preview
-                  h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4" {...props} />,
-                  h2: ({node, ...props}) => <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400 mb-3" {...props} />,
-                  h3: ({node, ...props}) => <h3 className="text-lg font-medium text-blue-600 dark:text-blue-400 mb-2" {...props} />,
-                  p: ({node, ...props}) => <p className="mb-3 leading-relaxed" {...props} />,
-                  ul: ({node, ...props}) => <ul className="mb-3 pl-4" {...props} />,
-                  ol: ({node, ...props}) => <ol className="mb-3 pl-4" {...props} />,
-                  li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                  blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-blue-400 pl-4 italic my-4" {...props} />,
-                  code: ({node, inline, ...props}) => 
-                    inline ? 
-                      <code className="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm" {...props} /> :
-                      <code className="block bg-gray-100 dark:bg-gray-800 p-3 rounded-lg overflow-x-auto" {...props} />
-                }}
-              >
-                {value}
-              </ReactMarkdown>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 italic text-center">
-                <div className="mb-4">
-                  <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Start typing to see your live preview...</p>
-                </div>
-                <div className="text-xs text-left bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
-                  <div className="font-semibold mb-2">Try some markdown:</div>
-                  <div className="font-mono space-y-1">
-                    <div># Heading</div>
-                    <div>**Bold text**</div>
-                    <div>*Italic text*</div>
-                    <div>- List item</div>
-                    <div>&gt; Quote</div>
+        {/* Enhanced Live Preview Section */}
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-sm font-medium">
+              <Eye className="w-4 h-4" />
+              <span>Live Preview</span>
+            </div>
+            <div className="flex items-center gap-2 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full text-xs font-medium">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span>Real-time</span>
+            </div>
+            <div className="flex-1 h-px bg-gradient-to-r from-slate-300 to-transparent dark:from-slate-600"></div>
+          </div>
+          
+          <div className="relative group">
+            <div
+              ref={previewRef}
+              className="p-6 overflow-y-auto border-2 border-emerald-200 dark:border-emerald-700 rounded-xl bg-gradient-to-br from-emerald-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 prose prose-sm dark:prose-invert max-w-none min-h-[400px] shadow-lg group-hover:border-emerald-300 dark:group-hover:border-emerald-600 transition-all duration-200"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#10b981 transparent'
+              }}
+            >
+              {value ? (
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeSanitize, rehypeHighlight]}
+                  components={{
+                    // Enhanced styling for better preview
+                    h1: ({node, ...props}) => <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6" {...props} />,
+                    h2: ({node, ...props}) => <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-4" {...props} />,
+                    h3: ({node, ...props}) => <h3 className="text-xl font-medium bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3" {...props} />,
+                    p: ({node, ...props}) => <p className="mb-4 leading-relaxed text-slate-700 dark:text-slate-300" {...props} />,
+                    ul: ({node, ...props}) => <ul className="mb-4 pl-6 space-y-2" {...props} />,
+                    ol: ({node, ...props}) => <ol className="mb-4 pl-6 space-y-2" {...props} />,
+                    li: ({node, ...props}) => <li className="text-slate-700 dark:text-slate-300" {...props} />,
+                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-blue-400 bg-blue-50 dark:bg-blue-900/20 pl-6 py-4 italic my-6 rounded-r-lg" {...props} />,
+                    code: ({node, inline, ...props}) => 
+                      inline ? 
+                        <code className="bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded-md text-sm font-mono" {...props} /> :
+                        <code className="block bg-slate-100 dark:bg-slate-800 p-4 rounded-lg overflow-x-auto border-l-4 border-blue-400" {...props} />,
+                    strong: ({node, ...props}) => <strong className="font-bold text-slate-900 dark:text-slate-100" {...props} />,
+                    em: ({node, ...props}) => <em className="italic text-slate-800 dark:text-slate-200" {...props} />
+                  }}
+                >
+                  {value}
+                </ReactMarkdown>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <div className="mb-6 p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
+                    <FileText className="w-16 h-16 mx-auto mb-4 text-slate-400 dark:text-slate-500" />
+                    <p className="text-slate-600 dark:text-slate-400 mb-4">Start typing to see your live preview...</p>
+                  </div>
+                  
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 text-left max-w-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Sparkles className="w-5 h-5 text-blue-500" />
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Try some markdown:</span>
+                    </div>
+                    <div className="font-mono text-sm space-y-2 text-slate-600 dark:text-slate-400">
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-500">#</span>
+                        <span>Heading</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-500">**</span>
+                        <span>Bold text</span>
+                        <span className="text-emerald-500">**</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-purple-500">*</span>
+                        <span>Italic text</span>
+                        <span className="text-purple-500">*</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-orange-500">-</span>
+                        <span>List item</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-pink-500">&gt;</span>
+                        <span>Quote</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-500/5 to-teal-500/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
           </div>
         </div>
       </div>
@@ -254,7 +308,7 @@ const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenar
   );
 };
 
-// Main ScenarioInput component
+// Main ScenarioInput component with modern design
 export default function ScenarioInput({ onSimulate }) {
   const [scenarios, setScenarios] = useState([""]);
   const [isOpen, setIsOpen] = useState(false);
@@ -472,6 +526,7 @@ export default function ScenarioInput({ onSimulate }) {
       }
     }
 
+    // Filter scenarios and use the live preview text (which is the same as the input value)
     const filteredScenarios = scenarios.filter((s) => s.trim() !== "");
     if (!filteredScenarios.length) return;
 
@@ -483,65 +538,73 @@ export default function ScenarioInput({ onSimulate }) {
     setError(null);
     setResults([]);
 
+    
+    
     try {
-      const simulationStart = Date.now();
+  const simulationStart = Date.now();
 
-      const simulationPromises = filteredScenarios.map(async (scenario) => {
-        const payload = {
-          input_type: "text",
-          text: scenario,
-          user_id: user?.uid
-        };
+  const simulationPromises = filteredScenarios.map(async (scenario) => {
+    const payload = {
+      input_type: "text",
+      text: scenario,
+      user_id: user?.uid
+    };
 
-        console.log("📤 Sending to /api/simulate:", payload);
+    console.log("📤 Sending to /run:", payload);
 
-        try {
-          const response = await fetch("http://localhost:5000/api/simulate", {
-            method: "POST",
-            body: JSON.stringify(payload),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || "Simulation request failed");
-          }
-
-          const result = await response.json();
-          await handleScenarioSubmit(scenario, result);
-          return { query: scenario, response: result };
-        } catch (err) {
-          console.error("❌ Simulation fetch error:", err);
-          return { query: scenario, response: { error: err.message } };
-        }
+    try {
+      const response = await fetch(BACKEND_URL, {
+        method: "POST",
+        body: JSON.stringify({ input_data: payload }),
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
 
-      const allResults = await Promise.all(simulationPromises);
+      const result = await response.json();
+      console.log("📥 Received response:", result);
 
-      const elapsed = Date.now() - simulationStart;
-      const delay = Math.max(0, 4000 - elapsed);
+      if (!response.ok) {
+        throw new Error(result.detail || "Simulation request failed");
+      }
 
-      setTimeout(() => {
-        setResults(allResults);
-        setSimulationLoading(false);
-      }, delay);
+      await handleScenarioSubmit(scenario, result);
+      return { query: scenario, response: result };
+
     } catch (err) {
-      setError("An error occurred during simulation.");
-      console.error("Simulation error:", err);
-      setSimulationLoading(false);
+      console.error("❌ Simulation fetch error:", err);
+      return { query: scenario, response: { error: err.message } };
     }
+  });
+  // Wait for all simulations to complete 
 
-    if (onSimulate) onSimulate(filteredScenarios);
-  };
+  const allResults = await Promise.all(simulationPromises);
 
-  // Handle input changes for scenarios
-  const handleInputChange = (index, value) => {
-    const updated = [...scenarios];
-    updated[index] = value;
-    setScenarios(updated);
-  };
+  const elapsed = Date.now() - simulationStart;
+  const delay = Math.max(0, 4000 - elapsed);
+
+  setTimeout(() => {
+    setResults(allResults);
+    setSimulationLoading(false);
+  }, delay);
+  console.log("✅ All simulations completed in", elapsed, "ms");
+  setSimulationLoading(false);
+  setResults(allResults);
+  console.log("✅ Simulation results set:", allResults);
+} catch (err) {
+  setError("An error occurred during simulation.");
+  console.error("Simulation error:", err);
+  setSimulationLoading(false);
+  }
+}; // <-- properly closes handleSimulate function
+
+// Handle input changes for scenarios
+const handleInputChange = (index, value) => {
+
+  const updated = [...scenarios];
+  updated[index] = value;
+  setScenarios(updated);
+};
 
   const handleAddScenario = () => setScenarios([...scenarios, ""]);
 
@@ -553,158 +616,227 @@ export default function ScenarioInput({ onSimulate }) {
 
   if (loading) {
     return (
-<ShimmerLoader height="h-32" width="w-full" rounded="rounded-lg" />
+      <div className="p-6">
+        <ShimmerLoader height="h-32" width="w-full" rounded="rounded-xl" />
+      </div>
     );
   }
 
   return (
-    <>
-    <div className="flex flex-col md:flex-row gap-4 w-full ">
-      <div className="bg-white dark:bg-gray-800 shadow-lg flex-1 hover:shadow-blue-500/50 rounded-lg p-6 border text-gray-900 dark:text-white mt-8">
-        <div
-          className="flex justify-between items-center cursor-pointer p-3 bg-white rounded-md dark:bg-gray-800"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <h2 className="text-xl font-semibold text-green-500 dark:text-green-500">Scenario Input</h2>
-          <div className="flex items-center gap-3">
-            <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-2 py-1 rounded-full">
-              Markdown Enabled
-            </span>
-            <span className="text-blue-500 dark:text-blue-300 font-medium">
-              {isOpen ? <ChevronUp /> : <ChevronRight />}
-            </span>
+     <>
+      <div className="flex flex-col xl:flex-row gap-8 w-full max-w-7xl mx-auto">
+        {/* Left Panel - Scenario Input */}
+        <div className="flex-1 min-w-0">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
+            {/* Header */}
+            <div 
+              className="flex justify-between items-center cursor-pointer p-6 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-700 dark:hover:to-gray-800 transition-all duration-300"
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Scenario Builder</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Create and simulate multiple scenarios</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
+                    Markdown Ready
+                  </span>
+                </div>
+                <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                  {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </div>
+              </div>
+            </div>
+
+            {/* Collapsible Content */}
+            <div className={`transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+              <div className="p-6 space-y-6">
+                {/* Scenarios List */}
+                <div className="space-y-4 max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                  {scenarios.map((scenario, index) => (
+                    <div key={index} className="group relative">
+                      <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 p-5 hover:shadow-lg transition-all duration-300 hover:border-blue-300 dark:hover:border-blue-600">
+                        {/* Scenario Header */}
+                        <div className="flex justify-between items-center mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg">
+                              {index + 1}
+                            </div>
+                            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                              Scenario {index + 1}
+                            </h4>
+                          </div>
+                          
+                          {scenarios.length > 1 && (
+                            <button
+                              onClick={() => handleRemoveScenario(index)}
+                              className="opacity-0 group-hover:opacity-100 transition-all duration-200 text-red-500 hover:text-red-700 dark:hover:text-red-400 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                              aria-label={`Remove scenario ${index + 1}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Input Field */}
+                        <EnhancedInputPreview
+                          value={scenario}
+                          onChange={(value) => handleInputChange(index, value)}
+                          placeholder={`Describe scenario ${index + 1}... Use **bold**, *italic*, # headings, and - lists for rich formatting.`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Add Scenario Button */}
+                <button
+                  onClick={handleAddScenario}
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
+                >
+                  <Plus className="w-5 h-5" />
+                  Add New Scenario
+                </button>
+              </div>
+            </div>
+
+            {/* Simulation Button */}
+            <div className="p-6 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-t border-gray-200 dark:border-gray-700">
+              <button
+                className={`
+                  relative w-full rounded-xl py-4 px-6 font-semibold transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl
+                  ${isFreeTier && trialExpired
+                    ? 'bg-gradient-to-r from-gray-400 to-gray-500 text-white hover:from-gray-500 hover:to-gray-600' 
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white transform hover:scale-[1.02] active:scale-[0.98]'
+                  }
+                  ${simulationLoading ? 'opacity-70 cursor-not-allowed' : ''}
+                `}
+                onClick={handleSimulate}
+                disabled={simulationLoading}
+              >
+                {simulationLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    <span>Analyzing Scenarios...</span>
+                  </>
+                ) : isFreeTier && trialExpired ? (
+                  <>
+                    <Lock className="w-5 h-5" />
+                    <span>Unlock Advanced Simulations</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-5 h-5" />
+                    <span>Run Simulation</span>
+                  </>
+                )}
+                
+                {/* Tier Badge */}
+                {isPaidTier && (
+                  <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg">
+                    {userTier.toUpperCase()}
+                  </div>
+                )}
+              </button>
+
+              {/* Error Message */}
+              {error && (
+                <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                  <p className="text-red-600 dark:text-red-400 font-medium text-sm">{error}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {isOpen && (
-          <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 transition-all duration-300 max-h-[800px] opacity-100 mt-4">
-            {scenarios.map((scenario, index) => (
-              <div key={index} className="mb-8 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                    <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                      {index + 1}
-                    </div>
-                    Scenario {index + 1}
-                  </h4>
-                  {scenarios.length > 1 && (
-                    <button
-                      onClick={() => handleRemoveScenario(index)}
-                      className="text-red-500 hover:text-red-700 px-3 py-1 text-sm font-medium border border-red-300 rounded-lg hover:border-red-500 transition-colors"
-                      aria-label={`Remove scenario ${index + 1}`}
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-
-                <EnhancedInputPreview
-                  value={scenario}
-                  onChange={(value) => handleInputChange(index, value)}
-                  placeholder={`Describe scenario ${index + 1} here... You can use markdown formatting like **bold**, *italic*, # headings, - lists, etc.`}
-                />
-              </div>
-            ))}
-            
-            <button
-              onClick={handleAddScenario}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2"
-            >
-              <span className="text-lg">+</span>
-              Add Another Scenario
-            </button>
-          </div>
-        )}
-
-        {/* Enhanced Tier-Based Simulation Button */}
-        <button
-          className={`
-            relative w-full mt-6 rounded-lg py-3 font-semibold transition-all duration-200 flex items-center justify-center gap-2
-            ${isFreeTier 
-              ? 'bg-gradient-to-r from-gray-400 to-gray-500 text-white hover:from-gray-500 hover:to-gray-600 cursor-pointer' 
-              : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white hover:scale-105 active:scale-95'
-            }
-            ${simulationLoading ? 'opacity-70 cursor-not-allowed' : ''}
-          `}
-          onClick={handleSimulate}
-          disabled={simulationLoading}
-        >
+        {/* Right Panel - Results */}
+        <div className="flex-1 min-w-0">
           {simulationLoading ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              <span>Simulating...</span>
-            </>
-          ) : isFreeTier && trialExpired ? (
-            <>
-              <Lock className="w-5 h-5" />
-              <span>Unlock Simulations (Pro or Enterprise Required)</span>
-            </>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Processing Scenarios...
+                </h3>
+              </div>
+              <div className="space-y-4">
+                {[...Array(scenarios.length)].map((_, i) => (
+                  <div key={i} className="space-y-3 bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+                    <ShimmerLoader height="h-4" width="w-2/3" rounded="rounded-md" />
+                    <ShimmerLoader height="h-3" width="w-full" rounded="rounded-md" />
+                    <ShimmerLoader height="h-3" width="w-5/6" rounded="rounded-md" />
+                    <ShimmerLoader height="h-6" width="w-3/4" rounded="rounded-md" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : results.length > 0 ? (
+            <ScenarioSimulationCard results={results} />
           ) : (
-            <>
-              <Play className="w-5 h-5" />
-              <span>Run Simulation</span>
-            </>
+            <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 p-12 text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Target className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Ready for Simulation
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                Add your scenarios and click "Run Simulation" to see results here
+              </p>
+            </div>
           )}
-          
-          {/* Premium badge for paid users */}
-          {isPaidTier && (
-            <span className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-              {userTier.toUpperCase()}
-            </span>
-          )}
-        </button>
-
-        {/* Error message */}
-        {error && (
-          <p className="mt-4 text-red-600 font-semibold">
-            {error}
-          </p>
-        )}
+        </div>
       </div>
 
-      {/* Enhanced Upgrade Modal */}
+      {/* Upgrade Modal */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-md mx-4 relative">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full mx-4 relative shadow-2xl border border-gray-200 dark:border-gray-700">
             <button 
               onClick={() => setShowUpgradeModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               ✕
             </button>
             
-            <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4">
+            <div className="p-8 text-center">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
                 <Crown className="w-8 h-8 text-white" />
               </div>
               
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Unlock Simulations
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                Unlock Advanced Simulations
               </h3>
               
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Upgrade to Pro or Enterprise to access advanced simulation features and unlock your full potential.
+              <p className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+                Upgrade to Pro or Enterprise to access unlimited simulations and advanced features.
               </p>
               
-              <div className="space-y-3 mb-6 text-left">
-                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                  Unlimited simulations
-                </div>
-                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                  Advanced analytics
-                </div>
-                <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                  Priority support
-                </div>
+              <div className="space-y-4 mb-8 text-left">
+                {['Unlimited simulations', 'Advanced analytics & insights', 'Priority support & faster processing', 'Custom scenario templates'].map((feature, index) => (
+                  <div key={index} className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                    <div className="w-5 h-5 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full mr-3 flex items-center justify-center flex-shrink-0">
+                      <div className="w-2 h-2 bg-white rounded-full" />
+                    </div>
+                    {feature}
+                  </div>
+                ))}
               </div>
               
               <div className="flex gap-3">
                 <button 
                   onClick={() => setShowUpgradeModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
                 >
                   Maybe Later
                 </button>
@@ -713,7 +845,7 @@ export default function ScenarioInput({ onSimulate }) {
                     window.location.href = "/payments";
                     setShowUpgradeModal(false);
                   }}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
                 >
                   Upgrade Now
                 </button>
@@ -723,39 +855,29 @@ export default function ScenarioInput({ onSimulate }) {
         </div>
       )}
 
-      {/* Results and loading skeleton logic */}
-        {/* Right: Scenario Output or Simulation Results */}
-  <div className="flex-1">
-      {simulationLoading ? (
-        <div className="mt-12">
-          <div className="bg-white dark:bg-gray-800 shadow-lg border rounded-lg p-6 text-gray-900 dark:text-white">
-            <h3 className="text-lg font-semibold mb-4 text-green-500">
-              Analyzing Scenarios...
-            </h3>
-            <div className="space-y-4">
-              {[...Array(1)].map((_, i) => (
-                <div
-  key={i}
-  className="space-y-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-4 overflow-hidden relative"
->
-<ShimmerLoader height="h-4" width="w-2/3" rounded="rounded-md" />
-<ShimmerLoader height="h-3" width="w-full" rounded="rounded-md" />
- <ShimmerLoader height="h-3" width="w-5/6" rounded="rounded-md" />
-<ShimmerLoader height="h-6" width="w-3/4" rounded="rounded-md" />
-<ShimmerLoader height="h-6" width="w-full" rounded="rounded-md" />
-</div>
-
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : results.length > 0 ? (
-        <div className="mt-12">
-          <ScenarioSimulationCard results={results} />
-        </div>
-      ) : null}
-    </div>
-  </div>
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .animate-shimmer {
+          animation: shimmer 2s infinite;
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 6px;
+        
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background-color: rgb(156 163 175);
+          border-radius: 3px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background-color: rgb(107 114 128);
+        }
+      `}</style>
     </>
   );
 }

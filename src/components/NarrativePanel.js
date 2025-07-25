@@ -102,7 +102,7 @@ const NarrativePanel = forwardRef((props, ref) => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style >{`
         @keyframes shimmer {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }

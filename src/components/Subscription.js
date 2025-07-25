@@ -57,7 +57,7 @@ const SubscriptionInfo = ({ userDetails, discountActive }) => {
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border">
           <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Current Plan</h4>
           <p className="text-xl text-blue-600 dark:text-blue-400 font-bold">
-            {userDetails?.subscription?.plan || "Free Plan"}
+            {user?.tier || "Free Plan"} Plan <span className="text-gray-500 dark:text-gray-400">(Active)</span>  
           </p>
         </div>
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border">

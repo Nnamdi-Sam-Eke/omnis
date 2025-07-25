@@ -39,7 +39,8 @@ const OmnisDashboard = () => {
   const auth = getAuth();
   const db = getFirestore();
   const user = auth.currentUser;
-    const getGreeting = () => {
+  
+  const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
     if (hour < 18) return 'Good afternoon';
@@ -151,11 +152,18 @@ const OmnisDashboard = () => {
 
   
   if (!user) {
-    return <p>Please login to see your dashboard.</p>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="text-center p-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <span className="text-white text-2xl">🔒</span>
+          </div>
+          <p className="text-xl font-semibold text-gray-800 dark:text-white">Please login to see your dashboard.</p>
+        </div>
+      </div>
+    );
   }
   
-
-
   const tabLabels = {
     quickStats: 'Pilot Dashboard',
     analytics: 'Analytics',
@@ -163,8 +171,8 @@ const OmnisDashboard = () => {
   };
 
   return (
-     <>
-     {/* <TrialSlip user={user} /> */}
+    <>
+      {/* <TrialSlip user={user} /> */}
       {showBanner && discountEndDate && (
         <DiscountBanner
           discountEndDate={discountEndDate}
@@ -173,34 +181,40 @@ const OmnisDashboard = () => {
       )}
     
       <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setCommandPaletteOpen} setActiveTab={setActiveTab} />
-      <div className="p-4 flex-1 overflow-y-auto pb-16 space-y-4 min-h-screen overflow-y-scroll mt-10 transition-all duration-300">
-        <div className="mb-6 mt-8">
+      
+      <div className="p-4 flex-1 overflow-y-auto pb-16 space-y-6 min-h-screen mt-10 transition-all duration-500 
+                    bg-gradient-to-br from-gray-50/50 via-white/30 to-blue-50/50 
+                    dark:from-gray-900/50 dark:via-gray-800/30 dark:to-gray-700/50">
+        
+        {/* Header Section */}
+<div className="mb-6 mt-8">
           {/* Mobile & Tablet: Weather above greeting */}
           <div className="block lg:hidden space-y-3">
             <div className="flex justify-center sm:justify-start">
               <WeatherLocation />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-green-500 text-center sm:text-left">
-              {getGreeting()}, {userFirstName || 'there'} 👋
-            </h1>
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 
+                           bg-clip-text text-transparent drop-shadow-lg">
+                {getGreeting()}, {userFirstName || 'there'}
+              </h1>
+              <div className="inline-block text-4xl animate-bounce mt-2">👋</div>
           </div>
           {/* Desktop: Absolute positioning */}
           <div className="hidden lg:block relative">
-            <h1 className="text-3xl font-semibold mt-2 text-green-500 mb-6">
-              {getGreeting()}, {userFirstName || 'there'} 👋
-            </h1>
+           <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 
+                           bg-clip-text text-transparent drop-shadow-lg">
+                {getGreeting()}, {userFirstName || 'there'}
+              </h1>
+              <div className="inline-block text-4xl animate-bounce mt-2">👋</div>
             <div className="absolute mb-10 top-0 right-0">
               <WeatherLocation />
             </div>
           </div>
         </div>
-      
 
-        <div
-          role="tablist"
-          className="flex flex-wrap gap-4 justify-center mt-8 sm:justify-start mb-4 sm:mb-6"
-        >
-          {Object.keys(tabLabels).map(tab => (
+        {/* Tab Navigation */}
+        <div className="flex flex-wrap gap-3 justify-center sm:justify-start mb-8">
+          {Object.keys(tabLabels).map((tab, index) => (
             <button
               key={tab}
               role="tab"
@@ -209,79 +223,158 @@ const OmnisDashboard = () => {
               id={`${tab}-tab`}
               onClick={() => setActiveTab(tab)}
               title={`Go to ${tabLabels[tab]}`}
-              className={`px-4 py-2 sm:px-5 sm:py-2 rounded-full font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                activeTab === tab
-                  ? 'bg-blue-500 text-white border border-blue-700'
-                  : 'bg-gray-300 text-gray-800 hover:bg-green-300'
-              }`}
+              className={`group relative px-6 py-3 rounded-2xl font-bold transition-all duration-300 
+                        hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                        backdrop-blur-sm shadow-lg hover:shadow-xl border border-white/10
+                        ${activeTab === tab
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-blue-500/25'
+                          : 'bg-white/60 dark:bg-gray-800/60 text-gray-800 dark:text-white hover:bg-gradient-to-r hover:from-green-400 hover:to-emerald-500 hover:text-white'
+                        }`}
             >
-              {tabLabels[tab]}
+              {/* Active indicator */}
+              {activeTab === tab && (
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-2xl blur-xl" />
+              )}
+              
+              {/* Tab content */}
+              <div className="relative flex items-center gap-2">
+                <span className="text-sm font-medium tracking-wide">{tabLabels[tab]}</span>
+                {activeTab === tab && (
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                )}
+              </div>
+              
+              {/* Hover shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
+                            translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 rounded-2xl" />
             </button>
           ))}
         </div>
 
-        <div className="relative grid h-full grid-cols-1 msm:grid-cols-2 lg:grid-cols-1 gap-6 transition-all">
+        {/* Main Content */}
+        <div className="relative grid h-full grid-cols-1 msm:grid-cols-2 lg:grid-cols-1 gap-6 transition-all duration-500">
           {activeTab === 'quickStats' && (
-            <div id="quickStats-panel" role="tabpanel" aria-labelledby="quickStats-tab">
-              <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-300 mt-4 mb-4">
-                Quick stats, activity logs etc..
-              </h2>
-              <div className="mb-4 mt-8">
-                <input
-                  id="dashboard-search"
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search activities"
-                  title="Search for activities"
-                  className="pl-10 pr-4 py-2 w-full sm:w-2/4 border rounded-lg text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+            <div id="quickStats-panel" role="tabpanel" aria-labelledby="quickStats-tab"
+                 className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 
+                             bg-clip-text text-transparent mb-6">
+                  Quick stats, activity logs etc..
+                </h2>
+                
+                {/* Search Input */}
+                <div className="relative mb-6">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <input
+                    id="dashboard-search"
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search activities..."
+                    title="Search for activities"
+                    className="pl-12 pr-4 py-4 w-full sm:w-2/3 border-0 rounded-2xl text-sm 
+                             bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl
+                             text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400
+                             focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-gray-800
+                             transition-all duration-300"
+                  />
+                  <div className="absolute inset-y-0 right-4 flex items-center">
+                    <kbd className="px-2 py-1 text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 rounded">
+                      /
+                    </kbd>
+                  </div>
+                </div>
               </div>
 
+              {/* Search Results */}
               {filteredData.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Search Results</h3>
-                  <div className="grid grid-cols-1 gap-6">
+                <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                    Search Results
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4">
                     {filteredData.map((item, index) => (
                       <div
                         key={index}
-                        className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"
+                        className="group p-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl 
+                                 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] cursor-pointer
+                                 border border-white/20 dark:border-gray-700/50"
                         title="Click for more details"
                       >
-                        <h4 className="font-bold text-lg">{item.name}</h4>
-                        <p>{item.description}</p>
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl 
+                                        flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                            {item.name?.charAt(0).toUpperCase() || 'A'}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-bold text-lg text-gray-800 dark:text-white mb-2 
+                                         group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              {item.name}
+                            </h4>
+                            <p className="text-gray-600 dark:text-gray-300 line-clamp-2">{item.description}</p>
+                          </div>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <Suspense fallback={<SkeletonLoader height="h-40" />}>
-                <KpiCard />
-              </Suspense>
+              {/* KPI Cards */}
+              <div className="mb-8">
+                <Suspense fallback={<SkeletonLoader height="h-40" />}>
+                  <KpiCard />
+                </Suspense>
+              </div>
 
+              {/* Main Dashboard Grid */}
               <Suspense fallback={<SkeletonLoader height="h-[300px]" />}>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  <ActivityFeed />
-                  <SimulationTrendsChart />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                  <div className="animate-in fade-in slide-in-from-left-4 duration-500">
+                    <ActivityFeed />
+                  </div>
+                  <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                    <SimulationTrendsChart />
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                  <TaskPlanner />
-                  <ActionButtons />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                  <div className="animate-in fade-in slide-in-from-left-4 duration-700">
+                    <TaskPlanner />
+                  </div>
+                  <div className="animate-in fade-in slide-in-from-right-4 duration-700">
+                    <ActionButtons />
+                  </div>
                 </div>
               </Suspense>
 
-              <div className="flex justify-center">
+              {/* Quick Actions */}
+              <div className="flex justify-center animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <QuickActions />
               </div>
             </div>
           )}
 
           {activeTab === 'analytics' && (
-            <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab">
-              <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
-                Analytics (overview)
-              </h2>
+            <div id="analytics-panel" role="tabpanel" aria-labelledby="analytics-tab"
+                 className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 
+                             bg-clip-text text-transparent mb-2">
+                  Analytics Overview
+                </h2>
+                <div className="w-20 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full" />
+              </div>
               <Suspense fallback={<SkeletonLoader height="h-[300px]" />}>
                 <AnalyticsOverview />
               </Suspense>
@@ -289,10 +382,15 @@ const OmnisDashboard = () => {
           )}
 
           {activeTab === 'achievements' && (
-            <div id="achievements-panel" role="tabpanel" aria-labelledby="achievements-tab">
-              <h2 className="text-2xl font-semibold text-blue-500 dark:text-blue-300 mb-4">
-                Gamification & Engagement
-              </h2>
+            <div id="achievements-panel" role="tabpanel" aria-labelledby="achievements-tab"
+                 className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 
+                             bg-clip-text text-transparent mb-2">
+                  Gamification & Engagement
+                </h2>
+                <div className="w-20 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full" />
+              </div>
               <Suspense fallback={<SkeletonLoader height="h-[200px]" />}>
                 <AchievementsTab />
               </Suspense>
@@ -300,31 +398,57 @@ const OmnisDashboard = () => {
           )}
         </div>
 
+        {/* Keyboard Shortcuts Modal */}
         {showShortcuts && (
           <div
             role="dialog"
             aria-modal="true"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm
+                     animate-in fade-in duration-300"
           >
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md relative">
+            <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl p-8 rounded-3xl shadow-2xl 
+                          w-full max-w-md relative border border-white/20 dark:border-gray-700/50
+                          animate-in zoom-in-90 slide-in-from-bottom-4 duration-300">
+              
               <button
-                className="absolute top-2 right-2 text-gray-500 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                className="absolute top-4 right-4 w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full
+                         text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600
+                         focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200
+                         flex items-center justify-center"
                 onClick={() => setShowShortcuts(false)}
                 aria-label="Close keyboard shortcuts"
               >
                 ✕
               </button>
-              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Keyboard Shortcuts</h2>
-              <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300">
-                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">/</kbd>: Focus search</li>
-                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">Alt + 1</kbd>: Quick Stats Tab</li>
-                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">Alt + 2</kbd>: Analytics Tab</li>
-                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">Alt + 3</kbd>: Achievements Tab</li>
-                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">Esc</kbd>: Blur input / Close modals</li>
-                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">?</kbd>: Toggle this help dialog</li>
-                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">Enter</kbd>: Close this dialog</li>
-                <li><kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-600 dark:text-white rounded">Ctrl + K / Cmd + K</kbd>: Open Command Palette</li>
-              </ul>
+              
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Keyboard Shortcuts
+                </h2>
+                <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full" />
+              </div>
+              
+              <div className="space-y-4">
+                {[
+                  { key: '/', desc: 'Focus search' },
+                  { key: 'Alt + 1', desc: 'Quick Stats Tab' },
+                  { key: 'Alt + 2', desc: 'Analytics Tab' },
+                  { key: 'Alt + 3', desc: 'Achievements Tab' },
+                  { key: 'Esc', desc: 'Blur input / Close modals' },
+                  { key: '?', desc: 'Toggle this help dialog' },
+                  { key: 'Enter', desc: 'Close this dialog' },
+                  { key: 'Ctrl + K / Cmd + K', desc: 'Open Command Palette' }
+                ].map((shortcut, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 
+                                           rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <kbd className="px-3 py-1 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 
+                                  rounded-lg shadow-sm font-mono text-sm font-medium border border-gray-200 dark:border-gray-600">
+                      {shortcut.key}
+                    </kbd>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium text-sm">{shortcut.desc}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

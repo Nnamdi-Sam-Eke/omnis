@@ -206,20 +206,26 @@ const ScenarioAccuracyChart = forwardRef((props,ref) => {
           ))}
         </div>
 
-        <div className="relative w-full max-w-5xl mx-auto h-[50vh] sm:h-[45vh] md:h-[40vh] lg:h-[35vh] xl:h-[30vh] overflow-x-auto transition-all duration-300 bg-gradient-to-br from-white via-slate-50/50 to-purple-50/30 dark:from-slate-800 dark:via-slate-800/80 dark:to-purple-900/20 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-inner">
-          {isLoading ? (
-            <div className="w-full h-full relative overflow-hidden rounded-2xl">
-              {/* shimmer loader here if you have one */}
-            </div>
-          ) : (
-            <div className="relative" style={{ minWidth: `${minWidth}px`, height: "250%" }}>
-              <Suspense fallback={<div>Loading chart...</div>}>
-                <Line data={data} options={options} />
-              </Suspense>
-            </div>
-          )}
-        </div>
-      </div>
+       <div className="relative w-full max-w-5xl mx-auto h-[50vh] sm:h-[50vh] md:h-[55vh] lg:h-[60vh] xl:h-[65vh] 2xl:h-[70vh] transition-all duration-300 bg-gradient-to-br from-white via-slate-50/50 to-purple-50/30 dark:from-slate-800 dark:via-slate-800/80 dark:to-purple-900/20 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-inner overflow-hidden">
+  {isLoading ? (
+    <div className="w-full h-full relative rounded-2xl">
+      {/* shimmer loader here if you have one */}
+    </div>
+  ) : (
+    <div className="absolute inset-0">
+      <Suspense fallback={<div>Loading chart...</div>}>
+        <Line
+          data={data}
+          options={{
+            ...options,
+            maintainAspectRatio: false,
+          }}
+        />
+      </Suspense>
+    </div>
+  )}
+</div>
+</div>
     </div>
   );
 });

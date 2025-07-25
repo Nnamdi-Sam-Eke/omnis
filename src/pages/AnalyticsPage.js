@@ -5,7 +5,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import SkeletonLoader from '../components/SkeletonLoader';
 import useAccessControl from '../hooks/useAccessControl';
 import UpgradeModal from '../components/UpgradeModal';
-import { Clock, FlaskConical, Target, Lightbulb, Download, FileText } from 'lucide-react';
+import { Clock, FlaskConical, Target, Lightbulb, Download, FileText, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CountUp from 'react-countup';
 import html2canvas from 'html2canvas';
@@ -58,7 +58,6 @@ const AnalyticsPage = () => {
     setLoading(false);
   };
 
-  // Move the handleExportReportClick function outside of useEffect
   const handleExportReportClick = () => {
     setToastMessage("Feature Coming Soon!");
     setTimeout(() => setToastMessage(""), 4000);
@@ -118,7 +117,6 @@ const AnalyticsPage = () => {
     try {
       setIsDownloading(true);
       
-      // Show notification if charts aren't ready
       if (!allChartsReady) {
         alert('Charts are still loading. The PDF will be generated with available data.');
       }
@@ -193,168 +191,280 @@ const AnalyticsPage = () => {
 
   if (!checkAccess('fullAnalytics')) {
     return (
-      <div className="p-6 min-h-screen text-center">
-        <h2 className="text-xl font-semibold text-red-500 mb-4">
-          Access Denied: Upgrade Required</h2>
-        <p className="text-xl font-semibold text-red-500 mb-4">Upgrade your subscription to Pro or Enterprise to unlock full analytics features.</p>
-        <button
-          onClick={handleUpgradeClick}
-          className="px-4 py-2 bg-blue-600 text-white mt-10 rounded hover:bg-blue-700"
-          disabled={loading}
-        >
-          {loading ? 'Loading...' : 'Upgrade Now'}
-        </button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-blue-900">
+        <div className="container mx-auto px-6 py-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto text-center"
+          >
+            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-3xl p-12 shadow-2xl border border-white/20">
+              <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-8">
+                <TrendingUp className="w-12 h-12 text-white" />
+              </div>
+              
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-red-500 to-pink-600 bg-clip-text text-transparent mb-6">
+                Premium Analytics Required
+              </h2>
+              
+              <p className="text-lg text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
+                Unlock comprehensive analytics and insights to track your progress and optimize your learning journey.
+              </p>
+              
+              <motion.button
+                onClick={handleUpgradeClick}
+                disabled={loading}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-4 bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Loading...
+                  </div>
+                ) : (
+                  'Upgrade Now'
+                )}
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
         {showUpgradeModal && <UpgradeModal onClose={handleCloseModal} />}
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-4 min-h-screen">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-300">User Analytics & Insights</h2>
-        
-        {/* Enhanced Download Button */}
-        <motion.button
-          onClick={handleExportReportClick}
-          initial={{ scale: 1 }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className={`
-            relative group flex items-center gap-3 px-6 py-3 
-            text-white font-medium rounded-xl
-            transition-all duration-300 ease-in-out
-            shadow-lg
-            cursor-not-allowed
-            ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}
-            bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl transform hover:-translate-y-0.5
-            border border-blue-500/20
-            backdrop-blur-sm
-          `}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-blue-900">
+      <div className="container mx-auto px-6 py-8">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12"
         >
-          {/* Background glow effect */}
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-400/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
-
-          {/* Button content */}
-          <div className="relative flex items-center gap-3">
-            <div className="relative">
-              <Download className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
-              <FileText className="w-3 h-3 absolute -bottom-1 -right-1 text-white/80" />
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <TrendingUp className="w-7 h-7 text-white" />
             </div>
-            <span className="text-sm font-semibold">Export Report</span>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Analytics Hub
+              </h1>
+              <p className="text-slate-600 dark:text-slate-300 mt-1">
+                Comprehensive insights and performance metrics
+              </p>
+            </div>
           </div>
+          
+          {/* Modern Export Button */}
+          <motion.button
+            onClick={handleExportReportClick}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative flex items-center gap-3">
+              <div className="relative">
+                <Download className="w-5 h-5 transition-transform duration-300 group-hover:rotate-12" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-white/40 rounded-full animate-pulse"></div>
+              </div>
+              <span className="font-semibold">Export Report</span>
+            </div>
+            
+            {/* Tooltip */}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-10">
+              <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+              Feature Coming Soon
+            </div>
+          </motion.button>
+        </motion.div>
 
-          {/* Tooltip */}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-10">
-            Feature Coming Soon
-          </div>
-        </motion.button>
-      </div>
-
-      <div id="analytics-panel" className="space-y-6">
-        {loading && !error ? (
-          <SkeletonLoader height="h-[300px]" />
-        ) : error ? (
-          <div className="text-red-500 text-center py-4">{error}</div>
-        ) : (
-          <>
+        {/* Analytics Content */}
+        <div id="analytics-panel" className="space-y-8">
+          {loading && !error ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="w-5 h-5 text-yellow-500" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Total Time Spent</span>
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl p-6 border border-white/20">
+                  <SkeletonLoader height="h-[200px]" />
                 </div>
-                <div ref={analyticsCardRef}>
-                  <Suspense fallback={<SkeletonLoader height="h-[150px]" />}>
-                    <AnalyticsCard
-                      value={<CountUp end={totalTime} duration={2} />}
-                      label="hours"
-                      onRendered={() => setChartsReady(prev => ({ ...prev, analyticsCard: true }))}
-                    />
-                  </Suspense>
-                </div>
-              </motion.div>
-
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <FlaskConical className="w-5 h-5 text-indigo-500" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Total Simulations</span>
-                </div>
-                <div ref={dashboardChartsRef}>
-                  <Suspense fallback={<SkeletonLoader height="h-[150px]" />}>
-                    <DashboardCharts
-                      total={totalSimulations}
-                      onRendered={() => setChartsReady(prev => ({ ...prev, dashboardCharts: true }))}
-                    />
-                  </Suspense>
-                </div>
-              </motion.div>
+              ))}
             </div>
-
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-              <div className="flex items-center gap-2 mb-2">
-                <Target className="w-5 h-5 text-green-600" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">Scenario Accuracy</span>
+          ) : error ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-3xl p-8 text-center"
+            >
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-red-600 dark:text-red-400 text-2xl">⚠️</span>
               </div>
-              <div ref={scenarioAccuracyChartRef}>
-                <Suspense fallback={<SkeletonLoader height="h-[300px]" />}>
-                  <ScenarioAccuracyChart
-                    accuracy={scenarioAccuracy}
-                    onRendered={() => setChartsReady(prev => ({ ...prev, scenarioAccuracy: true }))}
-                  />
-                </Suspense>
-              </div>
+              <p className="text-red-600 dark:text-red-400 text-lg font-medium">{error}</p>
             </motion.div>
+          ) : (
+            <>
+              {/* Top Metrics Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300"
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center">
+                      <Clock className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-800 dark:text-slate-200">Total Time Spent</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">Your learning journey</p>
+                    </div>
+                  </div>
+                  <div ref={analyticsCardRef}>
+                    <Suspense fallback={<SkeletonLoader height="h-[120px]" />}>
+                      <AnalyticsCard
+                        value={<CountUp end={totalTime} duration={2} />}
+                        label="hours"
+                        onRendered={() => setChartsReady(prev => ({ ...prev, analyticsCard: true }))}
+                      />
+                    </Suspense>
+                  </div>
+                </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <FlaskConical className="w-5 h-5 text-pink-500" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Category Distribution</span>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300"
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                      <FlaskConical className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-800 dark:text-slate-200">Total Simulations</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">Experiments completed</p>
+                    </div>
+                  </div>
+                  <div ref={dashboardChartsRef}>
+                    <Suspense fallback={<SkeletonLoader height="h-[120px]" />}>
+                      <DashboardCharts
+                        total={totalSimulations}
+                        onRendered={() => setChartsReady(prev => ({ ...prev, dashboardCharts: true }))}
+                      />
+                    </Suspense>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Accuracy Chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7 }}
+                className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300"
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                    <Target className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-800 dark:text-slate-200">Scenario Accuracy</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Performance over time</p>
+                  </div>
                 </div>
-                <div ref={categoryDistributionChartRef}>
-                  <Suspense fallback={<SkeletonLoader height="h-[250px]" />}>
-                    <CategoryDistributionChart
-                      data={categoryDistribution}
-                      onRendered={() => setChartsReady(prev => ({ ...prev, categoryDistribution: true }))}
+                <div ref={scenarioAccuracyChartRef}>
+                  <Suspense fallback={<SkeletonLoader height="h-[300px]" />}>
+                    <ScenarioAccuracyChart
+                      accuracy={scenarioAccuracy}
+                      onRendered={() => setChartsReady(prev => ({ ...prev, scenarioAccuracy: true }))}
                     />
                   </Suspense>
                 </div>
               </motion.div>
 
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Lightbulb className="w-5 h-5 text-yellow-400" />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Narrative Insights</span>
-                </div>
-                <div ref={narrativePanelRef}>
-                  <Suspense fallback={<SkeletonLoader height="h-[250px]" />}>
-                    <NarrativePanel
-                      insights={narrativeInsights}
-                      onRendered={() => setChartsReady(prev => ({ ...prev, narrativePanel: true }))}
-                    />
-                  </Suspense>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        )}
+              {/* Bottom Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8 }}
+                  className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300"
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-600 rounded-xl flex items-center justify-center">
+                      <FlaskConical className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-800 dark:text-slate-200">Category Distribution</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">Topic breakdown</p>
+                    </div>
+                  </div>
+                  <div ref={categoryDistributionChartRef}>
+                    <Suspense fallback={<SkeletonLoader height="h-[220px]" />}>
+                      <CategoryDistributionChart
+                        data={categoryDistribution}
+                        onRendered={() => setChartsReady(prev => ({ ...prev, categoryDistribution: true }))}
+                      />
+                    </Suspense>
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.9 }}
+                  className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300"
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl flex items-center justify-center">
+                      <Lightbulb className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-800 dark:text-slate-200">Narrative Insights</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">AI-powered analysis</p>
+                    </div>
+                  </div>
+                  <div ref={narrativePanelRef}>
+                    <Suspense fallback={<SkeletonLoader height="h-[220px]" />}>
+                      <NarrativePanel
+                        insights={narrativeInsights}
+                        onRendered={() => setChartsReady(prev => ({ ...prev, narrativePanel: true }))}
+                      />
+                    </Suspense>
+                  </div>
+                </motion.div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
       
-      {/* Modified Toast - Now positioned at top-left */}
+      {/* Modern Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
           <motion.div
             key="toast"
-            initial={{ opacity: 0, x: -100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.4 }}
-            className="fixed top-6 left-6 backdrop-blur-lg bg-green-600 text-white py-3 px-4 rounded-lg shadow-lg z-[1000] max-w-xs"
+            initial={{ opacity: 0, x: -100, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -100, scale: 0.8 }}
+            transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
+            className="fixed top-6 left-6 z-[1000]"
           >
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium">{toastMessage}</span>
+            <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-2xl p-4 max-w-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-800 dark:text-slate-200">Coming Soon</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{toastMessage}</p>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}

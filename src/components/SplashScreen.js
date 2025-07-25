@@ -34,7 +34,7 @@ export default function SplashScreen() {
               alt="App Logo"
               className="w-16 h-16"
             />
-            <h1 className="text-4xl font-bold capitalize text-blue-600 font-poppins dark:text-blue-300">
+            <h1 className="text-4xl font-bold capitalize text-indigo-500 font-poppins ">
               Omnis
             </h1>
           </motion.div>

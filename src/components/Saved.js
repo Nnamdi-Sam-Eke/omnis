@@ -59,91 +59,200 @@ const SavedComponent = () => {
 
   if (loading) {
     return (
-      <div className="animate-pulse space-y-4 max-w-6xl mx-auto mt-8 p-8 border bg-white dark:bg-gray-900 rounded-2xl shadow-lg hover:shadow-blue-500/50 rounded-lg">
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
-        <div className="h-12 bg-gray-300 dark:bg-blue-700 rounded" />
+      <div className="animate-pulse space-y-6 max-w-6xl mx-auto p-8">
+        <div className="space-y-4">
+          <div className="h-8 bg-gradient-to-r from-slate-300 to-slate-200 dark:from-slate-700 dark:to-slate-600 rounded-xl"></div>
+          <div className="h-12 bg-gradient-to-r from-emerald-200 to-teal-200 dark:from-emerald-800 dark:to-teal-800 rounded-xl"></div>
+          <div className="space-y-3">
+            <div className="h-32 bg-gradient-to-r from-slate-200 to-slate-100 dark:from-slate-700 dark:to-slate-600 rounded-2xl"></div>
+            <div className="h-32 bg-gradient-to-r from-slate-200 to-slate-100 dark:from-slate-700 dark:to-slate-600 rounded-2xl"></div>
+            <div className="h-32 bg-gradient-to-r from-slate-200 to-slate-100 dark:from-slate-700 dark:to-slate-600 rounded-2xl"></div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto mt-8 p-8 border bg-white dark:bg-gray-900 rounded-2xl shadow-lg hover:shadow-blue-500/50 rounded-lg">
-      <h1 className="text-2xl font-bold text-center p-2 text-green-600 dark:text-green-300 mb-4">
-        Saved Queries
-      </h1>
-
-      <div className="mt-4 relative">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search Saved Scenarios"
-          className="pl-10 pr-4 py-2 w-full md:w-1/2 border rounded-lg text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          aria-label="Search saved scenarios"
-          title="Type to search for saved scenarios"
-        />
-        {suggestions.length > 0 && (
-          <ul
-            className="mt-2 bg-white dark:bg-gray-800 shadow-lg rounded-md max-h-40 overflow-y-auto"
-            role="listbox"
-            aria-live="polite"
-            title="Click a suggestion to autofill the search"
-          >
-            {suggestions.map((s, i) => (
-              <li
-                key={i}
-                role="option"
-                tabIndex={0}
-                onClick={() => setSearchQuery(s)}
-                onKeyDown={(e) =>
-                  (e.key === "Enter" || e.key === " ") && setSearchQuery(s)
-                }
-                className="px-4 py-2 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-600"
-                title={`Click to search for "${s}"`}
-              >
-                {s}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Flex container for horizontal layout */}
-      <div className="flex gap-8 mt-8">
-  {/* Saved Queries Card */}
-  <div className="flex-1 space-y-4">
-    {savedQueries.length === 0 ? (
-      <p className="text-center text-gray-500 dark:text-gray-400">
-        No saved queries available.
-      </p>
-    ) : searchQuery && filteredSavedQueries.length === 0 ? (
-      // Show no matches message only if searchQuery is not empty
-      <p className="text-center text-gray-500 dark:text-gray-400">
-        No matching queries found for "{searchQuery}".
-      </p>
-    ) : (
-      filteredSavedQueries.map((item) => (
-        <div
-          key={item.id}
-          className="p-4 bg-gray-100 dark:bg-gray-800 rounded-xl shadow"
-        >
-          <p className="text-green-600 font-semibold">Query:</p>
-          <p className="text-gray-900 dark:text-white">{item.query}</p>
-          <p className="text-green-600 font-semibold mt-2">Response:</p>
-          <p className="text-gray-900 dark:text-gray-300">
-            {item.response || "No response recorded"}
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            {item.timestamp?.seconds
-              ? new Date(item.timestamp.seconds * 1000).toLocaleString()
-              : "No timestamp available"}
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 p-4">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center pt-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent mb-4">
+            Saved Queries
+          </h1>
+          <div className="w-24 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 mx-auto rounded-full"></div>
         </div>
-      ))
-    )}
-  </div>
+
+        {/* Search Container */}
+        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-2xl p-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="w-5 h-5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search saved queries..."
+              className="w-full pl-12 pr-4 py-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent transition-all duration-300 shadow-lg"
+              aria-label="Search saved queries"
+              title="Type to search for saved queries"
+            />
+          </div>
+
+          {/* Search Suggestions */}
+          {suggestions.length > 0 && (
+            <div className="mt-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden">
+              <div className="max-h-40 overflow-y-auto">
+                {suggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    role="option"
+                    tabIndex={0}
+                    onClick={() => setSearchQuery(suggestion)}
+                    onKeyDown={(e) =>
+                      (e.key === "Enter" || e.key === " ") && setSearchQuery(suggestion)
+                    }
+                    className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors duration-200 border-b border-slate-100 dark:border-slate-700 last:border-b-0"
+                    title={`Click to search for "${suggestion}"`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                      <span className="text-sm text-slate-700 dark:text-slate-300 truncate">
+                        {suggestion}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Saved Queries Container */}
+        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-2xl overflow-hidden">
+          <div className="p-6">
+            {/* Case 1: No saved queries at all */}
+            {savedQueries.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/50 dark:to-teal-900/50 rounded-full flex items-center justify-center">
+                  <svg className="w-10 h-10 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-2">
+                  No Saved Queries Yet
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400">
+                  Your saved queries will appear here once you start saving them.
+                </p>
+              </div>
+            ) : /* Case 2: Have saved queries but search returned no results */
+            searchQuery && filteredSavedQueries.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/50 dark:to-orange-900/50 rounded-full flex items-center justify-center">
+                  <svg className="w-10 h-10 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-2">
+                  No Matching Queries Found
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400">
+                  No saved queries match your search for "{searchQuery}".
+                </p>
+              </div>
+            ) : /* Case 3: Display filtered results */
+            (
+              <div className="space-y-6">
+                {filteredSavedQueries.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="group bg-gradient-to-r from-white/80 to-slate-50/80 dark:from-slate-800/80 dark:to-slate-700/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-600/50 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] animate-in fade-in"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="flex items-start space-x-4">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-4">
+                        <div>
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
+                              Query
+                            </h3>
+                            <div className="flex-1 h-px bg-gradient-to-r from-emerald-300 to-transparent dark:from-emerald-600"></div>
+                          </div>
+                          <p className="text-slate-900 dark:text-slate-100 font-medium leading-relaxed">
+                            {item.query}
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="text-sm font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-wide">
+                              Response
+                            </h3>
+                            <div className="flex-1 h-px bg-gradient-to-r from-teal-300 to-transparent dark:from-teal-600"></div>
+                          </div>
+                          <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                            {item.response || "No response recorded"}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center space-x-2 pt-2">
+                          <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm text-slate-500 dark:text-slate-400">
+                            {item.timestamp?.seconds
+                              ? new Date(item.timestamp.seconds * 1000).toLocaleString()
+                              : "No timestamp available"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-in {
+          animation: fade-in 0.6s ease-out forwards;
+        }
+        
+        .backdrop-blur-sm {
+          backdrop-filter: blur(4px);
+        }
+        
+        .backdrop-blur-lg {
+          backdrop-filter: blur(16px);
+        }
+      `}</style>
     </div>
   );
 };

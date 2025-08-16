@@ -603,12 +603,9 @@ return (
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 dark:from-emerald-400 dark:via-teal-400 dark:to-blue-400 bg-clip-text text-transparent leading-tight">
+                  <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 dark:from-emerald-400 dark:via-teal-400 dark:to-blue-400 bg-clip-text text-transparent leading-tight">
                     Scenario Management Dashboard
                   </h2>
-                  <p className="text-slate-600 dark:text-slate-300 text-lg font-medium mt-1">
-                    Advanced scenario analysis and comparison tools
-                  </p>
                 </div>
               </div>
             </div>

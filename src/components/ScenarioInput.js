@@ -1,17 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeSanitize from "rehype-sanitize";
-import rehypeHighlight from "rehype-highlight";
-import html2pdf from "html2pdf.js";
-import "highlight.js/styles/github-dark.css";
 import { saveUserInteraction } from "../services/userBehaviourService";
 import { useMemory } from "../MemoryContext";
 import { db } from "../firebase";
 import { Timestamp } from "firebase/firestore";
-import { Trash2, Plus, Target } from "lucide-react";
-
-
+import { Trash2, Plus, Target, Tag } from "lucide-react";
 
 import {
   collection,
@@ -26,30 +18,25 @@ import {
   where,
 } from "firebase/firestore";
 import { useAuth } from "../AuthContext";
-import { ChevronRight, ChevronUp, Lock, Play, Crown, FileText, Copy, Undo, Redo, Download, Type, Sparkles, Eye, Edit3, Zap } from "lucide-react";
+import { ChevronRight, ChevronUp, Lock, Crown, Copy, Undo, Redo, Type, Sparkles, Edit3, Zap } from "lucide-react";
 import ScenarioSimulationCard from "./SimulationResult";
 import ShimmerLoader from "./ShimmerLoader";
-
-
-
 
 const BACKEND_URL = process.env.NODE_ENV === "development"
   ? "http://localhost:8000/run"
   : "https://your-production-backend.com/run";
 
-
-// Enhanced InputPreview component with modern design
-const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenario here..." }) => {
-  const [history, setHistory] = useState([value || ""]);
+// Simplified InputForm component without markdown
+const SimplifiedInputForm = ({ scenario, onScenarioChange, onCategoryChange, placeholder = "Type your scenario here..." }) => {
+  const [history, setHistory] = useState([scenario?.text || ""]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [showCopySuccess, setShowCopySuccess] = useState(false);
-  const previewRef = useRef(null);
   const textareaRef = useRef(null);
 
   // Initialize history when value changes from parent
   useEffect(() => {
-    if (value !== history[historyIndex]) {
-      setHistory([value || ""]);
+    if (scenario?.text !== history[historyIndex]) {
+      setHistory([scenario?.text || ""]);
       setHistoryIndex(0);
     }
   }, []);
@@ -59,7 +46,7 @@ const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenar
     const newValue = e.target.value;
     
     // Update parent component
-    onChange(newValue);
+    onScenarioChange({ ...scenario, text: newValue });
     
     // Update history for undo/redo
     const newHistory = history.slice(0, historyIndex + 1);
@@ -68,24 +55,16 @@ const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenar
     setHistoryIndex(newHistory.length - 1);
   };
 
-  // Export preview as PDF
-  const handleExportPDF = () => {
-    if (previewRef.current) {
-      const opt = {
-        margin: 1,
-        filename: 'scenario-preview.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
-      html2pdf().set(opt).from(previewRef.current).save();
-    }
+  // Handle category change
+  const handleCategoryChange = (e) => {
+    const newCategory = e.target.value;
+    onCategoryChange({ ...scenario, category: newCategory });
   };
 
-  // Copy input markdown to clipboard
+  // Copy input text to clipboard
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(value);
+      await navigator.clipboard.writeText(scenario?.text || "");
       setShowCopySuccess(true);
       setTimeout(() => setShowCopySuccess(false), 2000);
     } catch (err) {
@@ -104,7 +83,7 @@ const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenar
   const handleUndo = () => {
     if (historyIndex > 0) {
       const previousValue = history[historyIndex - 1];
-      onChange(previousValue);
+      onScenarioChange({ ...scenario, text: previousValue });
       setHistoryIndex(historyIndex - 1);
     }
   };
@@ -113,14 +92,14 @@ const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenar
   const handleRedo = () => {
     if (historyIndex < history.length - 1) {
       const nextValue = history[historyIndex + 1];
-      onChange(nextValue);
+      onScenarioChange({ ...scenario, text: nextValue });
       setHistoryIndex(historyIndex + 1);
     }
   };
 
   // Calculate word and character counts
-  const wordCount = value ? value.trim().split(/\s+/).filter(Boolean).length : 0;
-  const charCount = value ? value.length : 0;
+  const wordCount = scenario?.text ? scenario.text.trim().split(/\s+/).filter(Boolean).length : 0;
+  const charCount = scenario?.text ? scenario.text.length : 0;
 
   return (
     <div className="space-y-6">
@@ -159,15 +138,6 @@ const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenar
             <Copy className="w-4 h-4 transition-transform group-hover:scale-110" />
             <span>{showCopySuccess ? 'Copied!' : 'Copy'}</span>
           </button>
-          
-          <button
-            onClick={handleExportPDF}
-            className="group flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-sm hover:shadow-md"
-            title="Export preview as PDF"
-          >
-            <Download className="w-4 h-4 transition-transform group-hover:scale-110" />
-            <span>Export PDF</span>
-          </button>
         </div>
         
         <div className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400">
@@ -183,14 +153,36 @@ const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenar
         </div>
       </div>
 
-      {/* Modern Side-by-side Editor and Preview */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 min-h-[450px]">
-        {/* Enhanced Input Section */}
-        <div className="flex flex-col space-y-4">
+      {/* Category and Input Form */}
+      <div className="space-y-4">
+        {/* Category Input */}
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg text-sm font-medium">
+              <Tag className="w-4 h-4" />
+              <span>Category</span>
+            </div>
+            <div className="flex-1 h-px bg-gradient-to-r from-slate-300 to-transparent dark:from-slate-600"></div>
+          </div>
+          
+          <div className="relative group">
+            <input
+              type="text"
+              value={scenario?.category || ""}
+              onChange={handleCategoryChange}
+              className="w-full p-4 border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 dark:text-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 group-hover:border-slate-400 dark:group-hover:border-slate-500 shadow-lg"
+              placeholder="e.g., Business Strategy, Risk Assessment, Market Analysis..."
+            />
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/5 to-pink-500/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+          </div>
+        </div>
+
+        {/* Scenario Input */}
+        <div className="flex flex-col space-y-2">
           <div className="flex items-center gap-3 mb-2">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg text-sm font-medium">
               <Edit3 className="w-4 h-4" />
-              <span>Editor</span>
+              <span>Scenario</span>
             </div>
             <div className="flex-1 h-px bg-gradient-to-r from-slate-300 to-transparent dark:from-slate-600"></div>
           </div>
@@ -198,9 +190,9 @@ const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenar
           <div className="relative group">
             <textarea
               ref={textareaRef}
-              value={value}
+              value={scenario?.text || ""}
               onChange={handleInputChange}
-              className="w-full p-6 border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 dark:text-white font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[400px] group-hover:border-slate-400 dark:group-hover:border-slate-500 shadow-lg"
+              className="w-full p-6 border-2 border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 dark:text-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[200px] group-hover:border-slate-400 dark:group-hover:border-slate-500 shadow-lg"
               placeholder={placeholder}
               spellCheck="false"
             />
@@ -209,98 +201,7 @@ const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenar
           
           <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
             <Sparkles className="w-4 h-4 text-blue-500" />
-            <span>Pro tip: Use markdown formatting like **bold**, *italic*, # headers, - lists, etc.</span>
-          </div>
-        </div>
-
-        {/* Enhanced Live Preview Section */}
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-sm font-medium">
-              <Eye className="w-4 h-4" />
-              <span>Live Preview</span>
-            </div>
-            <div className="flex items-center gap-2 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full text-xs font-medium">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-              <span>Real-time</span>
-            </div>
-            <div className="flex-1 h-px bg-gradient-to-r from-slate-300 to-transparent dark:from-slate-600"></div>
-          </div>
-          
-          <div className="relative group">
-            <div
-              ref={previewRef}
-              className="p-6 overflow-y-auto border-2 border-emerald-200 dark:border-emerald-700 rounded-xl bg-gradient-to-br from-emerald-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 prose prose-sm dark:prose-invert max-w-none min-h-[400px] shadow-lg group-hover:border-emerald-300 dark:group-hover:border-emerald-600 transition-all duration-200"
-              style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#10b981 transparent'
-              }}
-            >
-              {value ? (
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeSanitize, rehypeHighlight]}
-                  components={{
-                    // Enhanced styling for better preview
-                    h1: ({node, ...props}) => <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6" {...props} />,
-                    h2: ({node, ...props}) => <h2 className="text-2xl font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-4" {...props} />,
-                    h3: ({node, ...props}) => <h3 className="text-xl font-medium bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3" {...props} />,
-                    p: ({node, ...props}) => <p className="mb-4 leading-relaxed text-slate-700 dark:text-slate-300" {...props} />,
-                    ul: ({node, ...props}) => <ul className="mb-4 pl-6 space-y-2" {...props} />,
-                    ol: ({node, ...props}) => <ol className="mb-4 pl-6 space-y-2" {...props} />,
-                    li: ({node, ...props}) => <li className="text-slate-700 dark:text-slate-300" {...props} />,
-                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-blue-400 bg-blue-50 dark:bg-blue-900/20 pl-6 py-4 italic my-6 rounded-r-lg" {...props} />,
-                    code: ({node, inline, ...props}) => 
-                      inline ? 
-                        <code className="bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded-md text-sm font-mono" {...props} /> :
-                        <code className="block bg-slate-100 dark:bg-slate-800 p-4 rounded-lg overflow-x-auto border-l-4 border-blue-400" {...props} />,
-                    strong: ({node, ...props}) => <strong className="font-bold text-slate-900 dark:text-slate-100" {...props} />,
-                    em: ({node, ...props}) => <em className="italic text-slate-800 dark:text-slate-200" {...props} />
-                  }}
-                >
-                  {value}
-                </ReactMarkdown>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <div className="mb-6 p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
-                    <FileText className="w-16 h-16 mx-auto mb-4 text-slate-400 dark:text-slate-500" />
-                    <p className="text-slate-600 dark:text-slate-400 mb-4">Start typing to see your live preview...</p>
-                  </div>
-                  
-                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 text-left max-w-sm">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Sparkles className="w-5 h-5 text-blue-500" />
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">Try some markdown:</span>
-                    </div>
-                    <div className="font-mono text-sm space-y-2 text-slate-600 dark:text-slate-400">
-                      <div className="flex items-center gap-2">
-                        <span className="text-blue-500">#</span>
-                        <span>Heading</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-emerald-500">**</span>
-                        <span>Bold text</span>
-                        <span className="text-emerald-500">**</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-purple-500">*</span>
-                        <span>Italic text</span>
-                        <span className="text-purple-500">*</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-orange-500">-</span>
-                        <span>List item</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-pink-500">&gt;</span>
-                        <span>Quote</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-500/5 to-teal-500/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+            <span>Describe your scenario in detail for better analysis results.</span>
           </div>
         </div>
       </div>
@@ -308,9 +209,9 @@ const EnhancedInputPreview = ({ value, onChange, placeholder = "Type your scenar
   );
 };
 
-// Main ScenarioInput component with modern design
+// Main ScenarioInput component with updated structure
 export default function ScenarioInput({ onSimulate }) {
-  const [scenarios, setScenarios] = useState([""]);
+  const [scenarios, setScenarios] = useState([{ text: "", category: "" }]);
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState([]);
   const { memory, saveToFirestore } = useMemory();
@@ -480,16 +381,17 @@ export default function ScenarioInput({ onSimulate }) {
     }
   };
 
-  const handleScenarioSubmit = async (query, response) => {
+  const handleScenarioSubmit = async (query, response, category) => {
     try {
       const historyEntry = {
         query,
         response,
+        category, // Include category in the database entry
         timestamp: serverTimestamp(),
       };
       await addDoc(collection(db, "users", user.uid, "userInteractions"), historyEntry);
       setChatHistory((prev) => [...prev, historyEntry]);
-      console.log("✅ History saved!");
+      console.log("✅ History saved with category!");
     } catch (error) {
       console.error("❌ Error saving history:", error);
     }
@@ -526,8 +428,8 @@ export default function ScenarioInput({ onSimulate }) {
       }
     }
 
-    // Filter scenarios and use the live preview text (which is the same as the input value)
-    const filteredScenarios = scenarios.filter((s) => s.trim() !== "");
+    // Filter scenarios and include both text and category
+    const filteredScenarios = scenarios.filter((s) => s.text.trim() !== "");
     if (!filteredScenarios.length) return;
 
     console.log("📊 Simulating scenarios:", filteredScenarios);
@@ -537,76 +439,74 @@ export default function ScenarioInput({ onSimulate }) {
     setSimulationLoading(true);
     setError(null);
     setResults([]);
-
-    
     
     try {
-  const simulationStart = Date.now();
+      const simulationStart = Date.now();
 
-  const simulationPromises = filteredScenarios.map(async (scenario) => {
-    const payload = {
-      input_type: "text",
-      text: scenario,
-      user_id: user?.uid
-    };
+      const simulationPromises = filteredScenarios.map(async (scenario) => {
+        const payload = {
+          input_type: "text",
+          text: scenario.text,
+          category: scenario.category, // Include category in payload
+          user_id: user?.uid
+        };
 
-    console.log("📤 Sending to /run:", payload);
+        console.log("📤 Sending to /run:", payload);
 
-    try {
-      const response = await fetch(BACKEND_URL, {
-        method: "POST",
-        body: JSON.stringify({ input_data: payload }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        try {
+          const response = await fetch(BACKEND_URL, {
+            method: "POST",
+            body: JSON.stringify({ input_data: payload }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          const result = await response.json();
+          console.log("📥 Received response:", result);
+
+          if (!response.ok) {
+            throw new Error(result.detail || "Simulation request failed");
+          }
+
+          await handleScenarioSubmit(scenario.text, result, scenario.category);
+          return { query: scenario.text, response: result, category: scenario.category };
+
+        } catch (err) {
+          console.error("❌ Simulation fetch error:", err);
+          return { query: scenario.text, response: { error: err.message }, category: scenario.category };
+        }
       });
 
-      const result = await response.json();
-      console.log("📥 Received response:", result);
+      // Wait for all simulations to complete 
+      const allResults = await Promise.all(simulationPromises);
 
-      if (!response.ok) {
-        throw new Error(result.detail || "Simulation request failed");
-      }
+      const elapsed = Date.now() - simulationStart;
+      const delay = Math.max(0, 4000 - elapsed);
 
-      await handleScenarioSubmit(scenario, result);
-      return { query: scenario, response: result };
-
+      setTimeout(() => {
+        setResults(allResults);
+        setSimulationLoading(false);
+      }, delay);
+      console.log("✅ All simulations completed in", elapsed, "ms");
+      setSimulationLoading(false);
+      setResults(allResults);
+      console.log("✅ Simulation results set:", allResults);
     } catch (err) {
-      console.error("❌ Simulation fetch error:", err);
-      return { query: scenario, response: { error: err.message } };
+      setError("An error occurred during simulation.");
+      console.error("Simulation error:", err);
+      setSimulationLoading(false);
     }
-  });
-  // Wait for all simulations to complete 
+  };
 
-  const allResults = await Promise.all(simulationPromises);
+  // Handle scenario changes (both text and category)
+  const handleScenarioChange = (index, updatedScenario) => {
+    const updated = [...scenarios];
+    updated[index] = updatedScenario;
+    setScenarios(updated);
+  };
 
-  const elapsed = Date.now() - simulationStart;
-  const delay = Math.max(0, 4000 - elapsed);
-
-  setTimeout(() => {
-    setResults(allResults);
-    setSimulationLoading(false);
-  }, delay);
-  console.log("✅ All simulations completed in", elapsed, "ms");
-  setSimulationLoading(false);
-  setResults(allResults);
-  console.log("✅ Simulation results set:", allResults);
-} catch (err) {
-  setError("An error occurred during simulation.");
-  console.error("Simulation error:", err);
-  setSimulationLoading(false);
-  }
-}; // <-- properly closes handleSimulate function
-
-// Handle input changes for scenarios
-const handleInputChange = (index, value) => {
-
-  const updated = [...scenarios];
-  updated[index] = value;
-  setScenarios(updated);
-};
-
-  const handleAddScenario = () => setScenarios([...scenarios, ""]);
+  const handleAddScenario = () => setScenarios([...scenarios, { text: "", category: "" }]);
 
   const handleRemoveScenario = (index) => {
     if (scenarios.length > 1) {
@@ -639,7 +539,7 @@ const handleInputChange = (index, value) => {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">Scenario Builder</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Create and simulate multiple scenarios</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Create and simulate categorized scenarios</p>
                 </div>
               </div>
               
@@ -647,7 +547,7 @@ const handleInputChange = (index, value) => {
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                   <span className="text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
-                    Markdown Ready
+                    Ready
                   </span>
                 </div>
                 <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
@@ -657,7 +557,7 @@ const handleInputChange = (index, value) => {
             </div>
 
             {/* Collapsible Content */}
-            <div className={`transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+            <div className={`transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[610px] opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
               <div className="p-6 space-y-6">
                 {/* Scenarios List */}
                 <div className="space-y-4 max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
@@ -673,6 +573,11 @@ const handleInputChange = (index, value) => {
                             <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
                               Scenario {index + 1}
                             </h4>
+                            {scenario.category && (
+                              <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full text-xs font-medium">
+                                {scenario.category}
+                              </span>
+                            )}
                           </div>
                           
                           {scenarios.length > 1 && (
@@ -686,11 +591,12 @@ const handleInputChange = (index, value) => {
                           )}
                         </div>
 
-                        {/* Input Field */}
-                        <EnhancedInputPreview
-                          value={scenario}
-                          onChange={(value) => handleInputChange(index, value)}
-                          placeholder={`Describe scenario ${index + 1}... Use **bold**, *italic*, # headings, and - lists for rich formatting.`}
+                        {/* Input Form */}
+                        <SimplifiedInputForm
+                          scenario={scenario}
+                          onScenarioChange={(updatedScenario) => handleScenarioChange(index, updatedScenario)}
+                          onCategoryChange={(updatedScenario) => handleScenarioChange(index, updatedScenario)}
+                          placeholder={`Describe scenario ${index + 1}... Be detailed for better analysis.`}
                         />
                       </div>
                     </div>
@@ -791,7 +697,7 @@ const handleInputChange = (index, value) => {
                 Ready for Simulation
               </h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                Add your scenarios and click "Run Simulation" to see results here
+                Add your categorized scenarios and click "Run Simulation" to see results here
               </p>
             </div>
           )}
@@ -865,7 +771,6 @@ const handleInputChange = (index, value) => {
         }
         .scrollbar-thin::-webkit-scrollbar {
           width: 6px;
-        
         }
         .scrollbar-thin::-webkit-scrollbar-track {
           background: transparent;

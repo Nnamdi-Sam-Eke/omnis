@@ -2,6 +2,8 @@ import React from 'react';
 import ScenarioInput from './ScenarioInput'; // Input Form
 import ScenarioInsightsCard from './ScenarioInsightsCard'; // Insights
 import ScenarioPreview from './ScenarioPreview';
+import BranchingContainer from './BranchingContainer';
+
 
 const NewScenarioPage = () => {
   return (
@@ -32,7 +34,7 @@ const NewScenarioPage = () => {
           {/* Left: Scenario Input */}
           <div className="w-full">
             <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <div className="p-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl">
+              <div className="p-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl">            
                 <div className="bg-white dark:bg-slate-800 rounded-xl p-6">
                   <ScenarioInput />
                 </div>

@@ -146,7 +146,7 @@ const AuthForm = () => {
               <div className="flex justify-center space-x-4 mb-4">
                 <button
                   className={`px-4 py-2 rounded-full text-sm font-medium transform transition-transform active:scale-95 ${
-                    isSignUp ? "bg-blue-600 text-white" : "bg-white/20 text-white"
+                    isSignUp ? "bg-purple-600 text-white" : "bg-white/20 text-white"
                   }`}
                   onClick={() => setIsSignUp(true)}
                 >
@@ -154,7 +154,7 @@ const AuthForm = () => {
                 </button>
                 <button
                   className={`px-4 py-2 rounded-full text-sm font-medium transform transition-transform active:scale-95 ${
-                    !isSignUp ? "bg-blue-600 text-white" : "bg-white/20 text-white"
+                    !isSignUp ? "bg-purple-600 text-white" : "bg-white/20 text-white"
                   }`}
                   onClick={() => setIsSignUp(false)}
                 >
@@ -233,7 +233,7 @@ const AuthForm = () => {
 
                <button
   type="submit"
-  className="w-full bg-gradient-to-r from-blue-600 to-green-500 text-white py-3 rounded-full transform transition-transform active:scale-95"
+  className="w-full bg-purple-600 text-white py-3 rounded-full transform transition-transform active:scale-95"
   disabled={isSubmitting}
 >
   {isSignUp

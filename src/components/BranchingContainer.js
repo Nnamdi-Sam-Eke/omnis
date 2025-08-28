@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import BranchingVisualization from "./BranchingVisualization";
+import BranchingVisualizationRF from "./BranchingVisualization";
 
 export default function BranchingContainer({ scenario, numPaths = 3, userDefinedForks = null }) {
   const [branchingData, setBranchingData] = useState(null);
@@ -39,5 +39,11 @@ export default function BranchingContainer({ scenario, numPaths = 3, userDefined
   if (loading) return <p>Loading simulation...</p>;
   if (error) return <p>Error: {error}</p>;
 
-  return <BranchingVisualization branchingData={branchingData} />;
+  return <BranchingVisualizationRF
+  data={branchingData}           // your backend JSON
+  defaultLayout="tree"           // or "graph"
+  narrateEndpoint="/narrate"
+  branchEndpoint="/branch"
+/>
+;
 }

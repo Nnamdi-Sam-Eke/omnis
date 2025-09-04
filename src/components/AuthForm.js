@@ -124,7 +124,7 @@ const AuthForm = () => {
                 />
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-green-500 text-white py-3 rounded-full transform transition-transform active:scale-95"
+                  className="w-full bg-purple-600 to-green-500 text-white py-3 rounded-full transform transition-transform active:scale-95"
                 >
                   Send Password Reset Email
                 </button>

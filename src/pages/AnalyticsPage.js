@@ -444,7 +444,7 @@ const AnalyticsPage = () => {
         </div>
       </div>
       
-      {/* Modern Toast Notification */}
+   {/* Modern Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
           <motion.div
@@ -460,7 +460,7 @@ const AnalyticsPage = () => {
                 <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                 </div>
-                <div>
+                <div>   
                   <p className="font-semibold text-slate-800 dark:text-slate-200">Coming Soon</p>
                   <p className="text-sm text-slate-600 dark:text-slate-400">{toastMessage}</p>
                 </div>

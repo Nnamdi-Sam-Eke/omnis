@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { FiThumbsUp, FiThumbsDown, FiHelpCircle, FiX, FiGitBranch } from "react-icons/fi";
-
+import React, { useState, useEffect , useRef } from "react";
+import { FiThumbsUp, FiThumbsDown, FiHelpCircle, FiX, FiGitBranch, FiLock } from "react-icons/fi";
+import { motion, AnimatePresence } from 'framer-motion';
 // Simple Branching Visualization Component
 import BranchingVisualization from "./BranchingVisualization";
 
@@ -9,7 +9,7 @@ const ScenarioSimulationCard = ({ results, setResults, loading, simulationInput 
   const addFeedback = (timestamp, feedback) => {
     console.log(`Adding feedback: ${timestamp} - ${feedback}`);
   };
-
+ const [toastMessage, setToastMessage] = useState(null);
   const [clickedButtons, setClickedButtons] = useState({});
   const [localResults, setLocalResults] = useState(results || []);
   const [rawResults, setRawResults] = useState({}); // Store raw results from /run
@@ -51,6 +51,10 @@ const ScenarioSimulationCard = ({ results, setResults, loading, simulationInput 
     showFullscreenMode: false
   });
 
+  const handleExportReportClick = () => {
+    setToastMessage("Feature Coming Soon!");
+    setTimeout(() => setToastMessage(""), 4000);
+  };
   // NEW: Handle explore branches functionality
   const handleExploreBranches = async () => {
     try {
@@ -105,6 +109,15 @@ const ScenarioSimulationCard = ({ results, setResults, loading, simulationInput 
       setIsBranchingLoading(false);
     }
   };
+
+   useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => {
+        setToastMessage(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   // Load available voices and detect screen size
   useEffect(() => {
@@ -613,20 +626,69 @@ ${JSON.stringify(result, null, 2)}
                     <div className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-blue-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
                   </button>
                   
-                  {/* Responsive Branch Button */}
-                  <button
-                    onClick={handleExploreBranches}
-                    disabled={isBranchingLoading}
-                    className="group relative flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 disabled:from-purple-300 disabled:to-indigo-300 text-white rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:cursor-not-allowed disabled:transform-none flex-1 sm:flex-none"
-                  >
-                    <FiGitBranch className="text-sm sm:text-lg flex-shrink-0" />
-                    <span className="whitespace-nowrap truncate">
-                      {isBranchingLoading ? 'Loading...' : 'Branch'}
-                    </span>
-                    {!isBranchingLoading && (
-                      <div className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-purple-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
-                    )}
-                  </button>
+                  {/* Responsive Branch Button + Toast above it */}
+                  <div className="relative flex flex-col items-center">
+                    {/* Toast notification appears above the branch button */}
+                    <AnimatePresence>
+                      {toastMessage && (
+                        <motion.div
+                          key="toast"
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
+                          className="z-[1000]"
+                          style={{
+                            position: "absolute",
+                            bottom: "100%",
+                            left: "50%",
+                            transform: "translateX(-50%) translateY(-25px)",
+                            marginBottom: "0.5rem",
+                          }}
+                        >
+                          <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-2xl p-4 max-w-xs">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                              </div>
+                              <div>
+                                <p className="font-semibold text-slate-800 dark:text-slate-200">Coming Soon</p>
+                                <p className="text-sm text-slate-600 dark:text-slate-400">{toastMessage}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    <button
+                      onClick={handleExportReportClick}
+                      // onClick={handleExploreBranches}
+                      disabled={isBranchingLoading}
+                      className={`group relative flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 disabled:from-purple-300 disabled:to-indigo-300 text-white rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:cursor-not-allowed disabled:transform-none flex-1 sm:flex-none
+      ${toastMessage ? "branch-overlay-active" : ""}
+    `}
+    style={{ position: "relative", overflow: "hidden" }}
+  >
+    <FiGitBranch className="text-sm sm:text-lg flex-shrink-0" />
+    <span className="whitespace-nowrap truncate">
+      {isBranchingLoading ? 'Loading...' : 'Branch'}
+    </span>
+    {!isBranchingLoading && (
+      <div className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-purple-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
+    )}
+    {/* Overlay and padlock when toastMessage is active */}
+    {toastMessage && (
+      <>
+        <span
+          className="absolute inset-0 rounded-lg sm:rounded-xl bg-gray-900/60 dark:bg-gray-800/70 pointer-events-none flex items-center justify-center"
+          style={{ zIndex: 2 }}
+        >
+          <FiLock className="text-2xl text-white opacity-90 drop-shadow-lg" />
+        </span>
+      </>
+    )}
+  </button>
+</div>
                 </div>
               </div>
             );
@@ -714,7 +776,8 @@ ${JSON.stringify(result, null, 2)}
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
-                    </button>
+                    </button
+                    >
                     
                     <div className="text-xs font-medium text-slate-700 dark:text-slate-300 px-2 py-1 bg-white dark:bg-slate-800 rounded-full border">
                       {modalState.currentSection === 'controls' && '🔊 Voice'}
@@ -1114,6 +1177,32 @@ ${JSON.stringify(result, null, 2)}
           </div>
         </div>
       )}
+
+     {/* Modern Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            key="toast"
+            initial={{ opacity: 0, x: -100, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -100, scale: 0.8 }}
+            transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
+            className="fixed top-6 left-6 z-[1000]"
+          >
+            <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-2xl p-4 max-w-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-800 dark:text-slate-200">Coming Soon</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{toastMessage}</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

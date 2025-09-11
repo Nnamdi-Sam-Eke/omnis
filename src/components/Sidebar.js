@@ -8,6 +8,7 @@ import { useAuth } from '../AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 import { useAccounts } from '../AccountContext';
 import LogoutSplash from './logoutSplash';
+import { AnimatePresence, motion } from "framer-motion";
 
 function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
   const { logout, user, login } = useAuth();
@@ -92,18 +93,38 @@ function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
         <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-black/5 pointer-events-none" />
         
         <div className="relative h-full overflow-y-auto p-4 flex flex-col justify-between">
-          {/* Toast notification */}
-          {toastMessage && (
-            <div 
-              className="absolute left-1/2 transform -translate-x-1/2 backdrop-blur-lg bg-red-500/90 text-white py-3 px-6 rounded-2xl shadow-xl border border-red-400/30 animate-pulse"
-              style={{ bottom: '120px', zIndex: 1000 }}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
-                <span className="font-medium">{toastMessage}</span>
-              </div>
-            </div>
-          )}
+          {/* Toast notification - styled to match SimulationResult.js */}
+          <AnimatePresence>
+            {toastMessage && (
+              <motion.div
+                key="toast"
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
+                className="z-[1000]"
+                style={{
+                  position: "absolute",
+                  bottom: "120px",
+                  left: "50%",
+                  transform: "translateX(-50%) translateY(-25px)",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-2xl p-4 max-w-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-800 dark:text-slate-200">Coming Soon</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">{toastMessage}</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div>
             {/* User profile section */}
@@ -185,7 +206,41 @@ function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
                 <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
                 Accounts
               </h4>
-              <div className="space-y-2">
+              <div className="space-y-2 relative flex flex-col items-center">
+                {/* Toast notification appears directly above the Add Account button and is centered */}
+                <AnimatePresence>
+                  {toastMessage && (
+                    <motion.div
+                      key="toast"
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
+                      className="z-[1000] left-1/2 -translate-x-1/2"
+                      style={{
+                        position: "absolute",
+                        bottom: "100%",
+                        transform: "translateY(-25px)",
+                        marginBottom: "0.5rem",
+                        width: "100%",
+                        display: "flex",
+                        justifyContent: "center"
+                      }}
+                    >
+                      <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-2xl p-4 max-w-xs w-full flex justify-center">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-800 dark:text-slate-200">Coming Soon</p>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">{toastMessage}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 {accounts.map((acc) => (
                   <button
                     key={acc.name}
@@ -210,10 +265,11 @@ function Sidebar({ isSidebarOpen, setIsSidebarOpen }) {
                   onClick={handleAddAccountClick}
                   aria-disabled="true"
                   className="mt-3 block w-full text-left px-4 py-3 rounded-2xl 
-                           bg-gradient-to-r from-green-500/80 to-emerald-500/80 
-                           backdrop-blur-sm opacity-80 cursor-not-allowed 
-                           flex items-center gap-3 font-medium shadow-lg
-                           hover:from-green-500/90 hover:to-emerald-500/90 transition-all duration-300"
+                       bg-gradient-to-r from-green-500/80 to-emerald-500/80 
+                       backdrop-blur-sm opacity-80 cursor-not-allowed 
+                       flex items-center gap-3 font-medium shadow-lg
+                       hover:from-green-500/90 hover:to-emerald-500/90 transition-all duration-300"
+                  style={{ position: "relative", overflow: "visible" }}
                 >
                   <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                     <span className="text-lg">+</span>

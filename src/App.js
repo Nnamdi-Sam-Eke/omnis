@@ -8,6 +8,7 @@ import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
 import { onMessage } from "firebase/messaging";
 
 // Pages
+import OnboardingContainer from './components/onboarding/OnboardingContainer';
 import SessionTracker from './components/SessionTracker';
 import SplashScreen from './components/SplashScreen';
 import Home from './pages/Home';
@@ -28,7 +29,7 @@ import Header from './components/Header';
 import FeedbackButton from './components/FeedbackButton';
 import CreatorsCorner from './Creator\'sCorner';
 import Footer from './components/Footer';
-import GoodbyePage from './pages/GoodbyePage';
+
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { OmnisProvider } from './context/OmnisContext';
@@ -56,7 +57,7 @@ const PublicRoute = ({ children }) => {
   return !user ? children : <Navigate to="/dashboard" />;
 };
 
-const noLayoutRoutes = ['/login'];
+const noLayoutRoutes = ['/login', '/onboarding'];
 
 const AppContent = () => {
   const location = useLocation();
@@ -193,6 +194,25 @@ const AppContent = () => {
   }
   if (postLoginSplash) return <SplashScreen />;
 
+  // --- CLEAN FULLSCREEN LAYOUT FOR NO-LAYOUT ROUTES ---
+  if (hideLayout) {
+    return (
+      <AccountProvider>
+        <OmnisProvider>
+          <MemoryProvider>
+            <StripeProvider>
+              <Routes>
+                <Route path="/onboarding" element={<PrivateRoute><OnboardingContainer /></PrivateRoute>} />
+                <Route path="/login" element={<PublicRoute><AuthForm /></PublicRoute>} />
+              </Routes>
+            </StripeProvider>
+          </MemoryProvider>
+        </OmnisProvider>
+      </AccountProvider>
+    );
+  }
+
+  // --- DEFAULT LAYOUT FOR ALL OTHER ROUTES ---
   return (
     <div className="scale-75 origin-top-left w-[133.33%]">
       <div className="min-h-screen w-full bg-white dark:bg-gray-900">
@@ -232,6 +252,7 @@ const AppContent = () => {
                   <SessionTracker />
 
                   <Routes>
+                    <Route path="/onboarding" element={<PrivateRoute><OnboardingContainer /></PrivateRoute>} />
                     <Route path="/login" element={<PublicRoute><AuthForm /></PublicRoute>} />
                     <Route path="/" element={<PrivateRoute><OmnisDashboard /></PrivateRoute>} />
                     <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
@@ -249,7 +270,7 @@ const AppContent = () => {
                     <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
                     <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
                     <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-                    <Route path="/goodbye" element={<GoodbyePage />} />
+                    
                   </Routes>
 
                   {showUpgradeModal && (location.pathname === '/dashboard' || location.pathname === '/') && (

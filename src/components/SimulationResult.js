@@ -3,6 +3,7 @@ import { FiThumbsUp, FiThumbsDown, FiHelpCircle, FiX, FiGitBranch, FiLock } from
 import { motion, AnimatePresence } from 'framer-motion';
 // Simple Branching Visualization Component
 import BranchingVisualization from "./BranchingVisualization";
+import { generateOmnisContent, expandOmnisText } from "../services/omnis-actions";
 
 const ScenarioSimulationCard = ({ results, setResults, loading, simulationInput }) => {
   // Mock the useOmnisContext hook since it's not available
@@ -52,7 +53,7 @@ const ScenarioSimulationCard = ({ results, setResults, loading, simulationInput 
   });
 
   const handleExportReportClick = () => {
-    setToastMessage("Feature Coming Soon!");
+    setToastMessage("Branching paths under development, try again soon.");
     setTimeout(() => setToastMessage(""), 4000);
   };
   // NEW: Handle explore branches functionality
@@ -484,6 +485,43 @@ ${JSON.stringify(result, null, 2)}
     setModalState(prev => ({ ...prev, showFullscreenMode: !prev.showFullscreenMode }));
   };
 
+  // NEW: State for generated content and expanded content
+  const [generatedContent, setGeneratedContent] = useState("");
+  const [expandedContent, setExpandedContent] = useState("");
+
+  // --- Hook up generateOmnisContent to display result in output component ---
+  useEffect(() => {
+    if (simulationInput) {
+      generateOmnisContent(simulationInput, (content) => {
+        setGeneratedContent(content);
+        // Optionally update localResults to show in output card
+        setLocalResults([{ query: simulationInput, response: { result: content, task: "Generated Content" }, timestamp: Date.now() }]);
+        if (setResults) setResults([{ query: simulationInput, response: { result: content, task: "Generated Content" }, timestamp: Date.now() }]);
+      });
+    }
+  }, [simulationInput]);
+
+  // --- Hook up expandOmnisText to Expand button ---
+  const handleExpandClick = (result, timestamp) => {
+    setExplanationModal({
+      isOpen: true,
+      content: '',
+      loading: true,
+      error: null,
+      timestamp: timestamp
+    });
+
+    expandOmnisText((expanded) => {
+      setExpandedContent(expanded);
+      setExplanationModal(prev => ({
+        ...prev,
+        loading: false,
+        content: expanded,
+        error: null
+      }));
+    });
+  };
+
   if (!localResults || localResults.length === 0) {
     return (
       <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 hover:shadow-2xl hover:shadow-blue-500/20 rounded-2xl p-8 text-slate-900 dark:text-white transition-all duration-300">
@@ -570,6 +608,27 @@ ${JSON.stringify(result, null, 2)}
         </div>
 
         <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-400 scrollbar-track-slate-200 dark:scrollbar-thumb-slate-600 dark:scrollbar-track-slate-800 space-y-4 pr-2">
+          {/* Show generated content in output card */}
+          {generatedContent && (
+            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-slate-200/50 dark:border-slate-700/50">
+              <h4 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
+                <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+                Generated Scenario
+              </h4>
+              <div className="text-sm text-slate-600 dark:text-slate-300 mt-2">
+                {generatedContent}
+              </div>
+              {/* Expand button */}
+              <button
+                aria-label="Expand"
+                className="group relative flex items-center justify-center gap-1 px-3 py-2 rounded-lg font-medium text-xs transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg bg-blue-500 hover:bg-blue-600 text-white mt-4"
+                onClick={() => handleExpandClick({ response: { result: generatedContent, task: "Generated Content" } }, Date.now())}
+              >
+                <FiHelpCircle className="text-sm" />
+                <span>Expand</span>
+              </button>
+            </div>
+          )}
           {localResults.filter(Boolean).map((result, index) => {
             const timestamp = result?.timestamp || index;
             return (
@@ -962,6 +1021,7 @@ ${JSON.stringify(result, null, 2)}
                         </div>
                       )}
                       
+                      {/* Main Narrative Section */}
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 sm:p-6">
                         <div className="flex items-start gap-3 sm:gap-4">
                           <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
@@ -977,6 +1037,16 @@ ${JSON.stringify(result, null, 2)}
                               </div>
                             </div>
                           </div>
+                        </div>
+                        {/* Divider */}
+                        <div className="my-6 border-t border-blue-200 dark:border-blue-800"></div>
+                        {/* Next Step Suggestion */}
+                        <div className="flex items-center gap-2 mt-4">
+                          <span className="text-green-500 text-lg">➡️</span>
+                          <span className="font-semibold text-green-700 dark:text-green-300">Next Step:</span>
+                          <span className="text-green-700 dark:text-green-300">
+                            {getNextStepSuggestion(explanationModal.content)}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1375,6 +1445,18 @@ function formatResponse(response) {
       </pre>
     </div>
   );
+}
+
+function getNextStepSuggestion(content) {
+  // Simple rule-based suggestion
+  if (!content) return "Review the above explanation and consider running a branching simulation.";
+  const lc = content.toLowerCase();
+  if (lc.includes("risk")) return "Consider running a risk analysis branch.";
+  if (lc.includes("recommend")) return "Apply the recommendations or simulate alternative scenarios.";
+  if (lc.includes("anomaly")) return "Investigate anomalies further or consult with your team.";
+  if (lc.includes("predict")) return "Use the prediction to inform your next business decision.";
+  if (lc.includes("cost")) return "Review cost-saving measures and optimize your strategy.";
+  return "Review the above explanation and consider running a branching simulation.";
 }
 
 export default ScenarioSimulationCard;

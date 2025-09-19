@@ -2,21 +2,24 @@ import React, { useState, useEffect, useRef } from "react";
 import { saveUserInteraction } from "../services/userBehaviourService";
 import { useMemory } from "../MemoryContext";
 import { db } from "../firebase";
-import { Timestamp } from "firebase/firestore";
 import { Trash2, Plus, Target, Tag } from "lucide-react";
-
+import { generateOmnisContent } from "../services/omnis-actions";
 import {
+  writeBatch,
+  doc,
   collection,
   addDoc,
   query,
   orderBy,
   getDocs,
-  doc,
   setDoc,
   getDoc,
   serverTimestamp,
   where,
 } from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
+
+
 import { useAuth } from "../AuthContext";
 import { ChevronRight, ChevronUp, Lock, Crown, Copy, Undo, Redo, Type, Sparkles, Edit3, Zap } from "lucide-react";
 import ScenarioSimulationCard from "./SimulationResult";
@@ -208,7 +211,6 @@ const SimplifiedInputForm = ({ scenario, onScenarioChange, onCategoryChange, pla
     </div>
   );
 };
-
 // Main ScenarioInput component with updated structure
 export default function ScenarioInput({ onSimulate }) {
   const [scenarios, setScenarios] = useState([{ text: "", category: "" }]);
@@ -224,6 +226,10 @@ export default function ScenarioInput({ onSimulate }) {
   const [discountDeadline, setDiscountDeadline] = useState(null);
   const [loading, setLoading] = React.useState(true);
   const [simulationLoading, setSimulationLoading] = useState(false);
+  const [simulationInput, setSimulationInput] = useState(""); // NEW: For Gemini prompt
+  const [generatedResults, setGeneratedResults] = useState([]); // NEW: For Gemini output
+  const [isSimulating, setIsSimulating] = useState(false); // NEW: Simulate loading per scenario
+  const [isModalOpen, setIsModalOpen] = useState(false); // Add this state if not present
   
   // Get user tier for button logic
   const userTier = (
@@ -397,6 +403,7 @@ export default function ScenarioInput({ onSimulate }) {
     }
   };
 
+  // --- NEW: Handle Run Simulation with Gemini ---
   const handleSimulate = async () => {
     if (!user) return;
 
@@ -405,97 +412,65 @@ export default function ScenarioInput({ onSimulate }) {
       return;
     }
 
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-      await setDoc(userRef, {
-        subscriptionTier: userTier,
-        trialStartedAt: serverTimestamp(),
-        hasUsedSimulationTrial: true,
-      });
-    } else {
-      const userData = userSnap.data();
-      if (!userData.trialStartedAt || userData.hasUsedSimulationTrial !== true) {
-        await setDoc(
-          userRef,
-          {
-            trialStartedAt: serverTimestamp(),
-            hasUsedSimulationTrial: true,
-          },
-          { merge: true }
-        );
-      }
-    }
-
-    // Filter scenarios and include both text and category
+    // Get all non-empty scenarios
     const filteredScenarios = scenarios.filter((s) => s.text.trim() !== "");
     if (!filteredScenarios.length) return;
 
-    console.log("📊 Simulating scenarios:", filteredScenarios);
-    await saveUserInteraction(user.uid, "simulate_scenario", { scenarios: filteredScenarios });
-    await loadUserInteractions();
-
     setSimulationLoading(true);
     setError(null);
-    setResults([]);
-    
-    try {
-      const simulationStart = Date.now();
 
-      const simulationPromises = filteredScenarios.map(async (scenario) => {
-        const payload = {
-          input_type: "text",
-          text: scenario.text,
-          category: scenario.category, // Include category in payload
-          user_id: user?.uid
+    // Send all scenarios to Gemini and collect results
+    const results = await Promise.all(
+      filteredScenarios.map(async (scenario) => {
+        let content = "";
+        await generateOmnisContent(scenario.text, (c) => {
+          content = c;
+        });
+
+        return {
+          query: scenario.text,
+          category: scenario.category,
+          response: { result: content, task: "Generated Content" },
         };
+      })
+    );
 
-        console.log("📤 Sending to /run:", payload);
+    // 🔥 store in batches (default = 5, configurable)
+    await storeResultsInBatches(results, user, db, 5);
 
-        try {
-          const response = await fetch(BACKEND_URL, {
-            method: "POST",
-            body: JSON.stringify({ input_data: payload }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
+    setGeneratedResults(results);
+    setIsModalOpen(true);
 
-          const result = await response.json();
-          console.log("📥 Received response:", result);
+    setSimulationInput(filteredScenarios.map(s => s.text).join("\n"));
+    setSimulationLoading(false);
+  };
 
-          if (!response.ok) {
-            throw new Error(result.detail || "Simulation request failed");
-          }
+  // 🔄 Updated simulate function (per-scenario)
+  const handleSimulateScenario = async (scenario, index) => {
+    try {
+      setIsSimulating(true);
 
-          await handleScenarioSubmit(scenario.text, result, scenario.category);
-          return { query: scenario.text, response: result, category: scenario.category };
+      // Call Omnis Gemini action
+      const content = await generateOmnisContent(scenario.text);
 
-        } catch (err) {
-          console.error("❌ Simulation fetch error:", err);
-          return { query: scenario.text, response: { error: err.message }, category: scenario.category };
-        }
-      });
+      // Store result tied to this scenario
+      setGeneratedResults((prev) => [
+        ...prev,
+        {
+          input: scenario.text,
+          category: scenario.category,
+          output: content,
+          index, // keep track of which form this came from
+        },
+      ]);
 
-      // Wait for all simulations to complete 
-      const allResults = await Promise.all(simulationPromises);
+      // Save to Firestore (your helper)
+      await handleScenarioSubmit(scenario.text, content, scenario.category);
 
-      const elapsed = Date.now() - simulationStart;
-      const delay = Math.max(0, 4000 - elapsed);
-
-      setTimeout(() => {
-        setResults(allResults);
-        setSimulationLoading(false);
-      }, delay);
-      console.log("✅ All simulations completed in", elapsed, "ms");
-      setSimulationLoading(false);
-      setResults(allResults);
-      console.log("✅ Simulation results set:", allResults);
-    } catch (err) {
-      setError("An error occurred during simulation.");
-      console.error("Simulation error:", err);
-      setSimulationLoading(false);
+      setIsSimulating(false);
+    } catch (error) {
+      console.error("Error simulating scenario:", error);
+      setIsSimulating(false);
     }
   };
 
@@ -514,6 +489,35 @@ export default function ScenarioInput({ onSimulate }) {
     }
   };
 
+  // helper to split results into chunks of size N
+  function chunkArray(array, size) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  // batching logic (configurable batch size)
+  async function storeResultsInBatches(results, user, db, batchSize = 5) {
+    const chunks = chunkArray(results, batchSize);
+
+    for (const group of chunks) {
+      const batch = writeBatch(db);
+
+      group.forEach((newResult) => {
+        const ref = doc(collection(db, "userInteractions")); // auto-ID
+        batch.set(ref, {
+          ...newResult,
+          userId: user?.uid,
+          timestamp: new Date(),
+        });
+      });
+
+      await batch.commit(); // commit one group at a time
+    }
+  }
+
   if (loading) {
     return (
       <div className="p-6">
@@ -523,7 +527,7 @@ export default function ScenarioInput({ onSimulate }) {
   }
 
   return (
-     <>
+    <>
       <div className="flex flex-col xl:flex-row gap-8 w-full max-w-7xl mx-auto">
         {/* Left Panel - Scenario Input */}
         <div className="flex-1 min-w-0">
@@ -686,8 +690,9 @@ export default function ScenarioInput({ onSimulate }) {
                 ))}
               </div>
             </div>
-          ) : results.length > 0 ? (
-            <ScenarioSimulationCard results={results} />
+          ) : generatedResults.length > 0 ? (
+            // Pass generatedResults and simulationInput to ScenarioSimulationCard
+            <ScenarioSimulationCard results={generatedResults} simulationInput={simulationInput} />
           ) : (
             <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 p-12 text-center">
               <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-4">

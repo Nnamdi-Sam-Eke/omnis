@@ -19,7 +19,6 @@ import {
 } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 
-
 import { useAuth } from "../AuthContext";
 import { ChevronRight, ChevronUp, Lock, Crown, Copy, Undo, Redo, Type, Sparkles, Edit3, Zap } from "lucide-react";
 import ScenarioSimulationCard from "./SimulationResult";
@@ -211,6 +210,7 @@ const SimplifiedInputForm = ({ scenario, onScenarioChange, onCategoryChange, pla
     </div>
   );
 };
+
 // Main ScenarioInput component with updated structure
 export default function ScenarioInput({ onSimulate }) {
   const [scenarios, setScenarios] = useState([{ text: "", category: "" }]);
@@ -403,9 +403,12 @@ export default function ScenarioInput({ onSimulate }) {
     }
   };
 
-  // --- NEW: Handle Run Simulation with Gemini ---
+  // --- Updated: Handle Run Simulation with Gemini ---
   const handleSimulate = async () => {
-    if (!user) return;
+    if (!user) {
+      setError("Please log in to run simulations.");
+      return;
+    }
 
     if (isFreeTier && trialExpired) {
       setShowUpgradeModal(true);
@@ -414,41 +417,58 @@ export default function ScenarioInput({ onSimulate }) {
 
     // Get all non-empty scenarios
     const filteredScenarios = scenarios.filter((s) => s.text.trim() !== "");
-    if (!filteredScenarios.length) return;
+    if (!filteredScenarios.length) {
+      setError("Please provide at least one valid scenario.");
+      return;
+    }
 
     setSimulationLoading(true);
     setError(null);
 
-    // Send all scenarios to Gemini and collect results
-    const results = await Promise.all(
-      filteredScenarios.map(async (scenario) => {
-        let content = "";
-        await generateOmnisContent(scenario.text, (c) => {
-          content = c;
-        });
+    try {
+      // Send all scenarios to Gemini and collect results
+      const results = await Promise.all(
+        filteredScenarios.map(async (scenario) => {
+          if (!scenario.text || scenario.text.trim() === "") {
+            throw new Error("Invalid or missing prompt");
+          }
+          console.log('Submitting prompt:', scenario.text);
+          let content = "";
+          await generateOmnisContent(scenario.text, (c) => {
+            content = c;
+          });
 
-        return {
-          query: scenario.text,
-          category: scenario.category,
-          response: { result: content, task: "Generated Content" },
-        };
-      })
-    );
+          return {
+            query: scenario.text,
+            category: scenario.category,
+            response: { result: content, task: "Generated Content" },
+          };
+        })
+      );
 
-    // 🔥 store in batches (default = 5, configurable)
-    await storeResultsInBatches(results, user, db, 5);
+      // Store in batches
+      await storeResultsInBatches(results, user, db, 5);
 
-    setGeneratedResults(results);
-    setIsModalOpen(true);
-
-    setSimulationInput(filteredScenarios.map(s => s.text).join("\n"));
-    setSimulationLoading(false);
+      setGeneratedResults(results);
+      setSimulationInput(filteredScenarios.map(s => s.text).join("\n"));
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Simulation error:", error);
+      setError(error.message || "Failed to run simulation. Please try again.");
+    } finally {
+      setSimulationLoading(false);
+    }
   };
 
-  // 🔄 Updated simulate function (per-scenario)
+  // --- Updated: Simulate function (per-scenario) ---
   const handleSimulateScenario = async (scenario, index) => {
     try {
       setIsSimulating(true);
+
+      if (!scenario.text || scenario.text.trim() === "") {
+        throw new Error("Invalid or missing prompt");
+      }
+      console.log('Submitting scenario prompt:', scenario.text);
 
       // Call Omnis Gemini action
       const content = await generateOmnisContent(scenario.text);
@@ -460,16 +480,16 @@ export default function ScenarioInput({ onSimulate }) {
           input: scenario.text,
           category: scenario.category,
           output: content,
-          index, // keep track of which form this came from
+          index,
         },
       ]);
 
-      // Save to Firestore (your helper)
+      // Save to Firestore
       await handleScenarioSubmit(scenario.text, content, scenario.category);
-
-      setIsSimulating(false);
     } catch (error) {
       console.error("Error simulating scenario:", error);
+      setError(error.message || "Failed to simulate scenario. Please try again.");
+    } finally {
       setIsSimulating(false);
     }
   };

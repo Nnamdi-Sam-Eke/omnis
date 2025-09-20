@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ScenarioInput from './ScenarioInput'; // Input Form
 import ScenarioInsightsCard from './ScenarioInsightsCard'; // Insights
 import ScenarioPreview from './ScenarioPreview';
 import BranchingContainer from './BranchingContainer';
 
-
 const NewScenarioPage = () => {
+  const [simulationResults, setSimulationResults] = useState([]);
+
+  const handleSimulate = (results) => {
+    setSimulationResults(results);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-900">
       <div className="max-w-7xl mx-auto p-6 space-y-12">
@@ -36,7 +41,7 @@ const NewScenarioPage = () => {
             <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-300">
               <div className="p-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl">            
                 <div className="bg-white dark:bg-slate-800 rounded-xl p-6">
-                  <ScenarioInput />
+                  <ScenarioInput onSimulate={handleSimulate} />
                 </div>
               </div>
             </div>
@@ -49,7 +54,7 @@ const NewScenarioPage = () => {
             <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-slate-700/50 shadow-xl hover:shadow-2xl transition-all duration-300 group-hover:scale-[1.02]">
               <div className="p-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl">
                 <div className="bg-white dark:bg-slate-800 rounded-xl p-6">
-                  <ScenarioInsightsCard />
+                  <ScenarioInsightsCard results={simulationResults} />
                 </div>
               </div>
             </div>

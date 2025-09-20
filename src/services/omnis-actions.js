@@ -31,16 +31,15 @@ export async function generateOmnisContent(userPrompt, setContent) {
     const result = await callGenerateContent({ prompt: userPrompt });
 
     if (result.data.success) {
-      lastGeneratedContent = result.data.generatedContent;
+      lastGeneratedContent = result.data.prediction; // Use 'prediction' instead of 'generatedContent'
       lastUserPrompt = userPrompt;
-
       setContent(lastGeneratedContent);
     } else {
-      setContent("Error generating content: " + result.data.message);
+      setContent("Error generating content: " + result.data.error || "Unknown error");
     }
   } catch (error) {
     console.error("Error calling generateOmnisContent:", error);
-    setContent("Failed to generate content. Please try again.");
+    setContent(error.message || "Failed to generate content. Please try again.");
   }
 }
 
@@ -65,25 +64,23 @@ export async function summarizeOmnisContent(setSummary) {
     const contentForSummarization = `Original User's Life Choice: ${lastUserPrompt}\nSimulated Outcome Description: ${lastGeneratedContent}`;
 
     const result = await callSummarizeContent({
-      content: contentForSummarization,
+      text: contentForSummarization, // Use 'text' to match Cloud Function input
       summaryPrompt: omniSummaryPrompt
     });
 
     if (result.data.success) {
-      setSummary(result.data.summarizedContent);
+      setSummary(result.data.prediction); // Use 'prediction' instead of 'summarizedContent'
     } else {
-      setSummary("Error summarizing content: " + result.data.message);
+      setSummary("Error summarizing content: " + result.data.error || "Unknown error");
     }
   } catch (error) {
     console.error("Error calling summarizeOmnisContent:", error);
-    setSummary("Failed to summarize content. Please try again.");
+    setSummary(error.message || "Failed to summarize content. Please try again.");
   }
 }
 
 /**
  * Expand/Explain content in-depth using Omnis Cloud Function
- * @param {function} setExpandedContent - Callback to update dedicated output component
- * @param {string} expansionPrompt - Optional custom instruction to guide explanation
  */
 export async function expandOmnisText(setExpandedContent, expansionPrompt) {
   if (!lastGeneratedContent) {
@@ -96,7 +93,7 @@ export async function expandOmnisText(setExpandedContent, expansionPrompt) {
   try {
     await ensureAuth();
 
-    const callExpandContent = httpsCallable(functions, "expandOmnisText");
+    const callExpandContent = httpsCallable(functions, "expandOmnisContent"); // Fix function name to match index.js
 
     const fullExpansionPrompt =
       expansionPrompt || "Please expand and explain the following life choice simulation in detail, highlighting potential outcomes, nuances, and implications:";
@@ -107,12 +104,12 @@ export async function expandOmnisText(setExpandedContent, expansionPrompt) {
     });
 
     if (result.data.success) {
-      setExpandedContent(result.data.expandedContent);
+      setExpandedContent(result.data.prediction); // Use 'prediction' instead of 'expandedContent'
     } else {
-      setExpandedContent("Error expanding content: " + result.data.message);
+      setExpandedContent("Error expanding content: " + result.data.error || "Unknown error");
     }
   } catch (error) {
-    console.error("Error calling expandOmnisText:", error);
-    setExpandedContent("Failed to expand content. Please try again.");
+    console.error("Error calling expandOmnisContent:", error);
+    setExpandedContent(error.message || "Failed to expand content. Please try again.");
   }
 }

@@ -10,17 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repo
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
+      # 2. Install frontend dependencies
+      - name: Install Frontend dependencies
         run: npm ci --prefix Frontend
 
+      # 3. Build React app
       - name: Build React app
         run: |
           export CI=false
           npm run build --prefix Frontend
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      # 4. Deploy Hosting only
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0.8.0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_THE_DIGITAL_TWIN_APP_3E2B1 }}

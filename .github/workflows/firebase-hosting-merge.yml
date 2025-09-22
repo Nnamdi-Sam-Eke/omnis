@@ -13,21 +13,28 @@ jobs:
       # 1. Checkout repo
       - uses: actions/checkout@v4
 
-      # 2. Install frontend dependencies
-      - name: Install Frontend dependencies
-        run: npm ci --prefix Frontend
+      # 2. Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
-      # 3. Build React app
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Build React app
       - name: Build React app
         run: |
           export CI=false
-          npm run build --prefix Frontend
+          npm run build
 
-      # 4. Deploy Hosting only
+      # 5. Deploy to Firebase Hosting
       - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0.8.0
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_THE_DIGITAL_TWIN_APP_3E2B1 }}
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"
           channelId: live
           projectId: the-digital-twin-app-3e2b1
+          

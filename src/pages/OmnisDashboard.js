@@ -18,7 +18,6 @@ import SkeletonLoader from '../components/SkeletonLoader';
 import QuickActions from '../components/QuickActionButtons';
 import DiscountBanner from '../components/DiscountBanner';
 import WeatherLocation from '../components/WeatherLocation';
-import TrialSlip from './TrialSlip';
 
 // Lazy-loaded components
 const ActivityFeed = lazy(() => import('../components/ActivityFeed'));

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { FiThumbsUp, FiThumbsDown, FiPenTool } from "react-icons/fi";
-import emailjs from "emailjs-com";
 
 function FeedbackButton() {
   const [isFeedbackFormVisible, setIsFeedbackFormVisible] = useState(false);
@@ -13,7 +12,7 @@ function FeedbackButton() {
     setIsFeedbackFormVisible(!isFeedbackFormVisible);
   };
 
-  const handleFeedbackSubmit = (e) => {
+  const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
 
     if (!feedback.trim() || !category || rating === null) {
@@ -21,24 +20,32 @@ function FeedbackButton() {
       return;
     }
 
-    emailjs.sendForm(
-      'service_lfch17n',
-      'template_zb3uq0x',
-      e.target,
-      'Ru_HJfV9Y-llO0KHQ'
-    ).then((result) => {
-        console.log("✅ Email sent:", result.text);
+    // Prepare data for Formspree
+    const formData = new FormData(e.target);
+    formData.append("category", category);
+    formData.append("rating", rating ? "Positive" : "Negative");
+    formData.append("message", feedback);
+
+    try {
+      const res = await fetch("https://formspree.io/f/xeornyen", {
+        method: "POST",
+        body: formData,
+        headers: { Accept: "application/json" },
+      });
+
+      if (res.ok) {
         setValidationMessage("Thank you for your feedback!");
         setFeedback("");
         setCategory("");
         setRating(null);
         setIsFeedbackFormVisible(false);
-    }, (error) => {
-        console.error("❌ Email error:", error.text);
-        setValidationMessage("Something went wrong. Please try again.");
-    });
-
-    e.target.reset();
+      } else {
+        throw new Error("Failed to send feedback");
+      }
+    } catch (error) {
+      console.error("❌ Feedback error:", error);
+      setValidationMessage("Something went wrong. Please try again.");
+    }
   };
 
   useEffect(() => {
@@ -51,7 +58,10 @@ function FeedbackButton() {
   return (
     <div>
       {/* Floating Feedback Button */}
-      <div className="fixed bottom-6 bg-opacity-50 backdrop-blur-sm right-6 z-[9999]" title="Feedback Button">
+      <div
+        className="fixed bottom-6 bg-opacity-50 backdrop-blur-sm right-6 z-[9999]"
+        title="Feedback Button"
+      >
         <button
           onClick={toggleFeedbackForm}
           className="bg-blue-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-full shadow-lg"
@@ -67,9 +77,12 @@ function FeedbackButton() {
         </div>
       )}
 
-      {/* Background Overlay with Blur */}
+      {/* Background Overlay */}
       {isFeedbackFormVisible && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9998]" onClick={toggleFeedbackForm}></div>
+        <div
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9998]"
+          onClick={toggleFeedbackForm}
+        ></div>
       )}
 
       {/* Feedback Form */}
@@ -101,7 +114,6 @@ function FeedbackButton() {
 
             {/* Rating */}
             <div className="mb-4 flex items-center space-x-6">
-              <input type="hidden" name="rating" value={rating ? "Positive" : rating === false ? "Negative" : ""} />
               <button
                 type="button"
                 onClick={() => setRating(true)}

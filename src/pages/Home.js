@@ -548,7 +548,7 @@ function Home() {
   );
 
   return (
-    <div className="relative">
+    <div className=" relative">
       <style>{`
         @keyframes gradient-x {
           0%, 100% { background-position: 0% 50%; }

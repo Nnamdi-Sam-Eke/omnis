@@ -76,6 +76,8 @@ const UptimeChart = forwardRef(({ onRendered }, ref) => {
   const [todayTime, setTodayTime] = useState({ hours: 0, minutes: 0 });
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  // date slicer: '7', '14', '50' days or 'all'
+  const [dateRange, setDateRange] = useState('7'); // default last 7 days
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState('session');
   const [chartType, setChartType] = useState('bar');
@@ -481,7 +483,7 @@ useEffect(() => {
   return (
     <div ref={ref}className="w-full hover:shadow-2xl shadow-2xl hover:shadow-emerald-400/30 dark:hover:shadow-emerald-500/25 transition-all duration-500 px-6 py-6 border border-gray-200 dark:border-gray-700 mt-8 bg-gradient-to-br from-white via-gray-50 to-white dark:from-gray-800 dark:via-gray-850 dark:to-gray-800 rounded-3xl ">
       {/* Subtle Green Brush Effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/20 via-transparent to-emerald-100/10 dark:from-emerald-900/10 dark:via-transparent dark:to-emerald-800/5 pointer-events-none rounded-3xl"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/20 via-transparent to-emerald-100/10 dark:from-emerald-900/10 dark:via-emerald-800/5 dark:to-transparent rounded-3xl pointer-events-none"></div>
       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-bl from-emerald-100/30 via-emerald-50/10 to-transparent dark:from-emerald-800/15 dark:via-emerald-900/5 dark:to-transparent rounded-3xl pointer-events-none"></div>
       <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-gradient-to-tr from-emerald-50/25 via-emerald-100/15 to-transparent dark:from-emerald-900/10 dark:via-emerald-800/8 dark:to-transparent rounded-3xl pointer-events-none"></div>
       
@@ -514,41 +516,41 @@ useEffect(() => {
           <SkeletonLoader />
         ) : (
           <>
-            {/* Date range filters and controls - Fixed responsive layout */}
-            <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6">
-              {/* Date inputs - Stack on mobile/tablet, side by side on larger screens */}
-              <div className="flex flex-col sm:flex-row gap-3 xl:gap-4">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+            {/* Date range filters and controls - Always vertically stacked */}
+            <div className="flex flex-col gap-4 mb-6">
+              {/* Date inputs - Always stacked vertically */}
+              <div className="flex flex-col gap-3">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex flex-col gap-1">
                   <span className="whitespace-nowrap">📅 Start Date:</span>
                   <input
                     type="date"
                     aria-label="Start Date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="border-2 border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white focus:border-emerald-500 dark:focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-800 transition-colors duration-200 min-w-0"
+                    className="border-2 border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white focus:border-emerald-500 dark:focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-800 transition-colors duration-200 w-full max-w-xs"
                   />
                 </label>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex flex-col gap-1">
                   <span className="whitespace-nowrap">📅 End Date:</span>
                   <input
                     type="date"
                     aria-label="End Date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="border-2 border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white focus:border-emerald-500 dark:focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-800 transition-colors duration-200 min-w-0"
+                    className="border-2 border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm dark:bg-gray-700 dark:text-white focus:border-emerald-500 dark:focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-800 transition-colors duration-200 w-full max-w-xs"
                   />
                 </label>
               </div>
 
               {/* Control buttons - Wrap on smaller screens, proper spacing */}
-              <div className="flex flex-wrap gap-2 justify-start xl:justify-end">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={fetchSessions}
                   disabled={fetching}
                   className="flex items-center gap-1.5 px-3 py-2 border-2 border-emerald-300 dark:border-emerald-600 rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900 dark:to-emerald-800 text-emerald-700 dark:text-emerald-300 text-sm font-semibold hover:from-emerald-100 hover:to-emerald-200 dark:hover:from-emerald-800 dark:hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                 >
                   <RefreshCw size={14} className={`${fetching ? 'animate-spin' : ''} flex-shrink-0`} />
-                  <span className="hidden xs:inline">Refresh</span>
+                  <span>Refresh</span>
                 </button>
                 
                 <button
@@ -556,7 +558,7 @@ useEffect(() => {
                   className="flex items-center gap-1.5 px-3 py-2 border-2 border-blue-300 dark:border-blue-600 rounded-xl bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 text-blue-700 dark:text-blue-300 text-sm font-semibold hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-800 dark:hover:to-blue-700 transition-all duration-200 transform hover:scale-105 whitespace-nowrap"
                 >
                   {chartType === 'bar' ? <TrendingUp size={14} className="flex-shrink-0" /> : <BarChart3 size={14} className="flex-shrink-0" />}
-                  <span className="hidden sm:inline">{chartType === 'bar' ? 'Line' : 'Bar'}</span>
+                  <span>{chartType === 'bar' ? 'Line' : 'Bar'}</span>
                 </button>
                 
                 <button
@@ -564,11 +566,11 @@ useEffect(() => {
                   className="flex items-center gap-1.5 px-3 py-2 border-2 border-purple-300 dark:border-purple-600 rounded-xl bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 text-purple-700 dark:text-purple-300 text-sm font-semibold hover:from-purple-100 hover:to-purple-200 dark:hover:from-purple-800 dark:hover:to-purple-700 transition-all duration-200 transform hover:scale-105 whitespace-nowrap"
                 >
                   <span className="flex-shrink-0">{view === 'session' ? '📊' : '🔍'}</span>
-                  <span className="hidden sm:inline">{view === 'session' ? 'By Day' : 'Sessions'}</span>
+                  <span>{view === 'session' ? 'By Day' : 'Sessions'}</span>
                 </button>
               </div>
             </div>
-
+              
             {/* Chart */}
             {fetching ? (
               <div className="flex items-center justify-center py-20">

@@ -376,74 +376,52 @@ ${JSON.stringify(result, null, 2)}
     }
   };
 
-  const handleExplainFurther = async (result, timestamp) => {
-    // Check cache first
-    if (narrativeCache[timestamp]) {
-      const tags = generateSuggestedTags(narrativeCache[timestamp], result);
-      setExportState(prev => ({ ...prev, suggestedTags: tags }));
-      setExplanationModal({
-        isOpen: true,
-        content: narrativeCache[timestamp],
-        loading: false,
-        error: null,
-        timestamp: timestamp
-      });
-      return;
-    }
-
+ /* --- Handle Explain (with cache + expandOmnisText) ---*/
+const handleExplainFurther = async (result, timestamp) => {
+  if (narrativeCache[timestamp]) {
+    const tags = generateSuggestedTags(narrativeCache[timestamp], result);
+    setExportState((prev) => ({ ...prev, suggestedTags: tags }));
     setExplanationModal({
       isOpen: true,
-      content: '',
-      loading: true,
+      content: narrativeCache[timestamp],
+      loading: false,
       error: null,
-      timestamp: timestamp
+      timestamp,
     });
+    return;
+  }
 
-    try {
-      // Get the raw result data
-      const rawResult = rawResults[timestamp] || result;
-      
-      const response = await fetch('http://localhost:8000/narrate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(result.response)
-      });
+  setExplanationModal({
+    isOpen: true,
+    content: "",
+    loading: true,
+    error: null,
+    timestamp,
+  });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+  try {
+    const expanded = await expandOmnisText();
+    const tags = generateSuggestedTags(expanded, result);
 
-      const data = await response.json();
-      const narrative = data.narrative || data.explanation || data.message || 'No explanation provided.';
-      
-      // Generate suggested tags
-      const tags = generateSuggestedTags(narrative, result);
-      setExportState(prev => ({ ...prev, suggestedTags: tags }));
-      
-      // Cache the narrative
-      setNarrativeCache(prev => ({
-        ...prev,
-        [timestamp]: narrative
-      }));
-      
-      setExplanationModal(prev => ({
-        ...prev,
-        loading: false,
-        content: narrative,
-        error: null
-      }));
-    } catch (error) {
-      console.error('Error fetching explanation:', error);
-      setExplanationModal(prev => ({
-        ...prev,
-        loading: false,
-        error: `Failed to fetch explanation: ${error.message}`,
-        content: ''
-      }));
-    }
-  };
+    setExportState((prev) => ({ ...prev, suggestedTags: tags }));
+    setNarrativeCache((prev) => ({ ...prev, [timestamp]: expanded }));
+    setExplanationModal((prev) => ({
+      ...prev,
+      loading: false,
+      content: expanded,
+      error: null,
+    }));
+  } catch (error) {
+    console.error("Error fetching explanation:", error);
+    setExplanationModal((prev) => ({
+      ...prev,
+      loading: false,
+      error: `Failed to fetch explanation: ${error.message}`,
+      content: "",
+    }));
+  }
+};
+  // --- Modal control functions ---
 
   const closeModal = () => {
     // Stop any ongoing speech when closing modal
@@ -490,37 +468,23 @@ ${JSON.stringify(result, null, 2)}
   const [expandedContent, setExpandedContent] = useState("");
 
   // --- Hook up generateOmnisContent to display result in output component ---
-  useEffect(() => {
-    if (simulationInput) {
-      generateOmnisContent(simulationInput, (content) => {
-        setGeneratedContent(content);
-        // Optionally update localResults to show in output card
-        setLocalResults([{ query: simulationInput, response: { result: content, task: "Generated Content" }, timestamp: Date.now() }]);
-        if (setResults) setResults([{ query: simulationInput, response: { result: content, task: "Generated Content" }, timestamp: Date.now() }]);
+useEffect(() => {
+  if (simulationInput) {
+    generateOmnisContent(simulationInput)
+      .then((content) => {
+        const resultObj = {
+          query: simulationInput,
+          response: { result: content, task: "Generated Content" },
+          timestamp: Date.now(),
+        };
+        setLocalResults([resultObj]);
+        if (setResults) setResults([resultObj]);
+      })
+      .catch((err) => {
+        console.error("Error generating content:", err);
       });
-    }
-  }, [simulationInput]);
-
-  // --- Hook up expandOmnisText to Expand button ---
-  const handleExpandClick = (result, timestamp) => {
-    setExplanationModal({
-      isOpen: true,
-      content: '',
-      loading: true,
-      error: null,
-      timestamp: timestamp
-    });
-
-    expandOmnisText((expanded) => {
-      setExpandedContent(expanded);
-      setExplanationModal(prev => ({
-        ...prev,
-        loading: false,
-        content: expanded,
-        error: null
-      }));
-    });
-  };
+  }
+}, [simulationInput]);
 
   if (!localResults || localResults.length === 0) {
     return (
@@ -609,26 +573,6 @@ ${JSON.stringify(result, null, 2)}
 
         <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-400 scrollbar-track-slate-200 dark:scrollbar-thumb-slate-600 dark:scrollbar-track-slate-800 space-y-4 pr-2">
           {/* Show generated content in output card */}
-          {generatedContent && (
-            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-slate-200/50 dark:border-slate-700/50">
-              <h4 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
-                <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
-                Generated Scenario
-              </h4>
-              <div className="text-sm text-slate-600 dark:text-slate-300 mt-2">
-                {generatedContent}
-              </div>
-              {/* Expand button */}
-              <button
-                aria-label="Expand"
-                className="group relative flex items-center justify-center gap-1 px-3 py-2 rounded-lg font-medium text-xs transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg bg-blue-500 hover:bg-blue-600 text-white mt-4"
-                onClick={() => handleExpandClick({ response: { result: generatedContent, task: "Generated Content" } }, Date.now())}
-              >
-                <FiHelpCircle className="text-sm" />
-                <span>Expand</span>
-              </button>
-            </div>
-          )}
           {localResults.filter(Boolean).map((result, index) => {
             const timestamp = result?.timestamp || index;
             return (
@@ -644,7 +588,8 @@ ${JSON.stringify(result, null, 2)}
                   </div>
                 ) : (
                   <div className="text-sm text-slate-600 dark:text-slate-300 mt-2">
-                    {formatResponse(result?.response)}
+                    {result?.response?.result || "⚠️ No response"}
+
                   </div>
                 )}
 
@@ -1341,30 +1286,7 @@ function formatNarrative(content, currentSentenceIndex = -1, sentences = []) {
     ));
 }
 
-function formatResponse(response) {
-  if (!response || typeof response !== "object") {
-    return (
-      <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-        <span className="text-red-500">❌</span>
-        <p className="text-red-600 dark:text-red-400 font-medium">Invalid response received.</p>
-      </div>
-    );
-  }
 
-
-  // === Fallback to legacy format ===
-  return (
-    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-slate-400">📭</span>
-        <p className="text-slate-500 dark:text-slate-400 text-sm">Unstructured or legacy response.</p>
-      </div>
-      <pre className="text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap bg-slate-100 dark:bg-slate-900 p-3 rounded-lg overflow-x-auto">
-        {JSON.stringify(response, null, 2)}
-      </pre>
-    </div>
-  );
-}
 
 function getNextStepSuggestion(content) {
   // Simple rule-based suggestion

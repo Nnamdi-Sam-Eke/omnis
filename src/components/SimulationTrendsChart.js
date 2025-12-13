@@ -1,28 +1,21 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { ChevronRight, ChevronUp, TrendingUp, BarChart3 } from "lucide-react";
 
-// Modern Professional Loader Component
+// Modern Clean Loader Component
 const ModernLoader = ({ height = "h-full" }) => {
   return (
-    <div className={`${height} flex items-center justify-center bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 rounded-2xl`}>
+    <div className={`${height} flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 rounded-2xl`}>
       <div className="relative">
-        {/* Orbital rings */}
-        <div className="absolute inset-0 w-20 h-20 rounded-full border-2 border-transparent border-t-violet-500 animate-spin"></div>
-        <div className="absolute inset-2 w-16 h-16 rounded-full border-2 border-transparent border-r-cyan-500 animate-spin animation-delay-75" style={{animationDirection: 'reverse'}}></div>
-        <div className="absolute inset-4 w-12 h-12 rounded-full border-2 border-transparent border-b-emerald-500 animate-spin animation-delay-150"></div>
-        
-        {/* Center pulse */}
-        <div className="absolute inset-6 w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 via-cyan-500 to-emerald-500 animate-pulse shadow-lg"></div>
-        
-        {/* Floating particles */}
-        <div className="absolute -top-2 -left-2 w-2 h-2 bg-violet-400 rounded-full animate-bounce animation-delay-300"></div>
-        <div className="absolute -top-2 -right-2 w-2 h-2 bg-cyan-400 rounded-full animate-bounce animation-delay-500"></div>
-        <div className="absolute -bottom-2 -left-2 w-2 h-2 bg-emerald-400 rounded-full animate-bounce animation-delay-700"></div>
-        <div className="absolute -bottom-2 -right-2 w-2 h-2 bg-pink-400 rounded-full animate-bounce animation-delay-900"></div>
+        {/* Pulsing dots loader */}
+        <div className="flex gap-3">
+          <div className="w-4 h-4 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-4 h-4 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-4 h-4 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        </div>
       </div>
       
-      <div className="ml-8 text-center">
-        <div className="text-lg font-semibold bg-gradient-to-r from-violet-600 via-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+      <div className="mt-6 text-center">
+        <div className="text-lg font-semibold bg-gradient-to-r from-blue-600 via-cyan-600 to-emerald-600 bg-clip-text text-transparent">
           Loading Analytics
         </div>
         <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -39,7 +32,7 @@ const LineChart = ({ data, options }) => {
   const maxValue = Math.max(...data.datasets[0].data);
   const minValue = Math.min(...data.datasets[0].data);
   const chartWidth = 340;
-  const chartHeight = 160;
+  const chartHeight = 140;
   const padding = { left: 40, right: 20, top: 20, bottom: 40 };
   
   const handleMouseMove = (event, value, index, date) => {
@@ -47,7 +40,6 @@ const LineChart = ({ data, options }) => {
     const x = padding.left + (index / (data.datasets[0].data.length - 1)) * chartWidth;
     const y = chartHeight + padding.top - ((value - minValue) / (maxValue - minValue)) * chartHeight;
     
-    // Convert SVG coordinates to screen coordinates
     const screenX = (x / (chartWidth + padding.left + padding.right)) * rect.width;
     const screenY = (y / (chartHeight + padding.top + padding.bottom)) * rect.height;
     
@@ -72,26 +64,26 @@ const LineChart = ({ data, options }) => {
 
   return (
     <div className="w-full h-full bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-full"></div>
+          <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"></div>
           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Simulations</span>
         </div>
-        <div className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">
+        <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
           {data.datasets[0].data[data.datasets[0].data.length - 1]}
         </div>
       </div>
       
-      <div className="relative h-64">
+      <div className="relative h-48">
         <svg viewBox={`0 0 ${chartWidth + padding.left + padding.right} ${chartHeight + padding.top + padding.bottom}`} className="w-full h-full">
           <defs>
             <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#8b5cf6" />
+              <stop offset="0%" stopColor="#3b82f6" />
               <stop offset="50%" stopColor="#06b6d4" />
               <stop offset="100%" stopColor="#10b981" />
             </linearGradient>
             <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.3" />
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
               <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.1" />
             </linearGradient>
           </defs>
@@ -241,7 +233,6 @@ const LineChart = ({ data, options }) => {
             <div className="text-xs text-slate-500 dark:text-slate-400">
               {tooltip.data.date}
             </div>
-            {/* Tooltip arrow */}
             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white dark:border-t-slate-800"></div>
           </div>
         )}
@@ -285,16 +276,23 @@ const allData = [
 
 export default function SimulationTrendsChart() {
   const [range, setRange] = useState(7);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initial load
+    const t = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    // Only show loader when changing range, not on expand/collapse
     if (isExpanded) {
       setLoading(true);
-      const t = setTimeout(() => setLoading(false), 2000);
+      const t = setTimeout(() => setLoading(false), 600);
       return () => clearTimeout(t);
     }
-  }, [isExpanded]);
+  }, [range]);
 
   const sliceStart = range === "all" ? 0 : allData.length - Number(range);
   const filtered = allData.slice(sliceStart);
@@ -320,18 +318,19 @@ export default function SimulationTrendsChart() {
   const percentChange = previousValue > 0 ? ((change / previousValue) * 100).toFixed(1) : 0;
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm mt-8 hover:shadow-2xl hover:shadow-violet-500/20 transition-all duration-500 px-8 py-6 dark:bg-slate-900/80 dark:backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-3xl shadow-xl hover:scale-[1.02] hover:border-violet-300 dark:hover:border-violet-700">
+    <div className="bg-white/80 backdrop-blur-sm hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 px-4 sm:px-8 py-6 dark:bg-slate-900/80 dark:backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-3xl shadow-xl hover:scale-[1.02] hover:border-blue-300 dark:hover:border-blue-700 max-h-[90vh] sm:max-h-[600px] flex flex-col">
+      {/* Header - Fixed */}
       <div
-        className="flex justify-between items-center cursor-pointer mb-6 group"
+        className="flex justify-between items-center cursor-pointer mb-4 group flex-shrink-0"
         onClick={() => setIsExpanded((prev) => !prev)}
         aria-expanded={isExpanded}
       >
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-r from-violet-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
             <BarChart3 className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 via-cyan-600 to-emerald-600 bg-clip-text text-transparent">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-cyan-600 to-emerald-600 bg-clip-text text-transparent">
               Simulation Analytics
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -350,27 +349,28 @@ export default function SimulationTrendsChart() {
             </div>
           )}
           
-          <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center group-hover:bg-gradient-to-r group-hover:from-violet-100 group-hover:to-cyan-100 dark:group-hover:from-violet-900/30 dark:group-hover:to-cyan-900/30 transition-all duration-300">
+          <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center group-hover:bg-gradient-to-r group-hover:from-blue-100 group-hover:to-cyan-100 dark:group-hover:from-blue-900/30 dark:group-hover:to-cyan-900/30 transition-all duration-300">
             {isExpanded ? (
-              <ChevronUp className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors duration-300" />
+              <ChevronUp className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
             ) : (
-              <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors duration-300" />
+              <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
             )}
           </div>
         </div>
       </div>
 
+      {/* Scrollable Content */}
       <div
-        className={`transition-all duration-500 ease-out overflow-hidden ${
-          isExpanded ? 'max-h-[900px] opacity-100' : 'max-h-0 opacity-0'
+        className={`transition-all duration-500 ease-out overflow-hidden flex-1 min-h-0 ${
+          isExpanded ? 'opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
         {isExpanded && (
-          <>
-            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+          <div className="h-full overflow-y-auto overflow-x-hidden pr-2 pb-4 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-transparent">
+            <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
               <div className="flex items-center gap-6">
                 <div className="text-center">
-                  <div className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">
+                  <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                     {currentValue}
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">Current</div>
@@ -383,14 +383,14 @@ export default function SimulationTrendsChart() {
                 </div>
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {[7, 14, 30, "all"].map((d) => (
                   <button
                     key={d}
                     onClick={() => setRange(d)}
                     className={`px-4 py-2 text-sm rounded-full font-medium transition-all duration-300 ${
                       range === d
-                        ? "bg-gradient-to-r from-violet-500 to-cyan-500 text-white shadow-lg shadow-violet-500/30 scale-105"
+                        ? "bg-gradient-to-r from-blue-500 via-cyan-500 to-purple-500 text-white shadow-lg shadow-blue-500/30 scale-105"
                         : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-105"
                     }`}
                   >
@@ -400,16 +400,19 @@ export default function SimulationTrendsChart() {
               </div>
             </div>
 
-            <div className="relative w-full h-[400px] rounded-2xl overflow-hidden">
-              {loading ? (
-                <ModernLoader height="h-full" />
-              ) : (
+            <div className="relative w-full min-h-[280px] h-auto rounded-2xl overflow-hidden mb-4">
+              <div className={`transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}>
                 <Suspense fallback={<ModernLoader height="h-full" />}>
                   <LineChart data={chartData} options={{}} />
                 </Suspense>
+              </div>
+              {loading && (
+                <div className="absolute inset-0">
+                  <ModernLoader height="h-full" />
+                </div>
               )}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

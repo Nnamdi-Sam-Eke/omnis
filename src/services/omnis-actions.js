@@ -1,115 +1,72 @@
-// omnis-actions.js
-import { functions, auth } from "../firebase.js";
-import { httpsCallable } from "firebase/functions";
+// ==============================
+// CLIENT-SIDE GROQ CALL WRAPPER
+// ==============================
+export async function callGroqChat(messages, options = {}) {
+  // Use absolute URL for backend in development; adjust for production
+  const backendUrl = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:5000/api/groq-chat' 
+    : '/api/groq-chat';  // Or your production API base
 
-// Helper to ensure user is authenticated
-async function ensureAuth() {
-  if (!auth.currentUser) {
-    throw new Error("User not authenticated");
+  const response = await fetch(backendUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages, options }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Backend error: ${response.status} - ${errorText}`);
   }
+
+  // Check if response is JSON; handle non-JSON gracefully
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    const text = await response.text();
+    throw new Error(`Expected JSON, got: ${text.substring(0, 100)}...`);
+  }
+
+  const result = await response.json();
+  return result;
 }
 
-// --- State to store last generated content ---
-let lastGeneratedContent = "";
-let lastUserPrompt = "";
+// ==============================
+// GENERATE OMNIS CONTENT
+// ==============================
+export async function generateOmnisContent(scenarioText) {
+  const systemPrompt = `You are Omnis — a calm, predictive, wise digital-twin assistant. 
+Return concise analysis in plain text. If asked for lists, return bullet points.`;
 
-/**
- * Generate content using Omnis Cloud Function
- */
-export async function generateOmnisContent(userPrompt, setContent) {
-  if (!userPrompt) {
-    alert("Please enter a prompt!");
-    return;
-  }
+  const userPrompt = `Analyze this scenario and provide:
+1) A short summary (one paragraph).
+2) Key risks (bullet list).
+3) 3 actionable next steps (bullet list).
+4) Optional quick simulation estimate (1-2 sentences).
 
-  setContent("Generating content...");
+--- Scenario:
+${scenarioText}`;
 
-  try {
-    await ensureAuth();
+  const messages = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userPrompt },
+  ];
 
-    const callGenerateContent = httpsCallable(functions, "generateOmnisContent");
-    const result = await callGenerateContent({ prompt: userPrompt });
-
-    if (result.data.success) {
-      lastGeneratedContent = result.data.prediction; // Use 'prediction' instead of 'generatedContent'
-      lastUserPrompt = userPrompt;
-      setContent(lastGeneratedContent);
-    } else {
-      setContent("Error generating content: " + result.data.error || "Unknown error");
-    }
-  } catch (error) {
-    console.error("Error calling generateOmnisContent:", error);
-    setContent(error.message || "Failed to generate content. Please try again.");
-  }
+  return await callGroqChat(messages);
 }
 
-/**
- * Summarize content using Omnis Cloud Function
- */
-export async function summarizeOmnisContent(setSummary) {
-  if (!lastGeneratedContent || !lastUserPrompt) {
-    alert("Please generate content first before summarizing.");
-    return;
-  }
+// ==============================
+// EXPAND OMNIS TEXT
+// ==============================
+export async function expandOmnisText(scenarioText) {
+  const initialText = await generateOmnisContent(scenarioText);
 
-  setSummary("Summarizing content...");
+  const systemPrompt = `You are Omnis — a wise and insightful assistant.
+Take the following text and expand it into a detailed, thorough, and actionable explanation. 
+Keep clarity, practical advice, and readability in mind.`;
 
-  try {
-    await ensureAuth();
+  const messages = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: initialText },
+  ];
 
-    const callSummarizeContent = httpsCallable(functions, "summarizeOmnisContent");
-
-    const omniSummaryPrompt = `You are an analytical assistant for the Omnis app, summarizing life choice simulations. Your task is to provide a single, vivid, concise, and professional summary (max 2 sentences) of the following scenario and its potential outcome, highlighting the core essence of the simulated future.`;
-
-    const contentForSummarization = `Original User's Life Choice: ${lastUserPrompt}\nSimulated Outcome Description: ${lastGeneratedContent}`;
-
-    const result = await callSummarizeContent({
-      text: contentForSummarization, // Use 'text' to match Cloud Function input
-      summaryPrompt: omniSummaryPrompt
-    });
-
-    if (result.data.success) {
-      setSummary(result.data.prediction); // Use 'prediction' instead of 'summarizedContent'
-    } else {
-      setSummary("Error summarizing content: " + result.data.error || "Unknown error");
-    }
-  } catch (error) {
-    console.error("Error calling summarizeOmnisContent:", error);
-    setSummary(error.message || "Failed to summarize content. Please try again.");
-  }
-}
-
-/**
- * Expand/Explain content in-depth using Omnis Cloud Function
- */
-export async function expandOmnisText(setExpandedContent, expansionPrompt) {
-  if (!lastGeneratedContent) {
-    alert("Please generate content first before expanding.");
-    return;
-  }
-
-  setExpandedContent("Expanding content...");
-
-  try {
-    await ensureAuth();
-
-    const callExpandContent = httpsCallable(functions, "expandOmnisContent"); // Fix function name to match index.js
-
-    const fullExpansionPrompt =
-      expansionPrompt || "Please expand and explain the following life choice simulation in detail, highlighting potential outcomes, nuances, and implications:";
-
-    const result = await callExpandContent({
-      text: lastGeneratedContent,
-      expansionPrompt: fullExpansionPrompt
-    });
-
-    if (result.data.success) {
-      setExpandedContent(result.data.prediction); // Use 'prediction' instead of 'expandedContent'
-    } else {
-      setExpandedContent("Error expanding content: " + result.data.error || "Unknown error");
-    }
-  } catch (error) {
-    console.error("Error calling expandOmnisContent:", error);
-    setExpandedContent(error.message || "Failed to expand content. Please try again.");
-  }
+  return await callGroqChat(messages);
 }

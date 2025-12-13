@@ -3,9 +3,8 @@ import { saveUserInteraction } from "../services/userBehaviourService";
 import { useMemory } from "../MemoryContext";
 import { db } from "../firebase";
 import { Trash2, Plus, Target, Tag } from "lucide-react";
-import { generateOmnisContent } from "../services/omnis-actions";
+import { generateOmnisContent, expandOmnisText } from "../services/omnis-actions";
 import {
-  writeBatch,
   doc,
   collection,
   addDoc,
@@ -15,7 +14,6 @@ import {
   setDoc,
   getDoc,
   serverTimestamp,
-  where,
 } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
 
@@ -34,6 +32,17 @@ const SimplifiedInputForm = ({ scenario, onScenarioChange, onCategoryChange, pla
   const [historyIndex, setHistoryIndex] = useState(0);
   const [showCopySuccess, setShowCopySuccess] = useState(false);
   const textareaRef = useRef(null);
+
+  // Debounce State
+  const [debouncedValue, setDebouncedValue] = useState(scenario?.text || "");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onScenarioChange({ ...scenario, text: debouncedValue });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [debouncedValue]);
+
 
   // Initialize history when value changes from parent
   useEffect(() => {
@@ -98,6 +107,26 @@ const SimplifiedInputForm = ({ scenario, onScenarioChange, onCategoryChange, pla
       setHistoryIndex(historyIndex + 1);
     }
   };
+
+  // Add to SimplifiedInputForm
+useEffect(() => {
+  const handleKeyboard = (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'z') {
+        e.preventDefault();
+        handleUndo();
+      } else if (e.key === 'y') {
+        e.preventDefault();
+        handleRedo();
+      }
+    }
+  };
+  
+  window.addEventListener('keydown', handleKeyboard);
+  return () => window.removeEventListener('keydown', handleKeyboard);
+}, [historyIndex]);
+ 
+
 
   // Calculate word and character counts
   const wordCount = scenario?.text ? scenario.text.trim().split(/\s+/).filter(Boolean).length : 0;
@@ -228,7 +257,6 @@ export default function ScenarioInput({ onSimulate }) {
   const [simulationLoading, setSimulationLoading] = useState(false);
   const [simulationInput, setSimulationInput] = useState(""); // NEW: For Gemini prompt
   const [generatedResults, setGeneratedResults] = useState([]); // NEW: For Gemini output
-  const [isSimulating, setIsSimulating] = useState(false); // NEW: Simulate loading per scenario
   const [isModalOpen, setIsModalOpen] = useState(false); // Add this state if not present
   
   // Get user tier for button logic
@@ -290,12 +318,9 @@ export default function ScenarioInput({ onSimulate }) {
   const loadUserInteractions = async () => {
     if (!user) return;
     try {
-      const userInteractionsRef = collection(db, 'userInteractions');
-      const q = query(
-        userInteractionsRef, 
-        where('userId', '==', user.uid),
-        orderBy('timestamp', 'desc')
-      );
+      const userInteractionsRef = collection(db, "users", user.uid, "userInteractions");
+const q = query(userInteractionsRef, orderBy("timestamp", "desc"));
+
       
       const snapshot = await getDocs(q);
       const interactions = snapshot.docs.map(doc => ({
@@ -404,95 +429,131 @@ export default function ScenarioInput({ onSimulate }) {
   };
 
   // --- Updated: Handle Run Simulation with Gemini ---
-  const handleSimulate = async () => {
-    if (!user) {
-      setError("Please log in to run simulations.");
-      return;
+// Fixed handleSimulate function
+// Fixed handleSimulate function with better validation
+// Replace the handleSimulate function in ScenarioInput.js with this fixed version:
+
+const handleSimulate = async () => {
+  if (!user) {
+    setError("Please log in to run simulations.");
+    return;
+  }
+
+  if (isFreeTier && trialExpired) {
+    setShowUpgradeModal(true);
+    return;
+  }
+
+  // Get all non-empty scenarios with validation
+  const filteredScenarios = scenarios.filter((s) => {
+    if (!s || typeof s !== 'object') {
+      console.log('Invalid scenario object:', s);
+      return false;
     }
-
-    if (isFreeTier && trialExpired) {
-      setShowUpgradeModal(true);
-      return;
+    if (!s.text || typeof s.text !== 'string') {
+      console.log('Invalid scenario text:', s.text);
+      return false;
     }
-
-    // Get all non-empty scenarios
-    const filteredScenarios = scenarios.filter((s) => s.text.trim() !== "");
-    if (!filteredScenarios.length) {
-      setError("Please provide at least one valid scenario.");
-      return;
+    if (s.text.trim() === '') {
+      console.log('Empty scenario text');
+      return false;
     }
+    return true;
+  });
 
-    setSimulationLoading(true);
-    setError(null);
+  console.log('Original scenarios:', scenarios);
+  console.log('Filtered scenarios:', filteredScenarios);
 
-    try {
-      // Send all scenarios to Gemini and collect results
-      const results = await Promise.all(
-        filteredScenarios.map(async (scenario) => {
-          if (!scenario.text || scenario.text.trim() === "") {
-            throw new Error("Invalid or missing prompt");
-          }
-          console.log('Submitting prompt:', scenario.text);
-          let content = "";
-          await generateOmnisContent(scenario.text, (c) => {
-            content = c;
+  if (!filteredScenarios.length) {
+    setError("Please provide at least one valid scenario with text content.");
+    return;
+  }
+
+  setSimulationLoading(true);
+  setError(null);
+
+  try {
+    // Process all scenarios and collect results
+    const results = await Promise.all(
+      filteredScenarios.map(async (scenario, index) => {
+        try {
+          // Get the scenario text
+          const scenarioText = scenario.text.trim();
+          
+          console.log(`Processing scenario ${index + 1}:`, {
+            text: scenarioText,
+            category: scenario.category || 'Uncategorized',
+            textLength: scenarioText.length
           });
 
+          // Call generateOmnisContent with the scenario text
+          // This function will handle sending to Gemini via Firebase Functions
+          const generatedContent = await generateOmnisContent(scenarioText);
+          
+          if (!generatedContent || typeof generatedContent !== 'string') {
+            throw new Error(`No valid content generated for scenario ${index + 1}`);
+          }
+
+          console.log(`✅ Scenario ${index + 1} processed successfully`);
+
+          // Save to Firestore with category
+          await handleScenarioSubmit(
+            scenarioText, 
+            generatedContent, 
+            scenario.category || 'Uncategorized'
+          );
+
+          // Return formatted result
           return {
-            query: scenario.text,
-            category: scenario.category,
-            response: { result: content, task: "Generated Content" },
+            query: scenarioText,
+            category: scenario.category || 'Uncategorized',
+            response: { 
+              result: generatedContent, 
+              task: "AI Analysis" 
+            },
           };
-        })
-      );
+        } catch (scenarioError) {
+          console.error(`❌ Error processing scenario ${index + 1}:`, scenarioError);
+          
+          // Return error result to show in UI
+          return {
+            query: scenario.text || `Scenario ${index + 1}`,
+            category: scenario.category || 'Error',
+            response: { 
+              result: `⚠️ Error: ${scenarioError.message}. Please try again.`, 
+              task: "Error" 
+            },
+          };
+        }
+      })
+    );
 
-      // Store in batches
-      await storeResultsInBatches(results, user, db, 5);
-
-      setGeneratedResults(results);
-      setSimulationInput(filteredScenarios.map(s => s.text).join("\n"));
-      setIsModalOpen(true);
-    } catch (error) {
-      console.error("Simulation error:", error);
-      setError(error.message || "Failed to run simulation. Please try again.");
-    } finally {
-      setSimulationLoading(false);
+    // Filter out null results
+    const validResults = results.filter(result => result !== null);
+    
+    if (validResults.length === 0) {
+      throw new Error("No scenarios could be processed successfully. Please check your input and try again.");
     }
-  };
 
-  // --- Updated: Simulate function (per-scenario) ---
-  const handleSimulateScenario = async (scenario, index) => {
-    try {
-      setIsSimulating(true);
-
-      if (!scenario.text || scenario.text.trim() === "") {
-        throw new Error("Invalid or missing prompt");
-      }
-      console.log('Submitting scenario prompt:', scenario.text);
-
-      // Call Omnis Gemini action
-      const content = await generateOmnisContent(scenario.text);
-
-      // Store result tied to this scenario
-      setGeneratedResults((prev) => [
-        ...prev,
-        {
-          input: scenario.text,
-          category: scenario.category,
-          output: content,
-          index,
-        },
-      ]);
-
-      // Save to Firestore
-      await handleScenarioSubmit(scenario.text, content, scenario.category);
-    } catch (error) {
-      console.error("Error simulating scenario:", error);
-      setError(error.message || "Failed to simulate scenario. Please try again.");
-    } finally {
-      setIsSimulating(false);
+    // Update UI state with results
+    setGeneratedResults(validResults);
+    setSimulationInput(filteredScenarios.map((s) => s.text.trim()).join("\n\n"));
+    setIsModalOpen(true);
+    
+    console.log('✅ All simulations completed:', validResults);
+    
+    // Notify if some scenarios failed
+    if (validResults.length < filteredScenarios.length) {
+      const failedCount = filteredScenarios.length - validResults.length;
+      console.warn(`⚠️ ${failedCount} scenario(s) failed to process`);
     }
-  };
+  } catch (error) {
+    console.error("❌ Simulation error:", error);
+    setError(`Simulation failed: ${error.message || "Please try again with different scenarios."}`);
+  } finally {
+    setSimulationLoading(false);
+  }
+};
 
   // Handle scenario changes (both text and category)
   const handleScenarioChange = (index, updatedScenario) => {
@@ -509,34 +570,7 @@ export default function ScenarioInput({ onSimulate }) {
     }
   };
 
-  // helper to split results into chunks of size N
-  function chunkArray(array, size) {
-    const chunks = [];
-    for (let i = 0; i < array.length; i += size) {
-      chunks.push(array.slice(i, i + size));
-    }
-    return chunks;
-  }
 
-  // batching logic (configurable batch size)
-  async function storeResultsInBatches(results, user, db, batchSize = 5) {
-    const chunks = chunkArray(results, batchSize);
-
-    for (const group of chunks) {
-      const batch = writeBatch(db);
-
-      group.forEach((newResult) => {
-        const ref = doc(collection(db, "userInteractions")); // auto-ID
-        batch.set(ref, {
-          ...newResult,
-          userId: user?.uid,
-          timestamp: new Date(),
-        });
-      });
-
-      await batch.commit(); // commit one group at a time
-    }
-  }
 
   if (loading) {
     return (

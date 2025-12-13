@@ -18,7 +18,7 @@ import { db } from "../firebase";
 import moment from "moment";
 import toast, { Toaster } from "react-hot-toast";
 import { generateUserNotifications } from "../components/GenerateUserNotification";
-import { Bell, Info, Zap, CheckCircle, Inbox, MoreVertical, Filter, Trash2, Settings, Search, X, Sparkles } from "lucide-react";
+import { Bell, Info, CheckCircle, Inbox, Filter, Trash2, Search, X, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function NotificationsPage() {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import { toast, Toaster } from 'react-hot-toast';
 import { signOut } from "firebase/auth";
@@ -14,7 +14,6 @@ import SplashScreen from './components/SplashScreen';
 import Home from './pages/Home';
 import PartnerChat from './pages/PartnerChat';
 import SavedScenarios from './pages/SavedScenarios';
-import UserProfilePage from './pages/UserProfilePage';
 import Support from './pages/Support';
 import PaymentsPage from './pages/PaymentsPage';
 import ResourcesPage from './pages/ResourcesPage';
@@ -29,7 +28,6 @@ import Header from './components/Header';
 import FeedbackButton from './components/FeedbackButton';
 import CreatorsCorner from './Creator\'sCorner';
 import Footer from './components/Footer';
-
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { OmnisProvider } from './context/OmnisContext';
@@ -70,6 +68,7 @@ const AppContent = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [initialSplashDone, setInitialSplashDone] = useState(false);
   const [postLoginSplash, setPostLoginSplash] = useState(false);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
   const hideLayout = noLayoutRoutes.includes(location.pathname);
   const { showBanner, discountEndDate, setShowBanner } = useDiscount();
@@ -80,7 +79,7 @@ const AppContent = () => {
     });
   };
 
-  // ⏫ Upgrade Modal Logic
+  // ⚡ Upgrade Modal Logic
   useEffect(() => {
     async function checkUpgradeModal() {
       if (!user || !user.uid || !user.tier) return;
@@ -212,7 +211,7 @@ const AppContent = () => {
     );
   }
 
-  // --- DEFAULT LAYOUT FOR ALL OTHER ROUTES ---
+  // --- DEFAULT LAYOUT WITH RESPONSIVE PADDING ---
   return (
     <div className="scale-75 origin-top-left w-[133.33%]">
       <div className="min-h-screen w-full bg-white dark:bg-gray-900">
@@ -223,74 +222,85 @@ const AppContent = () => {
           />
         )}
 
-        <main className="min-h-full w-full pt-16 px-2 bg-white dark:bg-gray-900">
-          <AccountProvider>
-            {/* ✅ Correct placement */}
-            <Toaster position="top-right" />
+        {/* ✅ FIXED: Responsive padding - none on mobile, dynamic on desktop */}
+        <main
+  className={`min-h-screen bg-white dark:bg-gray-900 pt-16
+    transition-all duration-300 ease-in-out
+    ${isSidebarHovered ? 'lg:pl-64' : 'lg:pl-20'}
+    w-full overflow-x-hidden`}
+>
+          {/* ✅ FIXED: Container with responsive padding and max-width */}
+           <div className="w-full px-0 sm:px-4 lg:px-2 transition-all duration-300 ease-in-out">
+   
+            <AccountProvider>
+              {/* ✅ Correct placement */}
+              <Toaster position="top-right" />
 
-            {!hideLayout && (
-              <>
-                <Header
-                  toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-                  currentPage={currentPage}
-                  isProfileMenuOpen={isProfileMenuOpen}
-                  setIsProfileMenuOpen={setIsProfileMenuOpen}
-                  setCurrentPage={setCurrentPage}
-                  handleLogout={handleLogout}
-                />
-                <Sidebar
-                  isSidebarOpen={isSidebarOpen}
-                  setIsSidebarOpen={setIsSidebarOpen}
-                  handleLogout={handleLogout}
-                />
-              </>
-            )}
+              {!hideLayout && (
+                <>
+                  <Header
+                    toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                    currentPage={currentPage}
+                    isProfileMenuOpen={isProfileMenuOpen}
+                    setIsProfileMenuOpen={setIsProfileMenuOpen}
+                    setCurrentPage={setCurrentPage}
+                    handleLogout={handleLogout}
+                  />
+                  <Sidebar
+                    isSidebarOpen={isSidebarOpen}
+                    setIsSidebarOpen={setIsSidebarOpen}
+                    handleLogout={handleLogout}
+                    onHoverChange={setIsSidebarHovered}
+                  />
+                </>
+              )}
 
-            <OmnisProvider>
-              <MemoryProvider>
-                <StripeProvider>
-                  <SessionTracker />
+              <OmnisProvider>
+                <MemoryProvider>
+                  <StripeProvider>
+                    <SessionTracker />
 
-                  <Routes>
-                    <Route path="/onboarding" element={<PrivateRoute><OnboardingContainer /></PrivateRoute>} />
-                    <Route path="/login" element={<PublicRoute><AuthForm /></PublicRoute>} />
-                    <Route path="/" element={<PrivateRoute><OmnisDashboard /></PrivateRoute>} />
-                    <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
-                    <Route path="/dashboard" element={<PrivateRoute><OmnisDashboard /></PrivateRoute>} />
-                    <Route path="/partner-chat" element={<PrivateRoute><PartnerChat /></PrivateRoute>} />
-                    <Route path="/saved-scenarios" element={<PrivateRoute><SavedScenarios /></PrivateRoute>} />
-                    <Route path="/user-profile" element={<PrivateRoute><UserProfilePage /></PrivateRoute>} />
-                    <Route path="/support" element={<PrivateRoute><Support /></PrivateRoute>} />
-                    <Route path="/activity-log" element={<PrivateRoute><ActivityLog /></PrivateRoute>} />
-                    <Route path="/resources" element={<PrivateRoute><ResourcesPage /></PrivateRoute>} />
-                    <Route path="/new-scenario" element={<PrivateRoute><ScenarioTabs /></PrivateRoute>} />
-                    <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
-                    <Route path="/analytics" element={<PrivateRoute><AnalyticsPage /></PrivateRoute>} />
-                    <Route path="/payments" element={<PrivateRoute><PaymentsPage /></PrivateRoute>} />
-                    <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
-                    <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
-                    <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-                    
-                  </Routes>
+                    {/* ✅ Content container with smooth compression */}
+                    <div className="w-full transition-all duration-300 ease-in-out">
+                      <Routes>
+                        <Route path="/onboarding" element={<PrivateRoute><OnboardingContainer /></PrivateRoute>} />
+                        <Route path="/login" element={<PublicRoute><AuthForm /></PublicRoute>} />
+                        <Route path="/" element={<PrivateRoute><OmnisDashboard /></PrivateRoute>} />
+                        <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
+                        <Route path="/dashboard" element={<PrivateRoute><OmnisDashboard /></PrivateRoute>} />
+                        <Route path="/partner-chat" element={<PrivateRoute><PartnerChat /></PrivateRoute>} />
+                        <Route path="/saved-scenarios" element={<PrivateRoute><SavedScenarios /></PrivateRoute>} />
+                        <Route path="/support" element={<PrivateRoute><Support /></PrivateRoute>} />
+                        <Route path="/activity-log" element={<PrivateRoute><ActivityLog /></PrivateRoute>} />
+                        <Route path="/resources" element={<PrivateRoute><ResourcesPage /></PrivateRoute>} />
+                        <Route path="/new-scenario" element={<PrivateRoute><ScenarioTabs /></PrivateRoute>} />
+                        <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+                        <Route path="/analytics" element={<PrivateRoute><AnalyticsPage /></PrivateRoute>} />
+                        <Route path="/payments" element={<PrivateRoute><PaymentsPage /></PrivateRoute>} />
+                        <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
+                        <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
+                        <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+                      </Routes>
+                    </div>
 
-                  {showUpgradeModal && (location.pathname === '/dashboard' || location.pathname === '/') && (
-                    <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
-                  )}
-                </StripeProvider>
-              </MemoryProvider>
-            </OmnisProvider>
+                    {showUpgradeModal && (location.pathname === '/dashboard' || location.pathname === '/') && (
+                      <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
+                    )}
+                  </StripeProvider>
+                </MemoryProvider>
+              </OmnisProvider>
 
-            {!hideLayout && <Footer />}
-            {!hideLayout && <CreatorsCorner />}
-            {!hideLayout && <FeedbackButton />}
-          </AccountProvider>
+              {!hideLayout && <Footer />}
+              {!hideLayout && <CreatorsCorner />}
+              {!hideLayout && <FeedbackButton />}
+            </AccountProvider>
+          </div>
         </main>
       </div>
     </div>
   );
-};
+}
 
-// ✅ Top-Level App
 export default function App() {
   return (
     <ErrorBoundary>

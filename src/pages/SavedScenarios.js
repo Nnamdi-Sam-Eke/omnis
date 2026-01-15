@@ -1,5 +1,5 @@
 import React, { useEffect, useState, lazy, Suspense } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../AuthContext";
 
@@ -33,10 +33,8 @@ const SavedScenariosTabs = () => {
     const fetchSavedScenarios = async () => {
       if (!currentUser?.uid) return;
       try {
-        const q = query(
-          collection(db, "saved_scenarios"),
-          where("userId", "==", currentUser.uid)
-        );
+        const savedRef = collection(db, "savedScenarios", currentUser.uid, "saved");
+        const q = query(savedRef, orderBy("savedAt", "desc"));
         const querySnapshot = await getDocs(q);
         const data = querySnapshot.docs.map((doc) => ({
           id: doc.id,

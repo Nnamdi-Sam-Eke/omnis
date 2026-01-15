@@ -5,18 +5,18 @@ const Footer = () => {
   return (
     <footer
       className={`
-        w-full bg-white dark:bg-gray-800 shadow p-4 z-10
-        transition-transform duration-300 ease-in-out
+        w-full bg-white dark:bg-slate-950/95 shadow p-2 z-10
+        transition-transform rounded-lg border dark:border-white/90 dark:ring-1 dark:ring-white/20 dark:ring-offset-0 duration-300 ease-in-out
       `}
     >
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-1 items-center gap-2">
         {/* Left - The Creator */}
         <div className="text-gray-600 text-sm font-semibold">
           The Creator &copy; {new Date().getFullYear()}
         </div>
 
         {/* Center - Social Links */}
-        <div className="flex justify-center gap-2 text-gray-500">
+        {/* <div className="flex justify-center gap-2 text-gray-500">
           <a
             href="https://twitter.com/yourhandle"
             target="_blank"
@@ -41,10 +41,10 @@ const Footer = () => {
           >
             <FiGithub />
           </a>
-        </div>
+        </div> */}
 
         {/* Right - Links */}
-        <div className="flex flex-wrap justify-center gap-2 text-sm text-gray-500">
+        {/* <div className="flex flex-wrap justify-center gap-2 text-sm text-gray-500">
           <a href="/privacy" className="hover:text-gray-400">
             Privacy Policy
           </a>
@@ -54,7 +54,7 @@ const Footer = () => {
           <a href="/contact" className="hover:text-gray-400">
             Contact
           </a>
-        </div>
+        </div> */}
       </div>
     </footer>
   );

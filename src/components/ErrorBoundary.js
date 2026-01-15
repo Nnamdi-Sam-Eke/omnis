@@ -1,5 +1,6 @@
 // components/ErrorBoundary.js
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -20,7 +21,19 @@ class ErrorBoundary extends React.Component {
       return (
         <div className="p-6 text-center text-red-600">
           <h2 className="text-xl font-bold">Something went wrong.</h2>
-          <p>Please refresh the page or contact support.</p>
+          <p>
+            Please refresh the page or contact{' '}
+            <button
+              type="button"
+              onClick={() => {
+                if (this.props.navigate) this.props.navigate('/support');
+              }}
+              className="text-blue-600 dark:text-blue-400 underline font-medium"
+            >
+              support
+            </button>
+            .
+          </p>
         </div>
       );
     }
@@ -29,4 +42,9 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-export default ErrorBoundary;
+function ErrorBoundaryWithNavigate(props) {
+  const navigate = useNavigate();
+  return <ErrorBoundary {...props} navigate={navigate} />;
+}
+
+export default ErrorBoundaryWithNavigate;

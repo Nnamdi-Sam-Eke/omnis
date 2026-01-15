@@ -92,7 +92,7 @@ const History = () => {
       console.log(loadMore ? "📥 Loading more interactions..." : "📥 Loading initial interactions...");
       
       // Query from user's subcollection (where ScenarioInput saves data)
-      const userInteractionsRef = collection(db, "users", user.uid, "userInteractions");
+      const userInteractionsRef = collection(db, "userInteractions", user.uid, "interactions");
 
       const q = query(
         userInteractionsRef,

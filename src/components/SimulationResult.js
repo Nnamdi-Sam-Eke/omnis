@@ -4,8 +4,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Simple Branching Visualization Component
 import BranchingVisualization from "./BranchingVisualization";
 import { generateOmnisContent, expandOmnisText } from "../services/omnis-actions";
+import ShimmerLoader from "./ShimmerLoader";
+import { Target } from "lucide-react";
+import { doc, collection, addDoc, serverTimestamp, query, where, getDocs, deleteDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { useAuth } from '../AuthContext';
 
-const ScenarioSimulationCard = ({ results, setResults, loading, simulationInput }) => {
+const ScenarioSimulationCard = ({ results,
+            setResults,
+            loading,
+            simulationInput }) => {
   // Mock the useOmnisContext hook since it's not available
   const addFeedback = (timestamp, feedback) => {
     console.log(`Adding feedback: ${timestamp} - ${feedback}`);
@@ -27,6 +35,10 @@ const ScenarioSimulationCard = ({ results, setResults, loading, simulationInput 
   const [showBranchingModal, setShowBranchingModal] = useState(false);
   const [branchingData, setBranchingData] = useState(null);
   const [isBranchingLoading, setIsBranchingLoading] = useState(false);
+
+  // Saved scenarios state
+  const { user } = useAuth();
+  const [savedScenarioIds, setSavedScenarioIds] = useState(new Set());
 
   // Text-to-speech state
   const [speechState, setSpeechState] = useState({
@@ -55,6 +67,70 @@ const ScenarioSimulationCard = ({ results, setResults, loading, simulationInput 
   const handleExportReportClick = () => {
     setToastMessage("Branching paths under development, try again soon.");
     setTimeout(() => setToastMessage(""), 4000);
+  };
+  
+  // ✅ Save scenario to user's savedScenarios collection
+  const handleSaveScenario = async (result, timestamp) => {
+    if (!user?.uid) {
+      setToastMessage("❌ Please log in to save scenarios");
+      return;
+    }
+
+    try {
+      if (savedScenarioIds.has(timestamp)) {
+        setToastMessage("ℹ️ Scenario already saved");
+        return;
+      }
+
+      const scenarioData = {
+        query: result.query || "Untitled Scenario",
+        category: result.category || "Uncategorized",
+        response: result.response || {},
+        originalTimestamp: timestamp,
+        savedAt: serverTimestamp(),
+        savedDate: new Date().toISOString(),
+        metadata: {
+          wordCount: result.query?.split(' ').length || 0,
+          responseLength: result.response?.result?.length || 0,
+          hasError: !!result.error,
+        },
+        originalScenarioId: timestamp.toString(),
+        userId: user.uid,
+      };
+
+      const savedRef = collection(db, "userInteractions", user.uid, "savedScenarios");
+      const docRef = await addDoc(savedRef, scenarioData);
+      console.log("✅ Scenario saved to savedScenarios:", docRef.id);
+
+      setSavedScenarioIds(prev => new Set([...prev, timestamp]));
+      setToastMessage("✅ Scenario saved successfully!");
+    } catch (error) {
+      console.error("❌ Error saving scenario:", error);
+      setToastMessage(`❌ Failed to save: ${error.message}`);
+    }
+  };
+
+  const handleUnsaveScenario = async (timestamp) => {
+    if (!user?.uid) return;
+    try {
+      const savedRef = collection(db, "savedScenarios", user.uid, "saved");
+      const q = query(savedRef, where("originalScenarioId", "==", timestamp.toString()));
+      const snapshot = await getDocs(q);
+      const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref));
+      await Promise.all(deletePromises);
+
+      setSavedScenarioIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(timestamp);
+        return newSet;
+      });
+
+      setToastMessage("✅ Scenario removed from saved");
+      console.log("✅ Scenario unsaved");
+    } catch (error) {
+      console.error("❌ Error unsaving scenario:", error);
+      setToastMessage(`❌ Failed to unsave: ${error.message}`);
+    }
   };
   // NEW: Handle explore branches functionality
   const handleExploreBranches = async () => {
@@ -168,6 +244,22 @@ const ScenarioSimulationCard = ({ results, setResults, loading, simulationInput 
       setRawResults(rawData);
     }
   }, [results]);
+
+  // Load saved scenario IDs on mount
+  useEffect(() => {
+    const loadSavedScenarios = async () => {
+      if (!user?.uid) return;
+      try {
+        const savedRef = collection(db, "savedScenarios", user.uid, "saved");
+        const snapshot = await getDocs(savedRef);
+        const ids = new Set(snapshot.docs.map(d => d.data().originalScenarioId));
+        setSavedScenarioIds(ids);
+      } catch (error) {
+        console.error("Error loading saved scenarios:", error);
+      }
+    };
+    loadSavedScenarios();
+  }, [user]);
 
   // Text-to-speech functions
   function splitIntoSentences(text) {
@@ -376,8 +468,9 @@ ${JSON.stringify(result, null, 2)}
     }
   };
 
- /* --- Handle Explain (with cache + expandOmnisText) ---*/
+/* --- Handle Explain (with cache + expandOmnisText) ---*/
 const handleExplainFurther = async (result, timestamp) => {
+  // Check cache first
   if (narrativeCache[timestamp]) {
     const tags = generateSuggestedTags(narrativeCache[timestamp], result);
     setExportState((prev) => ({ ...prev, suggestedTags: tags }));
@@ -400,7 +493,14 @@ const handleExplainFurther = async (result, timestamp) => {
   });
 
   try {
-    const expanded = await expandOmnisText();
+    // ✅ Pass the original response as the previousOutput
+    const originalContent = result?.response?.result || '';
+    
+    if (!originalContent) {
+      throw new Error('No content available to expand');
+    }
+    
+    const expanded = await expandOmnisText(originalContent); // ✅ Now passing the content!
     const tags = generateSuggestedTags(expanded, result);
 
     setExportState((prev) => ({ ...prev, suggestedTags: tags }));
@@ -486,24 +586,8 @@ useEffect(() => {
   }
 }, [simulationInput]);
 
-  if (!localResults || localResults.length === 0) {
-    return (
-      <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 hover:shadow-2xl hover:shadow-blue-500/20 rounded-2xl p-8 text-slate-900 dark:text-white transition-all duration-300">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold">⚡</span>
-          </div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Scenario Output</h2>
-        </div>
-        <div className="text-center py-8">
-          <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl opacity-50">📊</span>
-          </div>
-          <p className="text-slate-500 dark:text-slate-400 text-lg">No results to display.</p>
-        </div>
-      </div>
-    );
-  }
+  // Determine if we have results
+  const hasResults = Array.isArray(localResults) && localResults.length > 0;
 
   const handleFeedback = (timestamp, feedback) => {
     if (!timestamp) return;
@@ -521,185 +605,185 @@ useEffect(() => {
     addFeedback(timestamp, feedback);
   };
 
-  if (loading) {
-    return (
-      <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 rounded-2xl p-8 text-slate-900 dark:text-white">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg animate-pulse">
-            <span className="text-white font-bold">⚡</span>
-          </div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Scenario Output</h2>
-        </div>
-        <div className="space-y-4 mt-4">
-          {[...Array(3)].map((_, i) => (
-            <div
-              key={i}
-              className="animate-pulse flex flex-col space-y-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-200/50 dark:border-slate-700/50"
-            >
-              <div className="h-5 bg-slate-300 dark:bg-slate-600 rounded-lg w-2/3" />
-              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-lg w-full" />
-              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-lg w-5/6" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  // Render loading / empty / results states inside the main component
 
   return (
     <>
-      <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl hover:shadow-2xl hover:shadow-blue-500/20 dark:border-slate-700 rounded-2xl p-8 border border-slate-200 text-slate-900 dark:text-white col-span-2 w-full transition-all duration-300">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold">⚡</span>
+      {loading ? (
+        <div className=" h-full bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
             </div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Scenario Output</h2>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Processing Scenarios...</h3>
           </div>
-          <div className="flex items-center gap-3">
-            
-            {/* Responsive Reset Button */}
-            <button 
-              onClick={() => handleReset()}
-              className="group relative flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
-              aria-label="Remove scenario simulation results"
-            >
-              <span className="text-xs sm:text-sm">🔄</span>
-              <span className="whitespace-nowrap">Reset</span>
-              <div className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-rose-400/20 to-pink-400/20 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
-            </button>
+          <div className="space-y-4">
+            {[...Array(Math.max((localResults && localResults.length) || 1, 1))].map((_, i) => (
+              <div key={i} className="space-y-3 bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+                <ShimmerLoader height="h-4" width="w-2/3" rounded="rounded-md" />
+                <ShimmerLoader height="h-3" width="w-full" rounded="rounded-md" />
+                <ShimmerLoader height="h-3" width="w-5/6" rounded="rounded-md" />
+                <ShimmerLoader height="h-6" width="w-3/4" rounded="rounded-md" />
+              </div>
+            ))}
           </div>
         </div>
+      ) : !hasResults ? (
+        <div className="h-full md:min-h-[800px] bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 p-12 text-center md:flex md:flex-col md:items-center md:justify-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mx-0">
+            <Target className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Ready for Simulation</h3>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Add your categorized scenarios and click "Run Simulation" to see results here</p>
+        </div>
+      ) : (
+        <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 shadow-xl hover:shadow-2xl hover:shadow-blue-500/20 dark:border-slate-700 rounded-2xl p-8 border border-slate-200 text-slate-900 dark:text-white col-span-2 w-full transition-all duration-300">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold">⚡</span>
+              </div>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Scenario Output</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              <button onClick={() => handleReset()} className="group relative flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95" aria-label="Remove scenario simulation results">
+                <span className="text-xs sm:text-sm">🔄</span>
+                <span className="whitespace-nowrap">Reset</span>
+                <div className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-rose-400/20 to-pink-400/20 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
+              </button>
+            </div>
+          </div>
 
-        <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-400 scrollbar-track-slate-200 dark:scrollbar-thumb-slate-600 dark:scrollbar-track-slate-800 space-y-4 pr-2">
-          {/* Show generated content in output card */}
-          {localResults.filter(Boolean).map((result, index) => {
-            const timestamp = result?.timestamp || index;
-            return (
-              <div key={timestamp} className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-slate-200/50 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]">
-                <h4 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
-                  {result?.query || "Unknown Query"}
-                </h4>
-                {result?.error ? (
-                  <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <span className="text-red-500">❌</span>
-                    <p className="text-red-600 dark:text-red-400 text-sm font-medium">{result.error}</p>
+          <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-slate-400 scrollbar-track-slate-200 dark:scrollbar-thumb-slate-600 dark:scrollbar-track-slate-800 space-y-4 pr-2">
+            {/* Show generated content in output card */}
+            {localResults.filter(Boolean).map((result, index) => {
+              const timestamp = result?.timestamp || index;
+              return (
+                <div key={timestamp} className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-slate-200/50 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]">
+                  <div className="flex items-start justify-between mb-3 gap-3">
+                    <h4 className="text-lg font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2 flex-1 min-w-0">
+                      <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex-shrink-0"></div>
+                      <span className="truncate">{result?.query || "Unknown Query"}</span>
+                    </h4>
+                    {result?.category && (
+                      <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0">
+                        {result.category}
+                      </span>
+                    )}
                   </div>
-                ) : (
-                  <div className="text-sm text-slate-600 dark:text-slate-300 mt-2">
-                    {result?.response?.result || "⚠️ No response"}
+                  {result?.error ? (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <span className="text-red-500">❌</span>
+                      <p className="text-red-600 dark:text-red-400 text-sm font-medium">{result.error}</p>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-slate-600 dark:text-slate-300 mt-2">
+                      {result?.response?.result || "⚠️ No response"}
 
-                  </div>
-                )}
+                    </div>
+                  )}
 
-                {/* Responsive Action Buttons */}
-                <div className="flex flex-col sm:flex-row justify-start gap-2 sm:gap-3 mt-4 pt-4 border-t border-slate-200/50 dark:border-slate-700/50">
-                  <button
-                    aria-label="Give positive feedback"
-                    className="flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
-                    onClick={() => handleFeedback(timestamp, "positive")}
-                  >
-                    <FiThumbsUp className="text-sm sm:text-lg" />
-                    <span className="sm:hidden"></span>
-                  </button>
-                  
-                  <button
-                    aria-label="Give negative feedback"
-                    className="flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    onClick={() => handleFeedback(timestamp, "negative")}
-                  >
-                    <FiThumbsDown className="text-sm sm:text-lg" />
-                    <span className="sm:hidden"></span>
-                  </button>
-                  
-                  {/* Responsive Explain Button */}
-                  <button
-                    aria-label="Explain further"
-                    className={`group relative flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex-1 sm:flex-none ${
-                      narrativeCache[timestamp] 
-                        ? "bg-indigo-500 hover:bg-indigo-600 text-white" 
-                        : "bg-blue-500 hover:bg-blue-600 text-white"
-                    }`}
-                    onClick={() => handleExplainFurther(result, timestamp)}
-                  >
-                    <FiHelpCircle className="text-sm sm:text-lg flex-shrink-0" />
-                    <span className="whitespace-nowrap truncate">
-                      {narrativeCache[timestamp] ? "View Explanation" : "Explain"}
-                    </span>
-                    <div className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-blue-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
-                  </button>
-                  
-                  {/* Responsive Branch Button + Toast above it */}
-                  <div className="relative flex flex-col items-center">
-                    {/* Toast notification appears above the branch button */}
-                    <AnimatePresence>
-                      {toastMessage && (
-                        <motion.div
-                          key="toast"
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
-                          className="z-[1000]"
-                          style={{
-                            position: "absolute",
-                            bottom: "100%",
-                            left: "50%",
-                            transform: "translateX(-50%) translateY(-25px)",
-                            marginBottom: "0.5rem",
-                          }}
-                        >
-                          <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-2xl p-4 max-w-xs">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                              </div>
-                              <div>
-                                <p className="font-semibold text-slate-800 dark:text-slate-200">Coming Soon</p>
-                                <p className="text-sm text-slate-600 dark:text-slate-400">{toastMessage}</p>
+                  {/* Responsive Action Buttons */}
+                  <div className="flex flex-col sm:flex-row justify-start gap-2 sm:gap-3 mt-4 pt-4 border-t border-slate-200/50 dark:border-slate-700/50">
+                    <button aria-label="Give positive feedback" className="flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => handleFeedback(timestamp, "positive")}>
+                      <FiThumbsUp className="text-sm sm:text-lg" />
+                      <span className="sm:hidden"></span>
+                    </button>
+                    
+                    <button aria-label="Give negative feedback" className="flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => handleFeedback(timestamp, "negative")}>
+                      <FiThumbsDown className="text-sm sm:text-lg" />
+                      <span className="sm:hidden"></span>
+                    </button>
+                    
+                    {/* Updated Explain Button with Better Copy */}
+                    <button 
+                      aria-label="View detailed analysis" 
+                      className={`group relative flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex-1 sm:flex-none ${
+                        narrativeCache[timestamp] 
+                          ? "bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white" 
+                          : "bg-gradient-to-r from-blue-800 to-green-500 hover:from-blue-900 hover:to-green-600 text-white"
+                      }`} 
+                      onClick={() => handleExplainFurther(result, timestamp)}
+                    >
+                      <FiHelpCircle className="text-sm sm:text-lg flex-shrink-0" />
+                      <span className="whitespace-nowrap truncate">
+                        {narrativeCache[timestamp] ? "View Full Analysis" : "See Detailed Analysis"}
+                      </span>
+                      {!narrativeCache[timestamp] && (
+                        <span className="hidden sm:inline-block ml-1 text-xs opacity-80">
+                          • Why • Risks • Steps
+                        </span>
+                      )}
+                      <div className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-amber-300/20 to-orange-300/20 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
+                    </button>
+                    
+                    {/* ✅ NEW: Save Button */}
+                    <button
+                      aria-label={savedScenarioIds.has(timestamp) ? "Scenario already saved" : "Save scenario"}
+                      className={`group relative flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg flex-1 sm:flex-none ${
+                        savedScenarioIds.has(timestamp)
+                          ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white cursor-default'
+                          : 'bg-gradient-to-r from-amber-300 to-amber-500 hover:from-amber-400 hover:to-orange-600 text-white'
+                      }`}
+                      onClick={() => {
+                        if (savedScenarioIds.has(timestamp)) {
+                          handleUnsaveScenario(timestamp);
+                        } else {
+                          handleSaveScenario(result, timestamp);
+                        }
+                      }}
+                    >
+                      {savedScenarioIds.has(timestamp) ? (
+                        <>
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                          </svg>
+                          <span className="whitespace-nowrap truncate">Saved</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                          </svg>
+                          <span className="whitespace-nowrap truncate">Save</span>
+                        </>
+                      )}
+                      <div className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-amber-300/20 to-orange-300/20 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
+                    </button>
+
+                    {/* Responsive Branch Button + Toast above it */}
+                    <div className="relative flex flex-col items-center">
+                      <AnimatePresence>
+                        {toastMessage && (
+                          <motion.div key="toast" initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} transition={{ duration: 0.3, type: "spring", stiffness: 300 }} className="z-[1000]" style={{ position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%) translateY(-25px)", marginBottom: "0.5rem" }}>
+                            <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-2xl shadow-2xl p-4 max-w-xs">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-slate-800 dark:text-slate-200">Coming Soon</p>
+                                  <p className="text-sm text-slate-600 dark:text-slate-400">{toastMessage}</p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    <button
-                      onClick={handleExportReportClick}
-                      // onClick={handleExploreBranches}
-                      disabled={isBranchingLoading}
-                      className={`group relative flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 disabled:from-purple-300 disabled:to-indigo-300 text-white rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:cursor-not-allowed disabled:transform-none flex-1 sm:flex-none
-      ${toastMessage ? "branch-overlay-active" : ""}
-    `}
-    style={{ position: "relative", overflow: "hidden" }}
-  >
-    <FiGitBranch className="text-sm sm:text-lg flex-shrink-0" />
-    <span className="whitespace-nowrap truncate">
-      {isBranchingLoading ? 'Loading...' : 'Branch'}
-    </span>
-    {!isBranchingLoading && (
-      <div className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-purple-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
-    )}
-    {/* Overlay and padlock when toastMessage is active */}
-    {toastMessage && (
-      <>
-        <span
-          className="absolute inset-0 rounded-lg sm:rounded-xl bg-gray-900/60 dark:bg-gray-800/70 pointer-events-none flex items-center justify-center"
-          style={{ zIndex: 2 }}
-        >
-          <FiLock className="text-2xl text-white opacity-90 drop-shadow-lg" />
-        </span>
-      </>
-    )}
-  </button>
-</div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      <button onClick={handleExportReportClick} disabled={isBranchingLoading} className={`group relative flex items-center justify-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2 lg:px-5 lg:py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 disabled:from-purple-300 disabled:to-indigo-300 text-white rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm lg:text-base transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:cursor-not-allowed disabled:transform-none flex-1 sm:flex-none ${toastMessage ? "branch-overlay-active" : ""}`} style={{ position: "relative", overflow: "hidden" }}>
+                        <FiGitBranch className="text-sm sm:text-lg flex-shrink-0" />
+                        <span className="whitespace-nowrap truncate">{isBranchingLoading ? 'Loading...' : 'Branch'}</span>
+                        {!isBranchingLoading && (<div className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-purple-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />)}
+                        {toastMessage && (<span className="absolute inset-0 rounded-lg sm:rounded-xl bg-gray-900/60 dark:bg-gray-800/70 pointer-events-none flex items-center justify-center" style={{ zIndex: 2 }}><FiLock className="text-2xl text-white opacity-90 drop-shadow-lg" /></span>)}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
-
+      )}
       {/* UPDATED: Mobile-Responsive Branching Modal */}
       {showBranchingModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-2 sm:p-4">
@@ -758,13 +842,13 @@ useEffect(() => {
       )}
 
       {/* UPDATED: Mobile-Responsive Explanation Modal */}
-      {explanationModal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className={`bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-h-[95vh] overflow-hidden relative transition-all duration-300 ${
-            modalState.isMobile 
-              ? `${modalState.showFullscreenMode ? 'max-w-full h-full' : 'max-w-full'} mx-2` 
-              : 'max-w-4xl mx-4'
-          }`}>
+    {explanationModal.isOpen && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-1 sm:p-2">
+    <div className={`bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden relative transition-all duration-300 ${
+      modalState.isMobile 
+        ? `${modalState.showFullscreenMode ? 'w-full h-full' : 'w-[95vw] h-[90vh] max-w-[95vw] max-h-[90vh]'} mx-auto` 
+        : 'w-[95vw] h-[95vh] max-w-[95vw] max-h-[95vh] mx-auto'
+    }`}>"
             
             {/* Mobile Navigation Bar - Only show on mobile */}
             {modalState.isMobile && (

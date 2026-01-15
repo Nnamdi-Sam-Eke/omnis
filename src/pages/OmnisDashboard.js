@@ -198,7 +198,7 @@ const OmnisDashboard = () => {
     
       <CommandPalette isOpen={isCommandPaletteOpen} setIsOpen={setCommandPaletteOpen} setActiveTab={setActiveTab} />
       
-      <div className="p-4 flex-1 overflow-y-auto pb-16 space-y-6 min-h-screen mt-10 transition-all duration-500 
+      <div className="p-4 flex-1 overflow-y-auto pb-20 space-y-6 h-[140vh] mt-10 transition-all duration-500 
                     bg-gradient-to-br from-gray-50/50 via-white/30 to-blue-50/50 
                     dark:from-gray-900/50 dark:via-gray-800/30 dark:to-gray-700/50">
         

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { saveUserInteraction } from "../services/userBehaviourService";
 import { useMemory } from "../MemoryContext";
 import { db } from "../firebase";
-import { Trash2, Plus, Target, Tag } from "lucide-react";
+import { Trash2, Plus, Tag } from "lucide-react";
 import { generateOmnisContent, expandOmnisText } from "../services/omnis-actions";
 import {
   doc,
@@ -241,12 +241,51 @@ useEffect(() => {
 };
 
 // Main ScenarioInput component with updated structure
-export default function ScenarioInput({ onSimulate }) {
+export default function ScenarioInput({ onSimulate, setGeneratedResults, setSimulationLoading, // ✅ Receive from parent
+  setSimulationInput }) {
   const [scenarios, setScenarios] = useState([{ text: "", category: "" }]);
-  const [isOpen, setIsOpen] = useState(false);
+  // Default: open on desktop, closed on mobile
+  const [isOpen, setIsOpen] = useState(() => window.innerWidth >= 768);
+
+  // Tracks whether the user has manually toggled
+  const [userToggled, setUserToggled] = useState(false);
   const [results, setResults] = useState([]);
   const { memory, saveToFirestore } = useMemory();
   const [error, setError] = useState(null);
+  // Local simulation state (restored after refactor)
+  // Local fallbacks for results and input in case parent did not provide setters
+  const [generatedResultsLocal, setGeneratedResultsLocal] = useState([]);
+  const [simulationInputLocal, setSimulationInputLocal] = useState("");
+  // Local simulation state
+  const [simulationLoadingLocal, setSimulationLoadingLocal] = useState(false);
+  
+
+  // Updater wrappers: always update local state, and call parent setter if provided
+  const updateGeneratedResults = (val) => {
+    setGeneratedResultsLocal(val);
+    if (typeof setGeneratedResults === 'function') {
+      try { setGeneratedResults(val); } catch (e) { console.warn('parent setGeneratedResults failed', e); }
+    }
+  };
+
+   // ✅ Create wrapper function that updates both local AND parent
+  const updateSimulationLoading = (val) => {
+    setSimulationLoadingLocal(val);
+    if (typeof setSimulationLoading === 'function') {
+      try { 
+        setSimulationLoading(val); 
+      } catch (e) { 
+        console.warn('parent setSimulationLoading failed', e); 
+      }
+    }
+  };
+
+  const updateSimulationInput = (val) => {
+    setSimulationInputLocal(val);
+    if (typeof setSimulationInput === 'function') {
+      try { setSimulationInput(val); } catch (e) { console.warn('parent setSimulationInput failed', e); }
+    }
+  };
   const [chatHistory, setChatHistory] = useState([]);
   const [userInteractions, setUserInteractions] = useState([]);
   const [trialExpired, setTrialExpired] = useState(false);
@@ -254,9 +293,6 @@ export default function ScenarioInput({ onSimulate }) {
   const { user } = useAuth();
   const [discountDeadline, setDiscountDeadline] = useState(null);
   const [loading, setLoading] = React.useState(true);
-  const [simulationLoading, setSimulationLoading] = useState(false);
-  const [simulationInput, setSimulationInput] = useState(""); // NEW: For Gemini prompt
-  const [generatedResults, setGeneratedResults] = useState([]); // NEW: For Gemini output
   const [isModalOpen, setIsModalOpen] = useState(false); // Add this state if not present
   
   // Get user tier for button logic
@@ -274,6 +310,27 @@ export default function ScenarioInput({ onSimulate }) {
     const timer = setTimeout(() => setLoading(false), 3000);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+
+      // Always keep expanded on desktop/tablet (>= md)
+      if (width >= 768) {
+        setIsOpen(true);
+        return;
+      }
+
+      // On mobile: if user has already toggled, respect their choice
+      if (userToggled) return;
+
+      // Default for mobile is closed
+      setIsOpen(false);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [userToggled]);
 
   useEffect(() => {
     if (user) {
@@ -303,7 +360,7 @@ export default function ScenarioInput({ onSimulate }) {
     if (!user) return;
     try {
       const q = query(
-        collection(db, "users", user.uid, "userInteractions"),
+        collection(db, "userInteractions", user.uid, "interactions"),
         orderBy("timestamp", "desc")
       );
       const querySnapshot = await getDocs(q);
@@ -318,8 +375,8 @@ export default function ScenarioInput({ onSimulate }) {
   const loadUserInteractions = async () => {
     if (!user) return;
     try {
-      const userInteractionsRef = collection(db, "users", user.uid, "userInteractions");
-const q = query(userInteractionsRef, orderBy("timestamp", "desc"));
+      const userInteractionsRef = collection(db, "userInteractions", user.uid, "interactions");
+      const q = query(userInteractionsRef, orderBy("timestamp", "desc"));
 
       
       const snapshot = await getDocs(q);
@@ -413,18 +470,40 @@ const q = query(userInteractionsRef, orderBy("timestamp", "desc"));
   };
 
   const handleScenarioSubmit = async (query, response, category) => {
+    if (!user?.uid) {
+      console.error("No user found");
+      return;
+    }
+
     try {
-      const historyEntry = {
-        query,
-        response,
-        category, // Include category in the database entry
+      // ✅ Create scenario entry with proper validation
+      const scenarioEntry = {
+        query: query || "Untitled Scenario",
+        response: response || "",
+        category: category || "Uncategorized",
         timestamp: serverTimestamp(),
+        createdAt: new Date().toISOString(),
+        // Metadata for better tracking
+        metadata: {
+          wordCount: query?.split(' ').filter(Boolean).length || 0,
+          responseLength: (typeof response === 'object' ? (response.result?.length || 0) : (response?.length || 0)),
+          hasCategory: !!category,
+        },
+        entryType: 'scenario',
       };
-      await addDoc(collection(db, "users", user.uid, "userInteractions"), historyEntry);
-      setChatHistory((prev) => [...prev, historyEntry]);
-      console.log("✅ History saved with category!");
+
+      // ✅ Save to userInteractions/{userId}/interactions subcollection
+      const scenariosRef = collection(db, "userInteractions", user.uid, "interactions");
+      const docRef = await addDoc(scenariosRef, scenarioEntry);
+    
+      console.log("✅ Scenario saved to userInteractions:", docRef.id);
+    
+      // Update local state with Firestore ID
+      setChatHistory((prev) => [...prev, { ...scenarioEntry, id: docRef.id }]);
+    
     } catch (error) {
-      console.error("❌ Error saving history:", error);
+      console.error("❌ Error saving scenario to userInteractions:", error);
+      setError(`Failed to save scenario: ${error.message}`);
     }
   };
 
@@ -446,38 +525,29 @@ const handleSimulate = async () => {
 
   // Get all non-empty scenarios with validation
   const filteredScenarios = scenarios.filter((s) => {
-    if (!s || typeof s !== 'object') {
-      console.log('Invalid scenario object:', s);
-      return false;
-    }
-    if (!s.text || typeof s.text !== 'string') {
-      console.log('Invalid scenario text:', s.text);
-      return false;
-    }
-    if (s.text.trim() === '') {
-      console.log('Empty scenario text');
-      return false;
-    }
+    if (!s || typeof s !== 'object') return false;
+    if (!s.text || typeof s.text !== 'string') return false;
+    if (s.text.trim() === '') return false;
     return true;
   });
-
-  console.log('Original scenarios:', scenarios);
-  console.log('Filtered scenarios:', filteredScenarios);
 
   if (!filteredScenarios.length) {
     setError("Please provide at least one valid scenario with text content.");
     return;
   }
 
-  setSimulationLoading(true);
+  // ✅ CRITICAL: Set loading FIRST and give React time to update
+  updateSimulationLoading(true);
   setError(null);
+  
+  // ✅ Add a small delay to ensure the loading state renders
+  await new Promise(resolve => setTimeout(resolve, 100));
 
   try {
     // Process all scenarios and collect results
     const results = await Promise.all(
       filteredScenarios.map(async (scenario, index) => {
         try {
-          // Get the scenario text
           const scenarioText = scenario.text.trim();
           
           console.log(`Processing scenario ${index + 1}:`, {
@@ -486,8 +556,6 @@ const handleSimulate = async () => {
             textLength: scenarioText.length
           });
 
-          // Call generateOmnisContent with the scenario text
-          // This function will handle sending to Gemini via Firebase Functions
           const generatedContent = await generateOmnisContent(scenarioText);
           
           if (!generatedContent || typeof generatedContent !== 'string') {
@@ -496,14 +564,12 @@ const handleSimulate = async () => {
 
           console.log(`✅ Scenario ${index + 1} processed successfully`);
 
-          // Save to Firestore with category
           await handleScenarioSubmit(
             scenarioText, 
-            generatedContent, 
+            { result: generatedContent, task: "AI Analysis" },
             scenario.category || 'Uncategorized'
           );
 
-          // Return formatted result
           return {
             query: scenarioText,
             category: scenario.category || 'Uncategorized',
@@ -515,7 +581,6 @@ const handleSimulate = async () => {
         } catch (scenarioError) {
           console.error(`❌ Error processing scenario ${index + 1}:`, scenarioError);
           
-          // Return error result to show in UI
           return {
             query: scenario.text || `Scenario ${index + 1}`,
             category: scenario.category || 'Error',
@@ -528,21 +593,18 @@ const handleSimulate = async () => {
       })
     );
 
-    // Filter out null results
     const validResults = results.filter(result => result !== null);
     
     if (validResults.length === 0) {
       throw new Error("No scenarios could be processed successfully. Please check your input and try again.");
     }
 
-    // Update UI state with results
-    setGeneratedResults(validResults);
-    setSimulationInput(filteredScenarios.map((s) => s.text.trim()).join("\n\n"));
+    updateGeneratedResults(validResults);
+    updateSimulationInput(filteredScenarios.map((s) => s.text.trim()).join("\n\n"));
     setIsModalOpen(true);
     
     console.log('✅ All simulations completed:', validResults);
     
-    // Notify if some scenarios failed
     if (validResults.length < filteredScenarios.length) {
       const failedCount = filteredScenarios.length - validResults.length;
       console.warn(`⚠️ ${failedCount} scenario(s) failed to process`);
@@ -551,7 +613,8 @@ const handleSimulate = async () => {
     console.error("❌ Simulation error:", error);
     setError(`Simulation failed: ${error.message || "Please try again with different scenarios."}`);
   } finally {
-    setSimulationLoading(false);
+    // ✅ Always turn off loading
+    updateSimulationLoading(false);
   }
 };
 
@@ -582,14 +645,20 @@ const handleSimulate = async () => {
 
   return (
     <>
-      <div className="flex flex-col xl:flex-row gap-8 w-full max-w-7xl mx-auto">
+      <div className="flex flex-col xl:flex-row h-[38vh] gap-8 w-full max-w-7xl mx-auto">
         {/* Left Panel - Scenario Input */}
         <div className="flex-1 min-w-0">
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
             {/* Header */}
             <div 
-              className="flex justify-between items-center cursor-pointer p-6 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-700 dark:hover:to-gray-800 transition-all duration-300"
-              onClick={() => setIsOpen(!isOpen)}
+              className="flex justify-between items-center cursor-pointer md:cursor-default p-6 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-700 dark:hover:to-gray-800 transition-all duration-300"
+              onClick={() => {
+                // Only allow collapsing/expanding on mobile
+                if (window.innerWidth < 768) {
+                  setIsOpen(prev => !prev);
+                  setUserToggled(true); // user takes control on mobile
+                }
+              }}
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
@@ -681,12 +750,12 @@ const handleSimulate = async () => {
                     ? 'bg-gradient-to-r from-gray-400 to-gray-500 text-white hover:from-gray-500 hover:to-gray-600' 
                     : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white transform hover:scale-[1.02] active:scale-[0.98]'
                   }
-                  ${simulationLoading ? 'opacity-70 cursor-not-allowed' : ''}
+                  ${simulationLoadingLocal ? 'opacity-70 cursor-not-allowed' : ''}
                 `}
                 onClick={handleSimulate}
-                disabled={simulationLoading}
+                disabled={simulationLoadingLocal}
               >
-                {simulationLoading ? (
+                {simulationLoadingLocal ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
                     <span>Analyzing Scenarios...</span>
@@ -721,46 +790,15 @@ const handleSimulate = async () => {
           </div>
         </div>
 
-        {/* Right Panel - Results */}
-        <div className="flex-1 min-w-0">
-          {simulationLoading ? (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Processing Scenarios...
-                </h3>
-              </div>
-              <div className="space-y-4">
-                {[...Array(scenarios.length)].map((_, i) => (
-                  <div key={i} className="space-y-3 bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
-                    <ShimmerLoader height="h-4" width="w-2/3" rounded="rounded-md" />
-                    <ShimmerLoader height="h-3" width="w-full" rounded="rounded-md" />
-                    <ShimmerLoader height="h-3" width="w-5/6" rounded="rounded-md" />
-                    <ShimmerLoader height="h-6" width="w-3/4" rounded="rounded-md" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : generatedResults.length > 0 ? (
-            // Pass generatedResults and simulationInput to ScenarioSimulationCard
-            <ScenarioSimulationCard results={generatedResults} simulationInput={simulationInput} />
-          ) : (
-            <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 p-12 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Target className="w-8 h-8 text-gray-400 dark:text-gray-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Ready for Simulation
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
-                Add your categorized scenarios and click "Run Simulation" to see results here
-              </p>
-            </div>
-          )}
-        </div>
+        {/* Right Panel - Results: render SimulationResult with safe local state */}
+        {/* <div className="flex-1 min-w-0">
+          <ScenarioSimulationCard
+            results={generatedResultsLocal}
+            setResults={updateGeneratedResults}
+            loading={simulationLoadingLocal}
+            simulationInput={simulationInputLocal}
+          />
+        </div> */}
       </div>
 
       {/* Upgrade Modal */}

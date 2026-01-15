@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import { toast, Toaster } from 'react-hot-toast';
 import { signOut } from "firebase/auth";
 import { auth, db, messaging } from "./firebase";
 import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
 import { onMessage } from "firebase/messaging";
-
+import SessionTracker from './components/SessionTracker';
 // Pages
 import OnboardingContainer from './components/onboarding/OnboardingContainer';
-import SessionTracker from './components/SessionTracker';
 import SplashScreen from './components/SplashScreen';
 import Home from './pages/Home';
 import PartnerChat from './pages/PartnerChat';
@@ -41,6 +40,8 @@ import StripeProvider from './StripeProvider';
 import UpgradeModal from './components/UpgradeModal';
 import DiscountBanner from './components/DiscountBanner';
 import './App.css';
+import useIdleTimer from './hooks/useIdleTimer';
+import WarningModal from './components/WarningModal';
 
 // ✅ PrivateRoute
 const PrivateRoute = ({ children }) => {
@@ -60,6 +61,7 @@ const noLayoutRoutes = ['/login', '/onboarding'];
 const AppContent = () => {
   const location = useLocation();
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -78,6 +80,20 @@ const AppContent = () => {
       console.error("Error signing out:", error);
     });
   };
+
+  // Idle timer: warn at 13min, timeout at 15min
+  const idle = useIdleTimer({
+    timeoutMinutes: 15,
+    warningMinutes: 13,
+    onWarn: () => {},
+    onTimeout: () => {
+      try {
+        localStorage.setItem('idleLoggedOut', '1');
+      } catch (e) {}
+      signOut(auth).catch(err => console.error('Idle signOut error', err));
+      navigate('/login');
+    },
+  });
 
   // ⚡ Upgrade Modal Logic
   useEffect(() => {
@@ -224,13 +240,13 @@ const AppContent = () => {
 
         {/* ✅ FIXED: Responsive padding - none on mobile, dynamic on desktop */}
         <main
-  className={`min-h-screen bg-white dark:bg-gray-900 pt-16
+  className={`min-h-screen bg-white dark:bg-gray-900 pt-20
     transition-all duration-300 ease-in-out
     ${isSidebarHovered ? 'lg:pl-64' : 'lg:pl-20'}
-    w-full overflow-x-hidden`}
+    w-full`}
 >
           {/* ✅ FIXED: Container with responsive padding and max-width */}
-           <div className="w-full px-0 sm:px-4 lg:px-2 transition-all duration-300 ease-in-out">
+           <div className="w-full px-0 sm:px-4 lg:px-0 transition-all duration-300 ease-in-out">
    
             <AccountProvider>
               {/* ✅ Correct placement */}
@@ -260,6 +276,16 @@ const AppContent = () => {
                   <StripeProvider>
                     <SessionTracker />
 
+                    <WarningModal
+                      isOpen={idle.isWarning}
+                      secondsLeft={idle.secondsLeft}
+                      onStay={() => idle.stay()}
+                      onLogout={() => {
+                        try { localStorage.setItem('idleLoggedOut', '1'); } catch (e) {}
+                        signOut(auth).catch(err => console.error('Idle signOut error', err));
+                        navigate('/login');
+                      }}
+                    />
                     {/* ✅ Content container with smooth compression */}
                     <div className="w-full transition-all duration-300 ease-in-out">
                       <Routes>

@@ -9,7 +9,76 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../firebase";
 import { useAuth } from '../AuthContext';
 import ReactMarkdown from 'react-markdown';
-import { callQwen } from "../services/qwenClient";
+// ADD THIS LINE instead:
+import { callGroqChat } from "../services/omnis-actions";
+
+// ============================================
+// HELPER FUNCTIONS FOR MEDIA COMPRESSION
+// ============================================
+
+const compressImage = async (file, maxWidth = 1920, quality = 0.8) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob(
+          (blob) => {
+            resolve(new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            }));
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+      
+      img.onerror = reject;
+    };
+    
+    reader.onerror = reject;
+  });
+};
+
+const compressAudio = async (file) => {
+  // Basic audio handling - for advanced compression, use ffmpeg.wasm
+  return file;
+};
+
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+  });
+};
+
+// Remove <think> tags and their content (and any stray tag fragments)
+const stripThink = (s) => {
+  if (typeof s !== 'string') return s;
+  return s.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<\/?think/gi, '').trim();
+};
 
 // Toast Notification Component
 const Toast = ({ message, type, onClose }) => {
@@ -249,7 +318,7 @@ export default function PartnerChat() {
   useEffect(() => {
     if (!user) return;
 
-    const messagesRef = collection(db, "conversations", conversationId, "messages");
+    const messagesRef = collection(db, "userInteractions", user.uid, "conversations", conversationId, "messages");
     const q = query(messagesRef, orderBy("timestamp", "asc"));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -270,21 +339,7 @@ export default function PartnerChat() {
     setToast({ message, type });
   };
 
-  const uploadFile = async (file) => {
-    try {
-      setIsUploading(true);
-      const fileRef = ref(storage, `chat-files/${conversationId}/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
-      return downloadURL;
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      showToast("Failed to upload file", "error");
-      return null;
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  // uploadFile removed — replaced by enhanced handleFileUpload with compression and metadata
 
   const handleSend = async () => {
   if (!input.trim() || !user) return;
@@ -298,7 +353,7 @@ export default function PartnerChat() {
   };
 
   try {
-    const messagesRef = collection(db, "conversations", conversationId, "messages");
+    const messagesRef = collection(db, "userInteractions", user.uid, "conversations", conversationId, "messages");
     const userMsgRef = await addDoc(messagesRef, userMessageData);
 
     setInput("");
@@ -306,7 +361,7 @@ export default function PartnerChat() {
 
     // Mark as sent after a tiny delay
     setTimeout(async () => {
-      await updateDoc(doc(db, "conversations", conversationId, "messages", userMsgRef.id), {
+      await updateDoc(doc(db, "userInteractions", user.uid, "conversations", conversationId, "messages", userMsgRef.id), {
         status: "sent"
       });
     }, 500);
@@ -319,16 +374,10 @@ export default function PartnerChat() {
       ];
 
       // Qwen call
-      const qwenResp = await callQwen({
-        model: "qwen-3-23b",
-        messages,
-        max_tokens: 800
-      });
-
-      const aiResponse =
-        qwenResp?.text?.trim() ||
-        "I'm here to help! How can I assist you?";
-
+     const aiResponse = await callGroqChat(messages, {
+  model: "qwen/qwen3-32b",
+  max_tokens: 800
+});
       // Save Omnis response to Firestore
       await addDoc(messagesRef, {
         sender: "omnis",
@@ -341,7 +390,7 @@ export default function PartnerChat() {
     } catch (aiError) {
       console.error("AI Error (Groq Qwen):", aiError);
 
-      await addDoc(collection(db, "conversations", conversationId, "messages"), {
+      await addDoc(collection(db, "userInteractions", user.uid, "conversations", conversationId, "messages"), {
         sender: "omnis",
         text: "I'm having trouble connecting right now. Please try again in a moment.",
         status: "sent",
@@ -359,43 +408,152 @@ export default function PartnerChat() {
   }
 };
 
+  // ============================================
+  // ENHANCED FILE UPLOAD WITH COMPRESSION
+  // ============================================
   const handleFileUpload = async (file) => {
-  if (!file) return;
+    if (!file) return;
 
-  setIsUploading(true);
-  try {
-    // Determine file type
-    const fileType = file.type.startsWith("image/")
-      ? "image"
-      : file.type.startsWith("audio/")
-      ? "audio"
-      : "application";
+    setIsUploading(true);
+    showToast("Processing file...", "info");
 
-    // Upload to Firebase Storage
-    const fileRef = ref(storage, `chat-files/${conversationId}/${Date.now()}_${file.name}`);
-    await uploadBytes(fileRef, file);
-    const downloadURL = await getDownloadURL(fileRef);
+    try {
+      let processedFile = file;
+      let compressionInfo = "";
 
-    // Save message in Firestore
-    const messagesRef = collection(db, "conversations", conversationId, "messages");
-    await addDoc(messagesRef, {
-      sender: "creator",
-      text: downloadURL,
-      fileName: file.name,
-      fileType: fileType,
-      status: "sent",
-      timestamp: new Date(),
-      read: false,
-    });
+      const fileType = file.type.startsWith("image/")
+        ? "image"
+        : file.type.startsWith("audio/")
+        ? "audio"
+        : file.type.startsWith("video/")
+        ? "video"
+        : "application";
 
-    showToast(`${fileType.charAt(0).toUpperCase() + fileType.slice(1)} uploaded`, "success");
-  } catch (error) {
-    console.error("File upload error:", error);
-    showToast("Failed to upload file", "error");
-  } finally {
-    setIsUploading(false);
-  }
-};
+      // Compress based on type
+      if (fileType === "image") {
+        const originalSize = (file.size / 1024 / 1024).toFixed(2);
+        processedFile = await compressImage(file);
+        const compressedSize = (processedFile.size / 1024 / 1024).toFixed(2);
+        compressionInfo = ` (${originalSize}MB → ${compressedSize}MB)`;
+        showToast(`Image compressed${compressionInfo}`, "success");
+      } else if (fileType === "audio") {
+        processedFile = await compressAudio(file);
+        compressionInfo = ` (${(file.size / 1024 / 1024).toFixed(2)}MB)`;
+      }
+
+      // Upload to Firebase Storage with proper path
+      const fileRef = ref(
+        storage,
+        `chat-files/${conversationId}/${Date.now()}_${processedFile.name}`
+      );
+      
+      const uploadResult = await uploadBytes(fileRef, processedFile);
+      const downloadURL = await getDownloadURL(fileRef);
+
+      // Get file metadata for AI context
+      const fileMetadata = {
+        name: processedFile.name,
+        type: fileType,
+        size: processedFile.size,
+        originalSize: file.size,
+        mimeType: processedFile.type,
+        storagePath: uploadResult.ref.fullPath
+      };
+
+      // Save user message with file in Firestore
+      const messagesRef = collection(db, "conversations", conversationId, "messages");
+      await addDoc(messagesRef, {
+        sender: "creator",
+        text: downloadURL,
+        fileName: processedFile.name,
+        fileType: fileType,
+        fileMetadata: fileMetadata,
+        status: "sent",
+        timestamp: new Date(),
+        read: false,
+      });
+
+      showToast(
+        `${fileType.charAt(0).toUpperCase() + fileType.slice(1)} uploaded${compressionInfo}`,
+        "success"
+      );
+
+      // Send to AI with context about the file
+      await handleAIResponseForMedia(fileType, downloadURL, processedFile, fileMetadata);
+
+    } catch (error) {
+      console.error("File upload error:", error);
+      showToast(`Failed to upload file: ${error.message}`, "error");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+
+  // ============================================
+  // AI RESPONSE FOR MEDIA FILES
+  // ============================================
+  const handleAIResponseForMedia = async (fileType, downloadURL, file, metadata) => {
+    try {
+      setTypingStatus("omnis");
+
+      let aiPrompt = "";
+      const messages = [
+        {
+          role: "system",
+          content: "You are Omnis: calm, predictive, wise, emotionally intelligent. When users share media, acknowledge what they've shared and provide helpful, contextual responses."
+        }
+      ];
+
+      // Build context-aware prompt based on file type
+      if (fileType === "image") {
+        aiPrompt = `The user has shared an image file named "${metadata.name}" (${(metadata.size / 1024).toFixed(2)}KB). Acknowledge their image warmly and ask if they'd like you to help with anything related to it. Be encouraging and helpful.`;
+      } else if (fileType === "audio") {
+        aiPrompt = `The user has shared an audio file named "${metadata.name}" (${(metadata.size / 1024 / 1024).toFixed(2)}MB). Acknowledge their audio file and let them know you've received it. Express interest in what they're sharing.`;
+      } else if (fileType === "video") {
+        aiPrompt = `The user has shared a video file named "${metadata.name}" (${(metadata.size / 1024 / 1024).toFixed(2)}MB). Acknowledge their video warmly and express interest in what they're sharing.`;
+      } else {
+        aiPrompt = `The user has shared a document named "${metadata.name}" (${(metadata.size / 1024).toFixed(2)}KB). Acknowledge the file and ask how you can help them with it.`;
+      }
+
+      messages.push({
+        role: "user",
+        content: aiPrompt
+      });
+
+      // Call AI
+      const aiResponse = await callGroqChat(messages, {
+        model: "qwen/qwen3-32b",
+        max_tokens: 800
+      });
+
+      // Save AI response
+      const messagesRef = collection(db, "userInteractions", user.uid, "conversations", conversationId, "messages");
+      await addDoc(messagesRef, {
+        sender: "omnis",
+        text: aiResponse,
+        status: "sent",
+        timestamp: new Date(),
+        read: true,
+        contextType: "media_response",
+        relatedFile: downloadURL
+      });
+
+    } catch (aiError) {
+      console.error("AI Error responding to media:", aiError);
+      
+      const messagesRef = collection(db, "userInteractions", user.uid, "conversations", conversationId, "messages");
+      await addDoc(messagesRef, {
+        sender: "omnis",
+        text: "I can see you've shared a file with me. I'm having a bit of trouble processing it right now, but I've saved it. How can I help you with this?",
+        status: "sent",
+        timestamp: new Date(),
+        read: true
+      });
+    } finally {
+      setTypingStatus("");
+    }
+  };
 
 
 
@@ -407,7 +565,7 @@ export default function PartnerChat() {
 
   const handleAction = async (action, msg) => {
     try {
-      const msgRef = doc(db, "conversations", conversationId, "messages", msg.id);
+      const msgRef = doc(db, "userInteractions", user.uid, "conversations", conversationId, "messages", msg.id);
 
       if (action === "trash") {
         await deleteDoc(msgRef);
@@ -415,7 +573,7 @@ export default function PartnerChat() {
       }
       
       if (action === 'edit') {
-        const newText = prompt("Edit your message:", msg.text);
+        const newText = prompt("Edit your message:", stripThink(msg.text));
         if (newText != null && newText.trim()) {
           await updateDoc(msgRef, { text: newText, edited: true });
           showToast("Message updated", "success");
@@ -423,12 +581,13 @@ export default function PartnerChat() {
       }
       
       if (action === 'copy') {
-        await navigator.clipboard.writeText(msg.text || msg.fileName);
+        await navigator.clipboard.writeText(stripThink(msg.text) || msg.fileName);
         showToast("Copied to clipboard", "success");
       }
       
       if (action === 'reply') {
-        setInput(`@${msg.sender}: ${msg.text.slice(0, 50)}${msg.text.length > 50 ? '...' : ''}\n\n`);
+        const preview = (stripThink(msg.text) || '').slice(0, 50);
+        setInput(`@${msg.sender}: ${preview}${(stripThink(msg.text) || '').length > 50 ? '...' : ''}\n\n`);
       }
       
       setSelectedMessageId(null);
@@ -439,8 +598,7 @@ export default function PartnerChat() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-      <AnimatePresence>
+    <div className="flex flex-col h-[120vh] overflow-x-hidden bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">   <AnimatePresence>
         {toast && (
           <Toast
             message={toast.message}
@@ -476,7 +634,7 @@ export default function PartnerChat() {
 
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-6 relative"
+        className="flex-1 min-h-0 overflow-y-auto px-4 py-6 relative"
       >
         {stickyDate && stickyDateOpacity > 0 && (
           <div 
@@ -572,53 +730,168 @@ export default function PartnerChat() {
                       }`}>
                         <ReactMarkdown
                           components={{
-                            h1: ({ node, ...props }) => <h1 className="text-lg font-bold mb-2" {...props} />,
-                            h2: ({ node, ...props }) => <h2 className="text-base font-semibold mb-2" {...props} />,
-                            h3: ({ node, ...props }) => <h3 className="text-sm font-medium mb-1" {...props} />,
-                            p: ({ node, ...props }) => <p className="mb-2 last:mb-0 break-words" {...props} />,
-                            code: ({ node, inline, className, children, ...props }) => {
-                              if (inline) {
-                                return (
-                                  <code 
-                                    className={`px-1.5 py-0.5 rounded text-xs font-mono break-all ${
-                                      msg.sender === "creator" 
-                                        ? "bg-blue-400/30 text-blue-100" 
-                                        : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                                    }`} 
-                                    {...props}
-                                  >
-                                    {children}
-                                  </code>
-                                );
-                              }
-                              return (
-                                <pre className={`p-3 rounded-lg overflow-x-auto text-xs ${
-                                  msg.sender === "creator" 
-                                    ? "bg-blue-400/20 text-blue-100" 
-                                    : "bg-slate-100 dark:bg-slate-800"
-                                }`}>
-                                  <code {...props}>{children}</code>
-                                </pre>
-                              );
-                            },
-                            a: ({ node, ...props }) => (
-                              <a 
-                                className={`underline hover:no-underline break-all ${
-                                  msg.sender === "creator" 
-                                    ? "text-blue-200 hover:text-blue-100" 
-                                    : "text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-                                }`} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                {...props} 
-                              />
-                            ),
-                            ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-2" {...props} />,
-                            ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-2" {...props} />,
-                            li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                          }}
+    // Main Heading (# Heading)
+    h1: ({ node, ...props }) => (
+      <h1 
+        className={`text-2xl font-bold mb-4 mt-6 pb-2 border-b-2 ${
+          msg.sender === "creator"
+            ? "text-white border-blue-300"
+            : "text-blue-600 dark:text-blue-400 border-blue-500 dark:border-blue-600"
+        }`} 
+        {...props} 
+      />
+    ),
+    
+    // Sub-heading (## Heading)
+    h2: ({ node, ...props }) => (
+      <h2 
+        className={`text-xl font-semibold mb-3 mt-5 ${
+          msg.sender === "creator"
+            ? "text-blue-100"
+            : "text-indigo-600 dark:text-indigo-400"
+        }`} 
+        {...props} 
+      />
+    ),
+    
+    // Minor heading (### Heading)
+    h3: ({ node, ...props }) => (
+      <h3 
+        className={`text-lg font-medium mb-2 mt-4 ${
+          msg.sender === "creator"
+            ? "text-blue-200"
+            : "text-purple-600 dark:text-purple-400"
+        }`} 
+        {...props} 
+      />
+    ),
+    
+    // Paragraphs with better spacing
+    p: ({ node, ...props }) => (
+      <p 
+        className="mb-3 last:mb-0 leading-relaxed text-base" 
+        {...props} 
+      />
+    ),
+    
+    // Bold text with color accent
+    strong: ({ node, ...props }) => (
+      <strong 
+        className={`font-bold ${
+          msg.sender === "creator"
+            ? "text-white"
+            : "text-gray-900 dark:text-white"
+        }`} 
+        {...props} 
+      />
+    ),
+    
+    // Italic text
+    em: ({ node, ...props }) => (
+      <em 
+        className="italic text-gray-700 dark:text-gray-300" 
+        {...props} 
+      />
+    ),
+    
+    // Inline code
+    code: ({ node, inline, className, children, ...props }) => {
+      if (inline) {
+        return (
+          <code 
+            className={`px-2 py-0.5 rounded-md text-sm font-mono ${
+              msg.sender === "creator"
+                ? "bg-blue-400/30 text-blue-50 border border-blue-300/50"
+                : "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
+            }`} 
+            {...props}
+          >
+            {children}
+          </code>
+        );
+      }
+      // Code block
+      return (
+        <pre className={`p-4 rounded-lg overflow-x-auto text-sm my-3 ${
+          msg.sender === "creator"
+            ? "bg-blue-400/20 text-blue-50 border border-blue-300/50"
+            : "bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
+        }`}>
+          <code className="font-mono" {...props}>{children}</code>
+        </pre>
+      );
+    },
+    
+    // Unordered lists with custom bullets
+    ul: ({ node, ...props }) => (
+      <ul 
+        className={`list-none space-y-2 my-3 pl-0 ${
+          msg.sender === "creator" ? "text-white" : ""
+        }`} 
+        {...props} 
+      />
+    ),
+    
+    // List items with colored bullets
+    li: ({ node, children, ...props }) => (
+      <li className="flex items-start gap-3" {...props}>
+        <span className={`mt-1.5 flex-shrink-0 w-2 h-2 rounded-full ${
+          msg.sender === "creator"
+            ? "bg-blue-300"
+            : "bg-gradient-to-br from-blue-500 to-indigo-600"
+        }`}></span>
+        <span className="flex-1">{children}</span>
+      </li>
+    ),
+    
+    // Ordered lists
+    ol: ({ node, ...props }) => (
+      <ol 
+        className="list-decimal pl-6 space-y-2 my-3 marker:text-blue-500 marker:font-semibold" 
+        {...props} 
+      />
+    ),
+    
+    // Links with hover effects
+    a: ({ node, ...props }) => (
+      <a 
+        className={`underline font-medium transition-colors ${
+          msg.sender === "creator"
+            ? "text-blue-200 hover:text-blue-100"
+            : "text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+        }`} 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        {...props} 
+      />
+    ),
+    
+    // Blockquotes
+    blockquote: ({ node, ...props }) => (
+      <blockquote 
+        className={`border-l-4 pl-4 py-2 my-3 italic ${
+          msg.sender === "creator"
+            ? "border-blue-300 bg-blue-400/10 text-blue-100"
+            : "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300"
+        }`} 
+        {...props} 
+      />
+    ),
+    
+    // Horizontal rules
+    hr: ({ node, ...props }) => (
+      <hr 
+        className={`my-4 border-t-2 ${
+          msg.sender === "creator"
+            ? "border-blue-300"
+            : "border-gray-300 dark:border-gray-600"
+        }`} 
+        {...props} 
+      />
+    ),
+  }}
                         >
-                          {msg.text}
+                          {stripThink(msg.text)}
                         </ReactMarkdown>
                         {msg.edited && (
                           <span className="text-xs opacity-70 italic ml-2">(edited)</span>
@@ -782,7 +1055,7 @@ export default function PartnerChat() {
                   </button>
                 </div>
 
-                <div className="flex-1 relative">
+                <div className="flex-1 relative ">
                   <textarea
                     value={input}
                     onChange={(e) => {
@@ -851,6 +1124,7 @@ export default function PartnerChat() {
               onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
             />
           </div>
+          <div className="h-4"></div>
         </div>
       </div>
     </div>

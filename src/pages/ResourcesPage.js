@@ -62,7 +62,7 @@ const ResourcesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20 p-4">
+    <div className="min-h-screen pb-20 bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-indigo-900/20 p-4">
       <div className="max-w-6xl mx-auto">
         {/* Header with enhanced styling */}
         <div className="text-center mb-12 mt-8 relative">

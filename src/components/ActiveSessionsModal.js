@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getFirestore, doc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 const ActiveSessionsModal = ({ 
   isOpen, 
@@ -11,6 +12,7 @@ const ActiveSessionsModal = ({
   const [terminatedSessions, setTerminatedSessions] = useState(new Set());
   const [isTerminating, setIsTerminating] = useState(null);
   const [isEndingAll, setIsEndingAll] = useState(false);
+  const db = getFirestore();
 
   if (!isOpen) return null;
 
@@ -60,8 +62,6 @@ const ActiveSessionsModal = ({
   };
 
   const getLocationFromIP = (ipAddress) => {
-    // In a real app, you'd use a geolocation service
-    // For now, we'll just show the IP
     return ipAddress && ipAddress !== 'Unknown' ? `IP: ${ipAddress}` : 'Location unavailable';
   };
 
@@ -84,58 +84,123 @@ const ActiveSessionsModal = ({
     setIsTerminating(sessionDocId);
     
     try {
-      // Longer delay to show loading state
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Delete the session document from Firestore
+      const sessionRef = doc(db, 'sessions', sessionDocId);
+      await deleteDoc(sessionRef);
+      
+      // Also mark as inactive in user's sessions subcollection
+      const session = sessions.find(s => s.id === sessionDocId);
+      if (session && session.userId) {
+        try {
+          const userSessionsRef = collection(db, 'users', session.userId, 'sessions');
+          const q = query(userSessionsRef, where('sessionId', '==', sessionId));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const userSessionDoc = querySnapshot.docs[0];
+            await updateDoc(userSessionDoc.ref, {
+              active: false,
+              terminated: true,
+              terminatedAt: new Date(),
+            });
+          }
+        } catch (subError) {
+          console.error('Error updating user session:', subError);
+        }
+      }
       
       // Add to terminated sessions set to hide it from UI
       setTerminatedSessions(prev => new Set([...prev, sessionDocId]));
       
-      // Call the original onTerminateSession if it exists (for actual backend termination)
+      // Call the callback if provided
       if (onTerminateSession && typeof onTerminateSession === 'function') {
         onTerminateSession(sessionId, sessionDocId);
       }
+      
+      console.log(`✅ Session ${sessionDocId} terminated successfully`);
     } catch (error) {
       console.error('Error terminating session:', error);
+      alert('Failed to terminate session. Please try again.');
     } finally {
       setIsTerminating(null);
     }
   };
 
   const handleEndAllSessions = async () => {
+    const nonCurrentSessions = sessions.filter(session => 
+      !isCurrentSession(session.sessionId) && !terminatedSessions.has(session.id)
+    );
+
+    if (nonCurrentSessions.length === 0) {
+      alert('No other sessions to terminate.');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to end ${nonCurrentSessions.length} session(s)? This will log you out on all other devices.`)) {
+      return;
+    }
+
     setIsEndingAll(true);
     
     try {
-      // Longer delay for end all operation
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Terminate all non-current sessions
+      const terminatePromises = nonCurrentSessions.map(async (session) => {
+        try {
+          // Delete from main sessions collection
+          const sessionRef = doc(db, 'sessions', session.id);
+          await deleteDoc(sessionRef);
+          
+          // Update user's sessions subcollection
+          if (session.userId) {
+            const userSessionsRef = collection(db, 'users', session.userId, 'sessions');
+            const q = query(userSessionsRef, where('sessionId', '==', session.sessionId));
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+              const userSessionDoc = querySnapshot.docs[0];
+              await updateDoc(userSessionDoc.ref, {
+                active: false,
+                terminated: true,
+                terminatedAt: new Date(),
+              });
+            }
+          }
+          
+          return session.id;
+        } catch (error) {
+          console.error(`Error terminating session ${session.id}:`, error);
+          return null;
+        }
+      });
       
-      // Get all non-current sessions
-      const nonCurrentSessions = sessions.filter(session => 
-        !isCurrentSession(session.sessionId) && !terminatedSessions.has(session.id)
-      );
+      const results = await Promise.all(terminatePromises);
+      const successfulTerminations = results.filter(id => id !== null);
       
-      // Add all non-current sessions to terminated set
-      const newTerminatedSessions = new Set([
-        ...terminatedSessions,
-        ...nonCurrentSessions.map(session => session.id)
-      ]);
+      // Add all terminated sessions to the set
+      setTerminatedSessions(prev => new Set([...prev, ...successfulTerminations]));
       
-      setTerminatedSessions(newTerminatedSessions);
-      
-      // Call onTerminateSession for each session if it exists
+      // Call callbacks
       if (onTerminateSession && typeof onTerminateSession === 'function') {
-        nonCurrentSessions.forEach(session => {
-          onTerminateSession(session.sessionId, session.id);
+        successfulTerminations.forEach(sessionId => {
+          const session = nonCurrentSessions.find(s => s.id === sessionId);
+          if (session) {
+            onTerminateSession(session.sessionId, sessionId);
+          }
         });
       }
+      
+      console.log(`✅ Successfully terminated ${successfulTerminations.length} session(s)`);
+      alert(`Successfully ended ${successfulTerminations.length} session(s).`);
     } catch (error) {
       console.error('Error ending all sessions:', error);
+      alert('Some sessions could not be terminated. Please try again.');
     } finally {
       setIsEndingAll(false);
     }
   };
 
   const handleRefresh = () => {
-    // Only reset terminated sessions when explicitly refreshing
+    // Reset terminated sessions and refresh the list
     setTerminatedSessions(new Set());
     if (onRefresh && typeof onRefresh === 'function') {
       onRefresh();
@@ -143,8 +208,6 @@ const ActiveSessionsModal = ({
   };
 
   const handleClose = () => {
-    // Don't reset terminated sessions when modal closes
-    // They should stay terminated until page refresh or explicit refresh
     onClose();
   };
 

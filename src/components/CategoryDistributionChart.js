@@ -72,8 +72,8 @@ const CategoryDistributionChart = forwardRef((props, ref) => {
     try {
       console.log("🔍 Fetching category data for user:", user.uid);
       
-      // Query user interactions collection
-      const userInteractionsRef = collection(db, "users", user.uid, "userInteractions");
+      // Query userInteractions/{userId}/interactions subcollection
+      const userInteractionsRef = collection(db, "userInteractions", user.uid, "interactions");
       const q = query(userInteractionsRef);
       
       const querySnapshot = await getDocs(q);

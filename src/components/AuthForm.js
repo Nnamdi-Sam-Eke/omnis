@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { doc, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { getAuth, signInWithPopup } from "firebase/auth";
 import { Eye, EyeOff } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import PulseBackground from "./PulseBackground";
@@ -29,6 +29,18 @@ const AuthForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [idleMessage, setIdleMessage] = useState("");
+
+  // Show message if user was logged out due to inactivity
+  useEffect(() => {
+    try {
+      const flag = localStorage.getItem('idleLoggedOut');
+      if (flag) {
+        setIdleMessage('You were logged out due to inactivity.');
+        localStorage.removeItem('idleLoggedOut');
+      }
+    } catch (e) {}
+  }, []);
 
   const fetchUserData = async () => {
     const user = getAuth().currentUser;
@@ -41,23 +53,23 @@ const AuthForm = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setIsSubmitting(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(getAuth(), provider);
-      const user = result.user;
+  // const handleGoogleSignIn = async () => {
+  //   setIsSubmitting(true);
+  //   try {
+  //     const provider = new GoogleAuthProvider();
+  //     const result = await signInWithPopup(getAuth(), provider);
+  //     const user = result.user;
       
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { lastLogin: serverTimestamp() });
+  //     const userRef = doc(db, "users", user.uid);
+  //     await updateDoc(userRef, { lastLogin: serverTimestamp() });
       
-      navigate("/dashboard");
-    } catch (err) {
-      console.error("Google Sign-In Error:", err);
-      setError(err.message || "Failed to sign in with Google");
-      setIsSubmitting(false);
-    }
-  };
+  //     navigate("/dashboard");
+  //   } catch (err) {
+  //     console.error("Google Sign-In Error:", err);
+  //     setError(err.message || "Failed to sign in with Google");
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -140,6 +152,11 @@ const AuthForm = () => {
       <div className="relative z-10 w-full md:w-1/2 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md rounded-xl shadow-lg bg-white/5 backdrop-blur-sm h-[500px] flex flex-col">
           <div className="p-8 overflow-y-auto flex-1">
+          {idleMessage && (
+            <div className="mb-4 p-3 rounded-md bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border border-yellow-200">
+              You were logged out due to inactivity.
+            </div>
+          )}
           <AnimatePresence mode="wait">
           {showResetPassword ? (
             <motion.div 
@@ -309,12 +326,12 @@ const AuthForm = () => {
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-white/20"></div>
                   </div>
-                  <div className="relative flex justify-center text-sm">
+                  {/* <div className="relative flex justify-center text-sm">
                     <span className="px-2 bg-white/5 text-white/70">or</span>
-                  </div>
+                  </div> */}
                 </div>
 
-                <button
+                {/* <button
                   type="button"
                   onClick={handleGoogleSignIn}
                   className="w-full bg-white/10 border border-white/20 hover:bg-white/20 text-white py-3 rounded-full transform transition-all duration-200 ease-in-out active:scale-95 hover:shadow-lg hover:shadow-white/20 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -327,7 +344,7 @@ const AuthForm = () => {
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
                   <span>Sign in with Google</span>
-                </button>
+                </button> */}
               </div>
             </motion.div>
             </>

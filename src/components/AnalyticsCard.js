@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, forwardRef } from 'react';
+import React, { useEffect, useState, forwardRef } from 'react';
 import {
   Chart as ChartJS,
   BarElement,
@@ -13,15 +13,10 @@ import {
   getFirestore,
   collection,
   getDocs,
-  addDoc,
-  doc,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
   query,
   orderBy,
 } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { ChevronRight, ChevronDown, BarChart3, TrendingUp, RefreshCw } from 'lucide-react';
 
 ChartJS.register(BarElement, CategoryScale, LineElement, LinearScale, Tooltip, Legend);
@@ -76,8 +71,6 @@ const UptimeChart = forwardRef(({ onRendered }, ref) => {
   const [todayTime, setTodayTime] = useState({ hours: 0, minutes: 0 });
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  // date slicer: '7', '14', '50' days or 'all'
-  const [dateRange, setDateRange] = useState('7'); // default last 7 days
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState('session');
   const [chartType, setChartType] = useState('bar');
@@ -88,29 +81,24 @@ const UptimeChart = forwardRef(({ onRendered }, ref) => {
 
   const db = getFirestore();
   const auth = getAuth();
-  const intervalIdRef = useRef(null);
-  const sessionIdRef = useRef(null);
 
-useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
       const t = setTimeout(() => {
         setIsLoading(false);
-        onRendered?.(); // ✅ Notify parent once chart is loaded
+        onRendered?.();
       }, 500);
       return () => clearTimeout(t);
     }
   }, [isOpen, onRendered]);
-  // Notify parent when chart is rendered
 
   useEffect(() => {
     if (!loading && isOpen && filteredSessions.length > 0 && onRendered) {
       onRendered();
     }
-  }, [loading, isOpen, filteredSessions, chartType, view]);
+  }, [loading, isOpen, filteredSessions, chartType, view, onRendered]);
 
-
- 
   // Format duration from seconds to "Xh Ym" format
   const formatDuration = (hoursFloat) => {
     const hours = Math.floor(hoursFloat);
@@ -118,127 +106,16 @@ useEffect(() => {
     return `${hours}h ${minutes}m`;
   };
 
-  // Enhanced Device detection functions
-  const getDeviceType = () => {
-    const ua = navigator.userAgent.toLowerCase();
-    
-    // Check for mobile devices
-    if (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua)) {
-      // Distinguish between tablet and phone
-      if (/ipad|android(?!.*mobile)|tablet/i.test(ua)) {
-        return 'Tablet';
-      }
-      return 'Mobile';
-    }
-    
-    // Check for desktop/laptop
-    if (/windows|macintosh|linux/i.test(ua)) {
-      return 'Desktop';
-    }
-    
-    // Fallback based on screen size if user agent detection fails
-    if (typeof window !== 'undefined') {
-      const screenWidth = window.screen.width;
-      if (screenWidth < 768) return 'Mobile';
-      if (screenWidth < 1024) return 'Tablet';
-      return 'Desktop';
-    }
-    
-    return 'Desktop'; // Default fallback
-  };
-
-  const getDeviceId = () => {
-    let deviceId = localStorage.getItem('deviceId');
-    if (!deviceId) {
-      const deviceType = getDeviceType();
-      const timestamp = Date.now();
-      const randomString = Math.random().toString(36).substring(2, 8);
-      deviceId = `${deviceType}_${timestamp}_${randomString}`;
-      localStorage.setItem('deviceId', deviceId);
-    }
-    return deviceId;
-  };
-
-  const startRealTimeTracking = async (user) => {
-    try {
-      const sessionRef = await addDoc(collection(db, 'users', user.uid, 'sessions'), {
-        start: serverTimestamp(),
-        duration: 0,
-        active: true,
-        deviceType: getDeviceType(),
-        deviceId: getDeviceId(),
-      });
-      sessionIdRef.current = sessionRef.id;
-      const sessionDocRef = doc(db, 'users', user.uid, 'sessions', sessionRef.id);
-
-      let localDuration = 0;
-
-      intervalIdRef.current = setInterval(async () => {
-        try {
-          localDuration += 60;
-          if (localDuration >= 180) {
-            const snap = await getDoc(sessionDocRef);
-            if (snap.exists()) {
-              const currentDuration = snap.data().duration || 0;
-              await updateDoc(sessionDocRef, {
-                duration: currentDuration + localDuration,
-                lastUpdated: serverTimestamp(),
-              });
-              localDuration = 0;
-            }
-          }
-        } catch (err) {
-          console.error('Error updating session duration:', err);
-        }
-      }, 60000);
-    } catch (err) {
-      console.error('Error starting real-time tracking:', err);
-    }
-  };
-
-  // --- Real-time tracking of current user's session duration ---
-  useEffect(() => {
-    const handleExit = async () => {
-      if (intervalIdRef.current) {
-        clearInterval(intervalIdRef.current);
-        intervalIdRef.current = null;
-      }
-      const user = auth.currentUser;
-      if (user && sessionIdRef.current) {
-        try {
-          const sessionDocRef = doc(db, 'users', user.uid, 'sessions', sessionIdRef.current);
-          await updateDoc(sessionDocRef, { active: false });
-          sessionIdRef.current = null;
-        } catch (err) {
-          console.error('Error marking session inactive:', err);
-        }
-      }
-    };
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        startRealTimeTracking(user);
-      } else {
-        handleExit();
-      }
-    });
-
-    window.addEventListener('beforeunload', handleExit);
-
-    return () => {
-      if (intervalIdRef.current) {
-        clearInterval(intervalIdRef.current);
-        intervalIdRef.current = null;
-      }
-      window.removeEventListener('beforeunload', handleExit);
-      unsubscribe();
-    };
-  }, [auth, db]);
+  // ✅ REMOVED: All session tracking logic - SessionTracker handles this now
+  // The component is now read-only, just fetching and displaying data
 
   // --- Fetch current user's sessions only ---
   const fetchSessions = async () => {
     const user = auth.currentUser;
-    if (!user) return;
+    if (!user) {
+      console.warn('No user logged in');
+      return;
+    }
     
     setFetching(true);
     setFetchError(null);
@@ -254,6 +131,7 @@ useEffect(() => {
         userId: user.uid,
       }));
       
+      console.log(`✅ Fetched ${userSessions.length} sessions`);
       setSessions(userSessions);
     } catch (error) {
       console.error('Error fetching sessions:', error);
@@ -263,9 +141,25 @@ useEffect(() => {
     }
   };
 
+  // Fetch on mount and when auth state changes
   useEffect(() => {
-    fetchSessions();
-  }, [auth]);
+    if (auth.currentUser) {
+      fetchSessions();
+    }
+  }, [auth.currentUser]);
+
+  // Auto-refresh every 30 seconds when chart is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const intervalId = setInterval(() => {
+      if (auth.currentUser) {
+        fetchSessions();
+      }
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [isOpen, auth.currentUser]);
 
   // --- Filter sessions by date and calculate total and today times ---
   useEffect(() => {
@@ -274,15 +168,15 @@ useEffect(() => {
       let todaySeconds = 0;
 
       const now = new Date();
-      const midnight = new Date();
-      midnight.setHours(0, 0, 0, 0);
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0); // Midnight today
 
       const startFilterDate = startDate ? new Date(startDate) : null;
       const endFilterDate = endDate
         ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
         : null;
 
-      // Filter sessions by start time & positive duration
+      // ✅ Filter sessions by start time & positive duration
       const filtered = sessions.filter((s) => {
         if (!s.start) return false;
 
@@ -298,13 +192,9 @@ useEffect(() => {
         const duration = s.duration || 0;
         totalSeconds += duration;
 
-        // Calculate overlap with today for partial sessions
-        const endTime = new Date(startTime.getTime() + duration * 1000);
-        const overlapStart = startTime < midnight ? midnight : startTime;
-        const overlapEnd = endTime > now ? now : endTime;
-
-        if (overlapEnd > overlapStart) {
-          todaySeconds += Math.floor((overlapEnd - overlapStart) / 1000);
+        // ✅ FIXED: Only count sessions that started today
+        if (startTime >= todayStart && startTime <= now) {
+          todaySeconds += duration;
         }
       });
 
@@ -341,9 +231,9 @@ useEffect(() => {
             label: 'Session Duration (hrs)',
             data: filteredSessions.map((s) => (s.duration || 0) / 3600),
             backgroundColor: chartType === 'bar' 
-              ? 'rgba(16, 185, 129, 0.8)' // emerald-500 with opacity
+              ? 'rgba(16, 185, 129, 0.8)'
               : 'transparent',
-            borderColor: chartType === 'line' ? '#10b981' : 'transparent', // emerald-500
+            borderColor: chartType === 'line' ? '#10b981' : 'transparent',
             fill: chartType === 'line',
             tension: chartType === 'line' ? 0.4 : 0,
             borderWidth: chartType === 'line' ? 3 : 0,
@@ -360,11 +250,10 @@ useEffect(() => {
       const dailyAggregates = {};
       filteredSessions.forEach((s) => {
         const date = s.start.toDate ? s.start.toDate() : new Date(s.start.seconds * 1000);
-        const dayKey = date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+        const dayKey = date.toISOString().split('T')[0];
         dailyAggregates[dayKey] = (dailyAggregates[dayKey] || 0) + (s.duration || 0);
       });
 
-      // Sort keys ascending
       const sortedDates = Object.keys(dailyAggregates).sort((a, b) => new Date(a) - new Date(b));
       const data = sortedDates.map((date) => dailyAggregates[date] / 3600);
 
@@ -375,9 +264,9 @@ useEffect(() => {
             label: 'Day Duration (hrs)',
             data,
             backgroundColor: chartType === 'bar' 
-              ? 'rgba(59, 130, 246, 0.8)' // blue-500 with opacity
+              ? 'rgba(59, 130, 246, 0.8)'
               : 'transparent',
-            borderColor: chartType === 'line' ? '#3b82f6' : 'transparent', // blue-500
+            borderColor: chartType === 'line' ? '#3b82f6' : 'transparent',
             fill: chartType === 'line',
             tension: chartType === 'line' ? 0.4 : 0,
             borderWidth: chartType === 'line' ? 3 : 0,
@@ -392,13 +281,11 @@ useEffect(() => {
     }
   };
 
-  // Calculate device breakdown with better device type handling
+  // Calculate device breakdown
   const deviceBreakdown = {};
   filteredSessions.forEach((s) => {
-    // Use stored deviceType, fallback to detection, then default
     let deviceType = s.deviceType || 'Desktop';
     
-    // Normalize device types
     if (deviceType === 'Unknown' || !deviceType) {
       deviceType = 'Desktop';
     }
@@ -406,7 +293,6 @@ useEffect(() => {
     deviceBreakdown[deviceType] = (deviceBreakdown[deviceType] || 0) + (s.duration || 0);
   });
 
-  // Convert to readable format
   const formattedDeviceBreakdown = Object.entries(deviceBreakdown).map(([type, seconds]) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -420,17 +306,17 @@ useEffect(() => {
       legend: { 
         position: 'top', 
         labels: { 
-          color: '#6b7280', // gray-500
+          color: '#6b7280',
           font: { size: 14, weight: '600' },
           usePointStyle: true,
           pointStyle: 'circle'
         } 
       },
       tooltip: {
-        backgroundColor: 'rgba(17, 24, 39, 0.95)', // gray-900 with opacity
-        titleColor: '#f3f4f6', // gray-100
-        bodyColor: '#f3f4f6', // gray-100
-        borderColor: '#6b7280', // gray-500
+        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+        titleColor: '#f3f4f6',
+        bodyColor: '#f3f4f6',
+        borderColor: '#6b7280',
         borderWidth: 1,
         cornerRadius: 8,
         callbacks: {
@@ -444,7 +330,7 @@ useEffect(() => {
     scales: {
       x: {
         ticks: {
-          color: '#6b7280', // gray-500
+          color: '#6b7280',
           maxRotation: 45,
           minRotation: 45,
           autoSkip: true,
@@ -453,7 +339,6 @@ useEffect(() => {
           callback: function (val) {
             const label = this.getLabelForValue(val);
             if (view === 'day') {
-              // Format 'YYYY-MM-DD' as 'MMM DD' (e.g. "Jun 20")
               const date = new Date(label);
               return date.toLocaleDateString('en-US', {
                 month: 'short',
@@ -468,12 +353,12 @@ useEffect(() => {
       y: {
         beginAtZero: true,
         ticks: {
-          color: '#6b7280', // gray-500
+          color: '#6b7280',
           stepSize: 1,
           font: { size: 12, weight: '500' },
         },
         grid: { 
-          color: 'rgba(107, 114, 128, 0.2)', // gray-500 with opacity
+          color: 'rgba(107, 114, 128, 0.2)',
           borderDash: [5, 5] 
         },
       },
@@ -481,13 +366,13 @@ useEffect(() => {
   };
 
   return (
-    <div ref={ref}className="w-full hover:shadow-2xl shadow-2xl hover:shadow-emerald-400/30 dark:hover:shadow-emerald-500/25 transition-all duration-500 px-6 py-6 border border-gray-200 dark:border-gray-700 mt-8 bg-gradient-to-br from-white via-gray-50 to-white dark:from-gray-800 dark:via-gray-850 dark:to-gray-800 rounded-3xl ">
+    <div ref={ref} className="w-full hover:shadow-2xl shadow-2xl hover:shadow-emerald-400/30 dark:hover:shadow-emerald-500/25 transition-all duration-500 px-6 py-6 border border-gray-200 dark:border-gray-700 mt-8 bg-gradient-to-br from-white via-gray-50 to-white dark:from-gray-800 dark:via-gray-850 dark:to-gray-800 rounded-3xl relative">
       {/* Subtle Green Brush Effect */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/20 via-transparent to-emerald-100/10 dark:from-emerald-900/10 dark:via-emerald-800/5 dark:to-transparent rounded-3xl pointer-events-none"></div>
       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-bl from-emerald-100/30 via-emerald-50/10 to-transparent dark:from-emerald-800/15 dark:via-emerald-900/5 dark:to-transparent rounded-3xl pointer-events-none"></div>
       <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-gradient-to-tr from-emerald-50/25 via-emerald-100/15 to-transparent dark:from-emerald-900/10 dark:via-emerald-800/8 dark:to-transparent rounded-3xl pointer-events-none"></div>
       
-            {/* Content - positioned relative to sit above the brush effect */}
+      {/* Content */}
       <div className="relative z-10">
         <div
           onClick={() => setIsOpen(!isOpen)}
@@ -516,9 +401,8 @@ useEffect(() => {
           <SkeletonLoader />
         ) : (
           <>
-            {/* Date range filters and controls - Always vertically stacked */}
+            {/* Date range filters and controls */}
             <div className="flex flex-col gap-4 mb-6">
-              {/* Date inputs - Always stacked vertically */}
               <div className="flex flex-col gap-3">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex flex-col gap-1">
                   <span className="whitespace-nowrap">📅 Start Date:</span>
@@ -542,7 +426,6 @@ useEffect(() => {
                 </label>
               </div>
 
-              {/* Control buttons - Wrap on smaller screens, proper spacing */}
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={fetchSessions}
@@ -646,18 +529,6 @@ useEffect(() => {
       </div>
     </div>
   );
-}
-);
-
-// Add shimmer animation to CSS (you can add this to your global CSS)
-const shimmerCSS = `
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-.animate-shimmer {
-  animation: shimmer 2s infinite;
-}
-`;
+});
 
 export default UptimeChart;

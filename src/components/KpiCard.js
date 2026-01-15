@@ -8,7 +8,7 @@ import {
   where
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { useAuth } from "../AuthContext"; // or wherever your user context lives
+import { useAuth } from "../AuthContext";
 
 import {
   FiBarChart,
@@ -33,8 +33,11 @@ const KpiCard = () => {
   const [activeUsers, setActiveUsers] = useState(null);
   const [avgAccuracy, setAvgAccuracy] = useState(null);
   const [uptime, setUptime] = useState("99.99%");
-  const { user } = useAuth(); // Changed from currentUser to user
-  const [userId, setUserId] = useState(user ? user.uid : null);
+  const { user } = useAuth();
+
+  // Auto-scroll functionality
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+  const autoScrollInterval = useRef(null);
 
   // Handles horizontal scrolling for KPI cards
   const scrollCards = (direction) => {
@@ -46,95 +49,154 @@ const KpiCard = () => {
     }
   };
 
+  // Auto-scroll feature
+  const toggleAutoScroll = () => {
+    setIsAutoScrolling(prev => !prev);
+  };
+
+  useEffect(() => {
+    if (isAutoScrolling) {
+      autoScrollInterval.current = setInterval(() => {
+        if (scrollRef.current) {
+          const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+          if (scrollLeft + clientWidth >= scrollWidth - 10) {
+            scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
+          } else {
+            scrollCards("right");
+          }
+        }
+      }, 3000);
+    } else {
+      if (autoScrollInterval.current) {
+        clearInterval(autoScrollInterval.current);
+      }
+    }
+
+    return () => {
+      if (autoScrollInterval.current) {
+        clearInterval(autoScrollInterval.current);
+      }
+    };
+  }, [isAutoScrolling]);
+
   // Simulating loading state for 2 seconds
   useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 3000); // simulate loading
+    const timeout = setTimeout(() => setLoading(false), 2000);
     return () => clearTimeout(timeout);
   }, []);
 
+  // Helper function to format large numbers
+  const formatNumber = (num) => {
+    if (num === null || num === undefined) return null;
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+    return num.toString();
+  };
+
   // Fetch and set data from Firebase
   useEffect(() => {
-    const usersRef = collection(db, "users");
-
-    // Total Users
-    const unsubscribeUsers = onSnapshot(usersRef, (snapshot) => {
-      setTotalUsers(snapshot.size);
-    });
-
-    // Last Activity (Most recent login)
-    const q = query(usersRef, orderBy("lastLogin", "desc"), limit(1));
-    const unsubscribeLastLogin = onSnapshot(q, (snapshot) => {
-      const doc = snapshot.docs[0];
-      if (doc && doc.data().lastLogin) {
-        const lastLoginDate = new Date(doc.data().lastLogin.toDate());
-        const now = new Date();
-        const diffMins = Math.floor((now - lastLoginDate) / (1000 * 60));
-        if (diffMins < 60) setLastActivity(`${diffMins} mins ago`);
-        else if (diffMins < 1440) setLastActivity(`${Math.floor(diffMins / 60)} hours ago`);
-        else setLastActivity(`${Math.floor(diffMins / 1440)} days ago`);
-      } else {
-        setLastActivity("No login data");
-      }
-    });
-
-    // Total Simulations and Avg. Accuracy - FIXED LOGIC WITH DEBUG
-    let unsubscribeSimulations;
-    if (user) { // Changed from currentUser to user
-      console.log("Current user ID:", user.uid); // Debug log
-      
-      // Query user-specific simulations from userInteractions collection
-      const simulationQuery = query(
-        collection(db, "userInteractions"),
-        where("userId", "==", user.uid), // Changed from currentUser.uid to user.uid
-        where("action", "==", "simulate_scenario")
-      );
-
-      unsubscribeSimulations = onSnapshot(simulationQuery, (snapshot) => {
-        console.log("Simulation query results:", snapshot.size); // Debug log
-        console.log("Documents found:", snapshot.docs.map(doc => doc.data())); // Debug log
-        
-        setTotalSimulations(snapshot.size);
-
-        const accuracies = snapshot.docs
-          .map((doc) => doc.data().accuracy)
-          .filter((a) => typeof a === "number");
-
-        const average = accuracies.length
-          ? (accuracies.reduce((a, b) => a + b, 0) / accuracies.length).toFixed(2) + "%"
-          : "N/A";
-
-        setAvgAccuracy(average);
-      }, (error) => {
-        console.error("Error fetching simulations:", error); // Debug log
-      });
-      
-      // Also try a broader query to see what's in the collection
-      const debugQuery = query(collection(db, "userInteractions"));
-      const unsubscribeDebug = onSnapshot(debugQuery, (snapshot) => {
-        console.log("All userInteractions documents:", snapshot.docs.map(doc => ({
-          id: doc.id,
-          data: doc.data()
-        })));
-      });
-      
-      // Clean up debug subscription after 5 seconds
-      setTimeout(() => {
-        if (unsubscribeDebug) unsubscribeDebug();
-      }, 5000);
-      
-    } else {
-      console.log("No user found"); // Changed from "No current user found" to "No user found"
-      // If no user, set defaults
-      setTotalSimulations(0);
-      setAvgAccuracy("N/A");
+    if (!user) {
+      setLoading(false);
+      return;
     }
 
-    // Active Users in the last 24 hours
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const activeQuery = query(usersRef, where("lastLogin", ">", yesterday));
-    const unsubscribeActiveUsers = onSnapshot(activeQuery, (snapshot) => {
-      setActiveUsers(snapshot.size);
-    });
+    const unsubscribers = [];
+
+    try {
+      const usersRef = collection(db, "users");
+
+      // Total Users
+      const unsubscribeUsers = onSnapshot(
+        usersRef,
+        (snapshot) => {
+          setTotalUsers(snapshot.size);
+        },
+        (err) => {
+          console.error("Error fetching users:", err);
+        }
+      );
+      unsubscribers.push(unsubscribeUsers);
+
+      // Last Activity (Most recent login)
+      const q = query(usersRef, orderBy("lastLogin", "desc"), limit(1));
+      const unsubscribeLastLogin = onSnapshot(
+        q,
+        (snapshot) => {
+          const doc = snapshot.docs[0];
+          if (doc && doc.data().lastLogin) {
+            const lastLoginDate = new Date(doc.data().lastLogin.toDate());
+            const now = new Date();
+            const diffMins = Math.floor((now - lastLoginDate) / (1000 * 60));
+            
+            if (diffMins < 1) {
+              setLastActivity("Just now");
+            } else if (diffMins < 60) {
+              setLastActivity(`${diffMins} min${diffMins > 1 ? 's' : ''} ago`);
+            } else if (diffMins < 1440) {
+              const hours = Math.floor(diffMins / 60);
+              setLastActivity(`${hours} hour${hours > 1 ? 's' : ''} ago`);
+            } else {
+              const days = Math.floor(diffMins / 1440);
+              setLastActivity(`${days} day${days > 1 ? 's' : ''} ago`);
+            }
+          } else {
+            setLastActivity("No login data");
+          }
+        },
+        (err) => {
+          console.error("Error fetching last activity:", err);
+        }
+      );
+      unsubscribers.push(unsubscribeLastLogin);
+
+      // Total Simulations - Simplified query (no filters)
+      const simulationQuery = query(
+        collection(db, "userInteractions", user.uid, "interactions"),
+        orderBy("timestamp", "desc")
+      );
+
+      const unsubscribeSimulations = onSnapshot(
+        simulationQuery,
+        (snapshot) => {
+          console.log("Total scenarios found:", snapshot.size);
+          setTotalSimulations(snapshot.size);
+
+          // Calculate accuracy if it exists
+          const accuracies = snapshot.docs
+            .map((doc) => doc.data().accuracy)
+            .filter((a) => typeof a === "number" && a >= 0 && a <= 100);
+
+          const average = accuracies.length
+            ? (accuracies.reduce((a, b) => a + b, 0) / accuracies.length).toFixed(2) + "%"
+            : "N/A";
+
+          setAvgAccuracy(average);
+        },
+        (error) => {
+          console.error("Error fetching simulations:", error);
+          setTotalSimulations(0);
+          setAvgAccuracy("N/A");
+        }
+      );
+      unsubscribers.push(unsubscribeSimulations);
+
+      // Active Users in the last 24 hours
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const activeQuery = query(usersRef, where("lastLogin", ">", yesterday));
+      const unsubscribeActiveUsers = onSnapshot(
+        activeQuery,
+        (snapshot) => {
+          setActiveUsers(snapshot.size);
+        },
+        (err) => {
+          console.error("Error fetching active users:", err);
+        }
+      );
+      unsubscribers.push(unsubscribeActiveUsers);
+
+    } catch (err) {
+      console.error("Error setting up listeners:", err);
+    }
 
     // Performance Status based on page load time
     const { timing } = window.performance;
@@ -175,19 +237,16 @@ const KpiCard = () => {
     fetchSystemStatus();
 
     return () => {
-      unsubscribeUsers();
-      unsubscribeLastLogin();
-      if (unsubscribeSimulations) unsubscribeSimulations();
-      unsubscribeActiveUsers();
+      unsubscribers.forEach(unsub => unsub());
     };
-  }, [user]); // Changed dependency from currentUser to user
+  }, [user]);
 
   // KPI Cards Layout
   const cards = [
     {
       icon: <FiUser className="text-3xl md:text-4xl" />,
       title: "Total Users",
-      value: totalUsers,
+      value: formatNumber(totalUsers),
       iconColor: "text-blue-500"
     },
     {
@@ -211,13 +270,13 @@ const KpiCard = () => {
     {
       icon: <FiActivity className="text-3xl md:text-4xl" />,
       title: "Total Simulations",
-      value: totalSimulations,
+      value: formatNumber(totalSimulations),
       iconColor: "text-indigo-500"
     },
     {
       icon: <FiTrendingUp className="text-3xl md:text-4xl" />,
       title: "Active Users",
-      value: activeUsers,
+      value: formatNumber(activeUsers),
       iconColor: "text-teal-500"
     },
     {
@@ -235,11 +294,25 @@ const KpiCard = () => {
   ];
 
   return (
-    <div className="relative mt-8">
+    <div className="relative mt-8 group">
+      {/* Auto-scroll toggle - positioned above the cards */}
+      <div className="flex justify-end mb-2 px-8">
+        <button
+          onClick={toggleAutoScroll}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            isAutoScrolling
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+          }`}
+        >
+          {isAutoScrolling ? "⏸ Pause Scroll" : "▶ Auto Scroll"}
+        </button>
+      </div>
+
       {/* Left scroll button */}
       <button
         onClick={() => scrollCards("left")}
-        className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white dark:text-white dark:bg-gray-700 rounded-full p-2 shadow-lg"
+        className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white dark:text-white dark:bg-gray-700 rounded-full p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
       >
         <FiChevronLeft size={24} />
       </button>
@@ -276,7 +349,7 @@ const KpiCard = () => {
       {/* Right scroll button */}
       <button
         onClick={() => scrollCards("right")}
-        className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white dark:text-white dark:bg-gray-700 rounded-full p-2 shadow-lg"
+        className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white dark:text-white dark:bg-gray-700 rounded-full p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
       >
         <FiChevronRight size={24} />
       </button>

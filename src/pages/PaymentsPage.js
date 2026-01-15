@@ -5,9 +5,6 @@ import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import SkeletonLoader from "../components/SkeletonLoader";
 import { Suspense } from "react";
-// import SubscriptionHistory from "../components/SubscriptionHistory";
-import ReceiptGenerator from "../components/RecieptGenerator";
-import SavedCardDetails from "../components/SavedCardDetails";
 import BillingAndSubscriptionsTab from "./BillingAndSubscriptionsTab";
 import Payments from "../components/Payments";
 

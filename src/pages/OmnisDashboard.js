@@ -13,7 +13,7 @@ import {
 import KpiCard from '../components/KpiCard';
 import ActionButtons from '../components/ActionButton';
 import CommandPalette from '../components/CommandPalette';
-import AchievementsTab from '../components/AchievementsTab';
+// import AchievementsTab from '../components/AchievementsTab'; // ✅ Commented out
 import SkeletonLoader from '../components/SkeletonLoader'; 
 import QuickActions from '../components/QuickActionButtons';
 import DiscountBanner from '../components/DiscountBanner';
@@ -145,7 +145,7 @@ const OmnisDashboard = () => {
       }
       if (e.altKey && e.key === '1') handleTabSwitch('quickStats');
       if (e.altKey && e.key === '2') handleTabSwitch('analytics');
-      if (e.altKey && e.key === '3') handleTabSwitch('achievements');
+      // if (e.altKey && e.key === '3') handleTabSwitch('achievements'); // ✅ Commented out
       if (e.key === 'Escape') document.activeElement.blur();
       if (e.key === '?') setShowShortcuts(prev => !prev);
       if (e.key === 'Enter' && showShortcuts) {
@@ -177,13 +177,13 @@ const OmnisDashboard = () => {
   const tabLabels = {
     quickStats: 'Pilot Dashboard',
     analytics: 'Analytics',
-    achievements: 'Accomplishments',
+    // achievements: 'Accomplishments', // ✅ Commented out
   };
 
   const tabIcons = {
     quickStats: '🎯',
     analytics: '📊', 
-    achievements: '🏆'
+    // achievements: '🏆' // ✅ Commented out
   };
 
   return (
@@ -422,7 +422,8 @@ const OmnisDashboard = () => {
               </div>
             )}
 
-            {activeTab === 'achievements' && (
+            {/* ✅ Accomplishments tab commented out */}
+            {/* {activeTab === 'achievements' && (
               <div id="achievements-panel" role="tabpanel" aria-labelledby="achievements-tab">
                 <div className="mb-8">
                   <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 
@@ -435,7 +436,7 @@ const OmnisDashboard = () => {
                   <AchievementsTab />
                 </Suspense>
               </div>
-            )}
+            )} */}
           </div>
         </div>
 
@@ -474,7 +475,7 @@ const OmnisDashboard = () => {
                   { key: '/', desc: 'Focus search' },
                   { key: 'Alt + 1', desc: 'Pilot Dashboard Tab' },
                   { key: 'Alt + 2', desc: 'Analytics Tab' },
-                  { key: 'Alt + 3', desc: 'Accomplishments Tab' },
+                  // { key: 'Alt + 3', desc: 'Accomplishments Tab' }, // ✅ Commented out
                   { key: 'Esc', desc: 'Blur input / Close modals' },
                   { key: '?', desc: 'Toggle this help dialog' },
                   { key: 'Enter', desc: 'Close this dialog' },
